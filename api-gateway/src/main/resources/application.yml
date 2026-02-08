@@ -29,6 +29,10 @@ spring:
           predicates:
             - Path=/auth/**
           filters:
+            - name: CircuitBreaker
+              args:
+                name: authService
+                fallbackUri: forward:/fallback/auth
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 10
@@ -41,6 +45,10 @@ spring:
             - Path=/notifications/**
           filters:
             - AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: notificationService
+                fallbackUri: forward:/fallback/notification
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 5
@@ -53,6 +61,10 @@ spring:
             - Path=/events/**
           filters:
             - AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: eventService
+                fallbackUri: forward:/fallback/event
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 10
@@ -65,6 +77,32 @@ spring:
             - Path=/ai/**
           filters:
             - AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: aiService
+                fallbackUri: forward:/fallback/ai
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+    instances:
+      authService:
+        baseConfig: default
+      notificationService:
+        baseConfig: default
+      eventService:
+        baseConfig: default
+      aiService:
+        baseConfig: default
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
 
 application:
   security:

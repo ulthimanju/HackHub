@@ -16,6 +16,7 @@ public class RouteValidator {
             "/auth/upgrade-role/otp",
             "/auth/login",
             "/auth/validate-token",
+            "/fallback",
             "/eureka"
     );
 
