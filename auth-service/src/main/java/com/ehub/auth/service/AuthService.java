@@ -18,7 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -128,6 +131,21 @@ public class AuthService {
     public User getProfile(String username) {
         return repository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
+    }
+
+    public void updateSkills(String userId, List<String> skills) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
+        user.setSkills(skills);
+        repository.save(user);
+    }
+
+    public List<User> getUsersBySkills(List<String> skills) {
+        // Simple implementation: filter in memory or use a native query for JSONB
+        // For production, a native query like "skills ?| array['skill1', 'skill2']" would be better
+        return repository.findAll().stream()
+                .filter(u -> u.getSkills() != null && !Collections.disjoint(u.getSkills(), skills))
+                .collect(Collectors.toList());
     }
 
     public boolean validateToken(String token) {

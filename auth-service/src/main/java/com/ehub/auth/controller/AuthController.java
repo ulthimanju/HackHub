@@ -25,6 +25,17 @@ public class AuthController {
         return ResponseEntity.ok(service.getProfile(authentication.getName()));
     }
 
+    @PutMapping("/profile/skills")
+    public ResponseEntity<String> updateSkills(Authentication authentication, @RequestBody List<String> skills) {
+        service.updateSkills(authentication.getName(), skills);
+        return ResponseEntity.ok("Skills updated successfully");
+    }
+
+    @PostMapping("/search/by-skills")
+    public ResponseEntity<List<User>> getUsersBySkills(@RequestBody List<String> skills) {
+        return ResponseEntity.ok(service.getUsersBySkills(skills));
+    }
+
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(service.register(request));

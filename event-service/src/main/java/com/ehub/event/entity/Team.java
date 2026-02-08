@@ -2,6 +2,8 @@ package com.ehub.event.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +37,10 @@ public class Team {
 
     @Column(nullable = false)
     private String leaderId; // User ID of the leader
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<String> skillsNeeded;
 
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
