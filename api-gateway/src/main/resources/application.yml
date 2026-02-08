@@ -55,6 +55,11 @@ spring:
                 redis-rate-limiter.burstCapacity: 10
                 key-resolver: "#{@userKeyResolver}"
 
+        - id: notification-ws
+          uri: http://notification-service:8082
+          predicates:
+            - Path=/ws-notifications/**
+
         - id: event-service
           uri: http://event-service:8084
           predicates:

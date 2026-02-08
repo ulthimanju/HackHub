@@ -13,6 +13,7 @@ import com.ehub.event.util.MessageKeys;
 import com.ehub.event.util.RegistrationStatus;
 import com.ehub.event.util.ShortCodeGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class EventService {
     private final RegistrationRepository registrationRepository;
     private final CommonClient commonClient;
     private final NotificationClient notificationClient;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     public List<EventResponse> getEventsByOrganizer(String organizerId) {
         return eventRepository.findByOrganizerId(organizerId).stream()
@@ -189,6 +191,14 @@ public class EventService {
         event.setJudging(false);
         event.setStatus(event.calculateCurrentStatus());
         eventRepository.save(event);
+
+        // Broadcast global update
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("eventId", id);
+        payload.put("eventName", event.getName());
+        payload.put("status", "RESULTS_ANNOUNCED");
+        payload.put("message", "Judging complete! Results for " + event.getName() + " are now live.");
+        redisTemplate.convertAndSend("ehub:broadcast:global-alerts", payload);
     }
 
     @Transactional
@@ -358,6 +368,15 @@ public class EventService {
 
         registration.setStatus(status);
         registrationRepository.save(registration);
+
+        // Broadcast to specific user via WebSocket bridge
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", "REGISTRATION_UPDATE");
+        payload.put("eventId", event.getId());
+        payload.put("eventName", event.getName());
+        payload.put("status", status.name());
+        payload.put("message", "Your registration for " + event.getName() + " has been " + status.name());
+        redisTemplate.convertAndSend("ehub:broadcast:user-" + registration.getUserId(), payload);
 
         // Send Notification to User
         try {

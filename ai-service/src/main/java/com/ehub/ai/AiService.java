@@ -99,6 +99,16 @@ public class AiService {
         try {
             Double score = callGeminiForScore(teamName, problemStatement, repoUrl);
             updateScoreInEventService(teamId, score);
+            
+            // Broadcast update for real-time leaderboard
+            Map<String, Object> broadcastPayload = new HashMap<>();
+            broadcastPayload.put("teamId", teamId);
+            broadcastPayload.put("teamName", teamName);
+            broadcastPayload.put("score", score);
+            broadcastPayload.put("timestamp", System.currentTimeMillis());
+            
+            redisTemplate.convertAndSend("ehub:broadcast:leaderboard", broadcastPayload);
+            
             return score;
         } catch (Exception e) {
             System.err.println("Evaluation failed for team " + teamId + ": " + e.getMessage());

@@ -17,6 +17,7 @@ public class RouteValidator {
             "/auth/login",
             "/auth/validate-token",
             "/fallback",
+            "/ws-notifications",
             "/eureka"
     );
 
