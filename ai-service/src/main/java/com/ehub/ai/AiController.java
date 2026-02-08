@@ -13,8 +13,9 @@ public class AiController {
     private final AiService aiService;
 
     @PostMapping("/evaluate/{teamId}")
-    public ResponseEntity<Double> evaluateTeam(@PathVariable String teamId) {
-        return ResponseEntity.ok(aiService.evaluateTeam(teamId));
+    public ResponseEntity<String> evaluateTeam(@PathVariable String teamId) {
+        aiService.evaluateTeam(teamId);
+        return ResponseEntity.ok("Evaluation queued for team: " + teamId);
     }
 
     @PostMapping("/evaluate-event/{eventId}")

@@ -7,7 +7,9 @@ services:
     environment:
       POSTGRES_DB: ehub_auth_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    secrets:
+      - db-password
     ports:
       - "5433:5432"
     healthcheck:
@@ -31,11 +33,17 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/ehub_auth_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      APPLICATION_SECURITY_JWT_SECRET_KEY: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      # db-password from secrets will map to db.password or spring.datasource.password via configtree
+      # we need to tell spring where to look for configtree
+      SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
+      # Map specific secrets to properties if naming doesn't match exactly
+      SPRING_DATASOURCE_PASSWORD: "${db-password}"
+      APPLICATION_SECURITY_JWT_SECRET_KEY: "${jwt-secret}"
       APPLICATION_NOTIFICATION_SERVICE_URL: http://notification-service:8082/notifications/password-reset/validate
       APPLICATION_COMMON_SERVICE_URL: http://common-services:8083/common
+    secrets:
+      - db-password
+      - jwt-secret
     networks:
       - ehub-network
 
@@ -59,10 +67,13 @@ services:
     environment:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
       GMAIL_USERNAME: ${GMAIL_USERNAME}
-      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      GMAIL_APP_PASSWORD: "${gmail-app-password}"
       APP_ITEM_LIMIT: ${APP_ITEM_LIMIT}
       APP_TIME_LIMIT: ${APP_TIME_LIMIT}
+    secrets:
+      - gmail-app-password
     networks:
       - ehub-network
 
@@ -85,6 +96,11 @@ services:
       - auth-service
       - notification-service
       - event-service
+    environment:
+      SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
+      APPLICATION_SECURITY_JWT_SECRET_KEY: "${jwt-secret}"
+    secrets:
+      - jwt-secret
     networks:
       - ehub-network
 
@@ -94,7 +110,9 @@ services:
     environment:
       POSTGRES_DB: ehub_event_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    secrets:
+      - db-password
     ports:
       - "5434:5432"
     healthcheck:
@@ -116,9 +134,12 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/ehub_event_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
+      SPRING_DATASOURCE_PASSWORD: "${db-password}"
       APPLICATION_COMMON_SERVICE_URL: http://common-services:8083/common
       APPLICATION_NOTIFICATION_SERVICE_URL: http://notification-service:8082/notifications/send-alert
+    secrets:
+      - db-password
     networks:
       - ehub-network
 
@@ -129,12 +150,28 @@ services:
     container_name: ai-service
     depends_on:
       - event-service
+      - redis
     environment:
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      GOOGLE_API_KEY: ${GEMINI_API_KEY}
+      SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      GEMINI_API_KEY: "${gemini-api-key}"
+      GOOGLE_API_KEY: "${gemini-api-key}"
       APPLICATION_EVENT_SERVICE_URL: http://event-service:8084
+    secrets:
+      - gemini-api-key
     networks:
       - ehub-network
+
+secrets:
+  db-password:
+    file: .secrets/db-password.txt
+  jwt-secret:
+    file: .secrets/jwt-secret.txt
+  gemini-api-key:
+    file: .secrets/gemini-api-key.txt
+  gmail-app-password:
+    file: .secrets/gmail-app-password.txt
 
 networks:
   ehub-network:

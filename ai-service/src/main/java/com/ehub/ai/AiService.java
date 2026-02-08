@@ -5,12 +5,12 @@ import com.google.genai.types.GenerateContentResponse;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -18,7 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AiService {
 
     private final RestTemplate restTemplate;
-    private final BlockingQueue<Map<String, Object>> evaluationQueue = new LinkedBlockingQueue<>();
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final String QUEUE_KEY = "ehub:ai:evaluation:queue";
     private final AtomicBoolean isBulkEvaluating = new AtomicBoolean(false);
 
     @Value("${GEMINI_API_KEY}")
@@ -32,18 +33,24 @@ public class AiService {
         Thread worker = new Thread(() -> {
             while (true) {
                 try {
-                    Map<String, Object> context = evaluationQueue.take();
-                    processEvaluation(context);
+                    // Use blocking pop with 5 second timeout to avoid busy wait
+                    Map<String, Object> context = (Map<String, Object>) redisTemplate.opsForList()
+                            .leftPop(QUEUE_KEY, 5, TimeUnit.SECONDS);
                     
-                    // If queue is empty after a task, and we were bulk evaluating, clear the flag
-                    if (evaluationQueue.isEmpty()) {
+                    if (context != null) {
+                        processEvaluation(context);
+                    } else {
+                        // If queue is empty, clear bulk evaluating flag
                         isBulkEvaluating.set(false);
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
                 } catch (Exception e) {
                     System.err.println("Background worker error: " + e.getMessage());
+                    try {
+                        Thread.sleep(5000); // Sleep on error to prevent log spam
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
         });
@@ -61,7 +68,8 @@ public class AiService {
             List<Map<String, Object>> contexts = restTemplate.getForObject(url, List.class);
             if (contexts != null && !contexts.isEmpty()) {
                 isBulkEvaluating.set(true);
-                evaluationQueue.addAll(contexts);
+                // Push all contexts to Redis list
+                redisTemplate.opsForList().rightPushAll(QUEUE_KEY, contexts.toArray());
             }
         } catch (Exception e) {
             System.err.println("Failed to fetch event context: " + e.getMessage());
@@ -74,7 +82,10 @@ public class AiService {
         Map<String, Object> context = restTemplate.getForObject(contextUrl, Map.class);
         if (context == null) return 0.0;
         context.put("teamId", teamId);
-        return processEvaluation(context);
+        
+        // Even for single team, we queue it to maintain consistency and order
+        redisTemplate.opsForList().rightPush(QUEUE_KEY, context);
+        return -1.0; // Return -1.0 to indicate evaluation is queued
     }
 
     private Double processEvaluation(Map<String, Object> context) {
