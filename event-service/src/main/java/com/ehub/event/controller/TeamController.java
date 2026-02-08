@@ -107,8 +107,11 @@ public class TeamController {
     }
 
     @PostMapping("/{teamId}/score")
-    public ResponseEntity<Void> updateScore(@PathVariable String teamId, @RequestParam Double score) {
-        teamService.updateScore(teamId, score);
+    public ResponseEntity<Void> updateScore(
+            @PathVariable String teamId, 
+            @RequestParam Double score,
+            @RequestParam(required = false) String aiSummary) {
+        teamService.updateScore(teamId, score, aiSummary);
         return ResponseEntity.ok().build();
     }
 }

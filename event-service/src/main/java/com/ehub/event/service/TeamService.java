@@ -12,10 +12,10 @@ import com.ehub.event.repository.ProblemStatementRepository;
 import com.ehub.event.repository.RegistrationRepository;
 import com.ehub.event.repository.TeamMemberRepository;
 import com.ehub.event.repository.TeamRepository;
-import com.ehub.event.util.EventStatus;
-import com.ehub.event.util.RegistrationStatus;
-import com.ehub.event.util.TeamMemberStatus;
-import com.ehub.event.util.TeamRole;
+import com.ehub.common.enums.EventStatus;
+import com.ehub.common.enums.RegistrationStatus;
+import com.ehub.common.enums.TeamMemberStatus;
+import com.ehub.common.enums.TeamRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -317,10 +317,11 @@ public class TeamService {
     }
 
     @Transactional
-    public void updateScore(String teamId, Double score) {
+    public void updateScore(String teamId, Double score, String aiSummary) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
         team.setScore(score);
+        team.setAiSummary(aiSummary);
         teamRepository.save(team);
     }
 
@@ -359,6 +360,7 @@ public class TeamService {
                 .submissionTime(team.getSubmissionTime())
                 .leaderId(team.getLeaderId())
                 .score(team.getScore())
+                .aiSummary(team.getAiSummary())
                 .members(memberDtos)
                 .build();
     }

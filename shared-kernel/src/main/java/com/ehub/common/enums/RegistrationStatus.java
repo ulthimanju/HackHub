@@ -1,4 +1,4 @@
-package com.ehub.event.util;
+package com.ehub.common.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 

@@ -1,6 +1,6 @@
 package com.ehub.event.entity;
 
-import com.ehub.event.util.EventStatus;
+import com.ehub.common.enums.EventStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;

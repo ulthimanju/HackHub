@@ -35,6 +35,9 @@ public class Team {
 
     private Double score;
 
+    @Column(columnDefinition = "TEXT")
+    private String aiSummary;
+
     @Column(nullable = false)
     private String leaderId; // User ID of the leader
 

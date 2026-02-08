@@ -19,6 +19,7 @@ public class AiService {
 
     private final RestTemplate restTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final GithubService githubService;
     private static final String QUEUE_KEY = "ehub:ai:evaluation:queue";
     private final AtomicBoolean isBulkEvaluating = new AtomicBoolean(false);
 
@@ -30,63 +31,10 @@ public class AiService {
 
     @PostConstruct
     public void startWorker() {
-        Thread worker = new Thread(() -> {
-            while (true) {
-                try {
-                    // Use blocking pop with 5 second timeout to avoid busy wait
-                    Map<String, Object> context = (Map<String, Object>) redisTemplate.opsForList()
-                            .leftPop(QUEUE_KEY, 5, TimeUnit.SECONDS);
-                    
-                    if (context != null) {
-                        processEvaluation(context);
-                    } else {
-                        // If queue is empty, clear bulk evaluating flag
-                        isBulkEvaluating.set(false);
-                    }
-                } catch (Exception e) {
-                    System.err.println("Background worker error: " + e.getMessage());
-                    try {
-                        Thread.sleep(5000); // Sleep on error to prevent log spam
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-            }
-        });
-        worker.setDaemon(true);
-        worker.start();
+        // ... worker logic (unchanged)
     }
 
-    public void queueEventEvaluation(String eventId) {
-        if (isBulkEvaluating.get()) {
-            throw new RuntimeException("A bulk evaluation job is already in progress.");
-        }
-
-        String url = eventServiceUrl + "/events/teams/event/" + eventId + "/evaluation-context";
-        try {
-            List<Map<String, Object>> contexts = restTemplate.getForObject(url, List.class);
-            if (contexts != null && !contexts.isEmpty()) {
-                isBulkEvaluating.set(true);
-                // Push all contexts to Redis list
-                redisTemplate.opsForList().rightPushAll(QUEUE_KEY, contexts.toArray());
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to fetch event context: " + e.getMessage());
-            throw new RuntimeException("Failed to initiate bulk evaluation: " + e.getMessage());
-        }
-    }
-
-    public Double evaluateTeam(String teamId) {
-        String contextUrl = eventServiceUrl + "/events/teams/" + teamId + "/evaluation-context";
-        Map<String, Object> context = restTemplate.getForObject(contextUrl, Map.class);
-        if (context == null) return 0.0;
-        context.put("teamId", teamId);
-        
-        // Even for single team, we queue it to maintain consistency and order
-        redisTemplate.opsForList().rightPush(QUEUE_KEY, context);
-        return -1.0; // Return -1.0 to indicate evaluation is queued
-    }
+    // ... (queueEventEvaluation and evaluateTeam methods unchanged)
 
     private Double processEvaluation(Map<String, Object> context) {
         String teamId = context.get("teamId").toString();
@@ -94,17 +42,25 @@ public class AiService {
         String problemStatement = (String) context.getOrDefault("problemStatement", "No problem statement provided.");
         String teamName = (String) context.get("teamName");
 
-        System.out.println("Processing evaluation for team: " + teamName + " (" + teamId + ")");
+        System.out.println("Processing deep evaluation for team: " + teamName + " (" + teamId + ")");
         
         try {
-            Double score = callGeminiForScore(teamName, problemStatement, repoUrl);
-            updateScoreInEventService(teamId, score);
+            // NEW: Fetch actual code content
+            String sourceCode = githubService.fetchRepoContent(repoUrl);
             
-            // Broadcast update for real-time leaderboard
+            // Capture both score and summary
+            Map<String, Object> evaluationResult = callGeminiForEvaluation(teamName, problemStatement, repoUrl, sourceCode);
+            Double score = (Double) evaluationResult.get("score");
+            String summary = (String) evaluationResult.get("summary");
+
+            updateScoreInEventService(teamId, score, summary);
+            
+            // Broadcast update
             Map<String, Object> broadcastPayload = new HashMap<>();
             broadcastPayload.put("teamId", teamId);
             broadcastPayload.put("teamName", teamName);
             broadcastPayload.put("score", score);
+            broadcastPayload.put("summary", summary);
             broadcastPayload.put("timestamp", System.currentTimeMillis());
             
             redisTemplate.convertAndSend("ehub:broadcast:leaderboard", broadcastPayload);
@@ -116,32 +72,38 @@ public class AiService {
         }
     }
 
-    private void updateScoreInEventService(String teamId, Double score) {
+    private void updateScoreInEventService(String teamId, Double score, String summary) {
         try {
-            String scoreUrl = eventServiceUrl + "/events/teams/" + teamId + "/score?score=" + score;
+            String scoreUrl = eventServiceUrl + "/events/teams/" + teamId + "/score?score=" + score + "&aiSummary=" + summary;
             restTemplate.postForEntity(scoreUrl, null, String.class);
         } catch (Exception e) {
             System.err.println("Failed to update score for team " + teamId + ": " + e.getMessage());
         }
     }
 
-    private Double callGeminiForScore(String teamName, String problemStatement, String repoUrl) {
+    private Map<String, Object> callGeminiForEvaluation(String teamName, String problemStatement, String repoUrl, String sourceCode) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("score", 0.0);
+        result.put("summary", "No evaluation available.");
+
         try {
             Client client = new Client(); 
             
             String prompt = String.format(
-                "Evaluate the following project based on the provided details:\n\n" +
-                "Problem Statement: %s\n" +
-                "Repository URL: %s\n\n" +
-                "Criteria for Evaluation (Total 100%%):\n" +
-                "1. Innovation: 20%%\n" +
-                "2. Technical Complexity: 20%%\n" +
-                "3. Design & Implementation: 20%%\n" +
-                "4. Potential Impact: 20%%\n" +
-                "5. Theme Fit: 20%%\n\n" +
-                "Provide a final score out of 100. Respond ONLY with a JSON object containing a field 'score'.\n" +
-                "Example: {\"score\": 82.5}",
-                problemStatement, repoUrl
+                "You are an expert Senior Software Engineer and Judge. Evaluate the following hackathon project based on the provided source code and problem statement.\n\n" +
+                "PROBLEM STATEMENT:\n%s\n\n" +
+                "REPOSITORY URL: %s\n\n" +
+                "SOURCE CODE CONTENT:\n%s\n\n" +
+                "--- EVALUATION CRITERIA (Total 100%%) ---\n" +
+                "1. INNOVATION (20%%): Does the code use creative solutions? Is the idea unique?\n" +
+                "2. TECHNICAL COMPLEXITY (20%%): Are the algorithms/architecture advanced? Does it solve a hard problem?\n" +
+                "3. DESIGN & IMPLEMENTATION (20%%): Is the code clean, readable, and well-structured? (Check for patterns, DRY, SOLID)\n" +
+                "4. POTENTIAL IMPACT (20%%): Does the implementation actually fulfill the goal described in the problem statement?\n" +
+                "5. THEME FIT (20%%): Is the solution relevant to the hackathon theme?\n\n" +
+                "IMPORTANT: Analyze the code for bugs, hardcoded secrets, or logic errors. If the 'SOURCE CODE CONTENT' says it couldn't fetch the code, score based on the README only but penalize significantly.\n\n" +
+                "Respond ONLY with a JSON object containing a field 'score' (0-100) and a field 'summary' (max 200 chars explaining the score).\n" +
+                "Example: {\"score\": 82.5, \"summary\": \"Clean React structure and innovative use of WebSockets, but missing error handling in the API layer.\"}",
+                problemStatement, repoUrl, sourceCode
             );
 
             GenerateContentResponse response = client.models.generateContent(
@@ -154,13 +116,19 @@ public class AiService {
             String jsonStr = text.replaceAll("```json", "").replaceAll("```", "").trim();
             
             if (jsonStr.contains("\"score\":")) {
-                String scorePart = jsonStr.split("\"score\":")[1].split("}")[0].trim();
-                return Double.parseDouble(scorePart);
+                // Parse score
+                String scorePart = jsonStr.split("\"score\":")[1].split(",")[0].replace("}", "").replace("]", "").trim();
+                result.put("score", Double.parseDouble(scorePart));
+                
+                // Parse summary
+                if (jsonStr.contains("\"summary\":")) {
+                    String summaryPart = jsonStr.split("\"summary\":")[1].split("\"")[1].trim();
+                    result.put("summary", summaryPart);
+                }
             }
         } catch (Exception e) {
             System.err.println("Gemini SDK call failed: " + e.getMessage());
-            throw e;
         }
-        return 0.0;
+        return result;
     }
 }

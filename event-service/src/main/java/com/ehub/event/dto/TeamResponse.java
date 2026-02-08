@@ -1,7 +1,7 @@
 package com.ehub.event.dto;
 
-import com.ehub.event.util.TeamMemberStatus;
-import com.ehub.event.util.TeamRole;
+import com.ehub.common.enums.TeamMemberStatus;
+import com.ehub.common.enums.TeamRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +22,7 @@ public class TeamResponse {
     private String demoUrl;
     private java.time.LocalDateTime submissionTime;
     private Double score;
+    private String aiSummary;
     private String leaderId;
     private List<TeamMemberResponse> members;
 

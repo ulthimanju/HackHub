@@ -20,8 +20,8 @@ services:
 
   auth-service:
     build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: auth-service/Dockerfile
     container_name: auth-service
     depends_on:
       auth-db:
@@ -51,8 +51,8 @@ services:
 
   notification-service:
     build:
-      context: ./notification-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: notification-service/Dockerfile
     container_name: notification-service
     depends_on:
       - redis
@@ -69,18 +69,10 @@ services:
     networks:
       - ehub-network
 
-  common-services:
-    build:
-      context: ./common-services
-      dockerfile: Dockerfile
-    container_name: common-services
-    networks:
-      - ehub-network
-
   api-gateway:
     build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
     ports:
       - "8000:8000"
@@ -115,8 +107,8 @@ services:
 
   event-service:
     build:
-      context: ./event-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: event-service/Dockerfile
     container_name: event-service
     depends_on:
       event-db:
@@ -135,8 +127,8 @@ services:
 
   ai-service:
     build:
-      context: ./ai-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ai-service/Dockerfile
     container_name: ai-service
     depends_on:
       - event-service
@@ -150,6 +142,18 @@ services:
       APPLICATION_EVENT_SERVICE_URL: http://event-service:8084
     secrets:
       - gemini-api-key
+    networks:
+      - ehub-network
+
+  client-service:
+    build:
+      context: .
+      dockerfile: client-service/Dockerfile
+    container_name: client-service
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000
     networks:
       - ehub-network
 
