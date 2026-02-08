@@ -60,8 +60,7 @@ public class AuthService {
                 .role(UserRole.PARTICIPANT)
                 .build();
         repository.save(user);
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new ArrayList<>());
-        var jwtToken = jwtService.generateToken(userDetails);
+        var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();
@@ -76,8 +75,7 @@ public class AuthService {
         );
         var user = repository.findByUsernameOrEmail(request.getUsername(), request.getUsername())
                 .orElseThrow();
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new ArrayList<>());
-        var jwtToken = jwtService.generateToken(userDetails);
+        var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();

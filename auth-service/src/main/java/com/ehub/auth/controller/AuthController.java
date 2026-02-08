@@ -19,6 +19,9 @@ public class AuthController {
 
     @GetMapping("/profile")
     public ResponseEntity<User> getProfile(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof User user) {
+            return ResponseEntity.ok(user);
+        }
         return ResponseEntity.ok(service.getProfile(authentication.getName()));
     }
 

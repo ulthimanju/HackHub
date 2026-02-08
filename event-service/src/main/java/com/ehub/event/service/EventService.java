@@ -102,7 +102,7 @@ public class EventService {
                 .build();
     }
 
-    public String createEvent(EventRequest request) {
+    public String createEvent(EventRequest request, String currentUserId) {
         String id = commonClient.getUuid();
         String shortCode = ShortCodeGenerator.generate(8);
         
@@ -126,7 +126,7 @@ public class EventService {
                 .location(request.getLocation())
                 .maxParticipants(request.getMaxParticipants())
                 .teamSize(request.getTeamSize())
-                .organizerId(request.getOrganizerId())
+                .organizerId(currentUserId)
                 .build();
         
         event.setStatus(event.calculateCurrentStatus());
@@ -265,8 +265,13 @@ public class EventService {
     }
 
     @Transactional
-    public void registerForEvent(String eventId, RegistrationRequest request) {
-        if (registrationRepository.existsByEventIdAndUserId(eventId, request.getUserId())) {
+    public void registerForEvent(String eventId, RegistrationRequest request, String currentUserId) {
+        // Enforce that the registration is for the authenticated user
+        if (!currentUserId.equals(request.getUserId())) {
+            throw new RuntimeException("Unauthorized: Cannot register on behalf of another user.");
+        }
+
+        if (registrationRepository.existsByEventIdAndUserId(eventId, currentUserId)) {
             throw new RuntimeException(MessageKeys.ALREADY_REGISTERED.getMessage());
         }
 
@@ -293,7 +298,7 @@ public class EventService {
         Registration registration = Registration.builder()
                 .id(id)
                 .eventId(eventId)
-                .userId(request.getUserId())
+                .userId(currentUserId)
                 .username(request.getUsername())
                 .userEmail(request.getUserEmail())
                 .status(RegistrationStatus.PENDING)
@@ -328,10 +333,14 @@ public class EventService {
     }
 
     @Transactional
-    public void cancelRegistration(String registrationId) {
+    public void cancelRegistration(String registrationId, String currentUserId) {
         Registration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.REGISTRATION_NOT_FOUND.getMessage()));
         
+        if (!registration.getUserId().equals(currentUserId)) {
+             throw new RuntimeException("Unauthorized: Only the participant can cancel their registration.");
+        }
+
         registrationRepository.delete(registration);
     }
 

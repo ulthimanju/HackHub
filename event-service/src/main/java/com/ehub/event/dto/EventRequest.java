@@ -35,7 +35,4 @@ public class EventRequest {
     
     private Integer maxParticipants;
     private Integer teamSize;
-    
-    @NotBlank(message = "Organizer ID is required")
-    private String organizerId;
 }

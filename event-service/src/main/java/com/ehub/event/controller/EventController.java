@@ -7,6 +7,8 @@ import com.ehub.event.util.RegistrationStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -16,6 +18,21 @@ import java.util.List;
 public class EventController {
 
     private final EventService eventService;
+
+    private String getCurrentUserId() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
+    @GetMapping("/organizer")
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<List<EventResponse>> getMyEventsAsOrganizer() {
+        return ResponseEntity.ok(eventService.getEventsByOrganizer(getCurrentUserId()));
+    }
+
+    @GetMapping("/my-registrations")
+    public ResponseEntity<List<EventResponse>> getMyEventsAsParticipant() {
+        return ResponseEntity.ok(eventService.getEventsByParticipant(getCurrentUserId()));
+    }
 
     @GetMapping("/organizer/{organizerId}")
     public ResponseEntity<List<EventResponse>> getEventsByOrganizer(@PathVariable String organizerId) {
@@ -43,62 +60,66 @@ public class EventController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> createEvent(@Valid @RequestBody EventRequest request) {
-        String eventId = eventService.createEvent(request);
+        String eventId = eventService.createEvent(request, getCurrentUserId());
         return ResponseEntity.ok(eventId);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> updateEvent(
             @PathVariable String id,
-            @RequestParam String requesterId,
             @Valid @RequestBody EventRequest request) {
-        eventService.updateEvent(id, request, requesterId);
+        eventService.updateEvent(id, request, getCurrentUserId());
         return ResponseEntity.ok("Event updated successfully");
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteEvent(@PathVariable String id, @RequestParam String requesterId) {
-        eventService.deleteEvent(id, requesterId);
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<String> deleteEvent(@PathVariable String id) {
+        eventService.deleteEvent(id, getCurrentUserId());
         return ResponseEntity.ok("Event deleted successfully");
     }
 
     @PostMapping("/{eventId}/problemstatements/bulk")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> addProblemStatements(
             @PathVariable String eventId,
-            @RequestParam String requesterId,
             @Valid @RequestBody List<ProblemStatementRequest> requests) {
-        eventService.addProblemStatements(eventId, requests, requesterId);
+        eventService.addProblemStatements(eventId, requests, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.PROBLEM_ADDED_SUCCESS.getMessage());
     }
 
     @PostMapping("/{eventId}/problemstatements")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> addProblemStatement(
             @PathVariable String eventId,
-            @RequestParam String requesterId,
             @Valid @RequestBody ProblemStatementRequest request) {
-        eventService.addProblemStatement(eventId, request, requesterId);
+        eventService.addProblemStatement(eventId, request, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.PROBLEM_ADDED_SUCCESS.getMessage());
     }
 
     @PutMapping("/problemstatements/{id}")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> updateProblemStatement(
             @PathVariable String id,
-            @RequestParam String requesterId,
             @Valid @RequestBody ProblemStatementRequest request) {
-        eventService.updateProblemStatement(id, request, requesterId);
+        eventService.updateProblemStatement(id, request, getCurrentUserId());
         return ResponseEntity.ok("Problem statement updated successfully");
     }
 
     @DeleteMapping("/problemstatements/{id}")
-    public ResponseEntity<String> deleteProblemStatement(@PathVariable String id, @RequestParam String requesterId) {
-        eventService.deleteProblemStatement(id, requesterId);
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<String> deleteProblemStatement(@PathVariable String id) {
+        eventService.deleteProblemStatement(id, getCurrentUserId());
         return ResponseEntity.ok("Problem statement deleted successfully");
     }
 
     @PatchMapping("/{id}/finalize-results")
-    public ResponseEntity<String> finalizeResults(@PathVariable String id, @RequestParam String requesterId) {
-        eventService.finalizeResults(id, requesterId);
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<String> finalizeResults(@PathVariable String id) {
+        eventService.finalizeResults(id, getCurrentUserId());
         return ResponseEntity.ok("Results finalized successfully");
     }
 
@@ -106,30 +127,33 @@ public class EventController {
     public ResponseEntity<String> registerForEvent(
             @PathVariable String eventId,
             @Valid @RequestBody RegistrationRequest request) {
-        eventService.registerForEvent(eventId, request);
+        // userId in request should match current user or be populated from current user
+        eventService.registerForEvent(eventId, request, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.REGISTRATION_SUCCESS.getMessage());
     }
 
     @GetMapping("/{eventId}/registrations")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<List<RegistrationResponse>> getEventRegistrations(@PathVariable String eventId) {
         return ResponseEntity.ok(eventService.getEventRegistrations(eventId));
     }
 
     @DeleteMapping("/registrations/{registrationId}")
     public ResponseEntity<String> cancelRegistration(@PathVariable String registrationId) {
-        eventService.cancelRegistration(registrationId);
+        eventService.cancelRegistration(registrationId, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.REGISTRATION_CANCELLED.getMessage());
     }
 
     @PatchMapping("/registrations/{registrationId}/status")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> updateRegistrationStatus(
             @PathVariable String registrationId,
-            @RequestParam String requesterId,
             @RequestParam RegistrationStatus status) {
-        eventService.updateRegistrationStatus(registrationId, status, requesterId);
+        eventService.updateRegistrationStatus(registrationId, status, getCurrentUserId());
         String message = status == RegistrationStatus.APPROVED 
             ? MessageKeys.REGISTRATION_APPROVED.getMessage() 
             : MessageKeys.REGISTRATION_REJECTED.getMessage();
         return ResponseEntity.ok(message);
     }
+}
 }
