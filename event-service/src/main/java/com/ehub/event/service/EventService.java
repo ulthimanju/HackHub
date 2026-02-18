@@ -1,6 +1,5 @@
 package com.ehub.event.service;
 
-import com.ehub.event.client.CommonClient;
 import com.ehub.event.client.NotificationClient;
 import com.ehub.event.dto.*;
 import com.ehub.event.entity.Event;
@@ -22,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,7 +31,6 @@ public class EventService {
     private final EventRepository eventRepository;
     private final ProblemStatementRepository problemRepository;
     private final RegistrationRepository registrationRepository;
-    private final CommonClient commonClient;
     private final NotificationClient notificationClient;
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -107,8 +106,7 @@ public class EventService {
     }
 
     public String createEvent(EventRequest request, String currentUserId) {
-        String id = commonClient.getUuid();
-        String shortCode = ShortCodeGenerator.generate(8);
+        String id = UUID.randomUUID().toString();
         
         Event event = Event.builder()
                 .id(id)
@@ -215,7 +213,7 @@ public class EventService {
         int currentCount = event.getProblemStatements().size();
         
         for (int i = 0; i < requests.size(); i++) {
-            String id = commonClient.getUuid();
+            String id = UUID.randomUUID().toString();
             String autoStatementId = String.format("PS%03d", currentCount + i + 1);
             
             ProblemStatement problem = ProblemStatement.builder()
@@ -238,7 +236,7 @@ public class EventService {
             throw new RuntimeException("Unauthorized: Only the event creator can add challenges.");
         }
 
-        String id = commonClient.getUuid();
+        String id = UUID.randomUUID().toString();
         String autoStatementId = String.format("PS%03d", event.getProblemStatements().size() + 1);
 
         ProblemStatement problem = ProblemStatement.builder()
@@ -305,7 +303,7 @@ public class EventService {
             }
         }
 
-        String id = commonClient.getUuid();
+        String id = UUID.randomUUID().toString();
         
         Registration registration = Registration.builder()
                 .id(id)

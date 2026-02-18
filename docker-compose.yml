@@ -26,6 +26,8 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
+      common-services:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/ehub_auth_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -113,6 +115,8 @@ services:
     depends_on:
       event-db:
         condition: service_healthy
+      common-services:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/ehub_event_db
       SPRING_DATASOURCE_USERNAME: postgres

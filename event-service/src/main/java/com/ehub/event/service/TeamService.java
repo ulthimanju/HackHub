@@ -1,6 +1,5 @@
 package com.ehub.event.service;
 
-import com.ehub.event.client.CommonClient;
 import com.ehub.event.client.NotificationClient;
 import com.ehub.event.dto.*;
 import com.ehub.event.entity.Event;
@@ -32,7 +31,6 @@ public class TeamService {
     private final RegistrationRepository registrationRepository;
     private final EventRepository eventRepository;
     private final ProblemStatementRepository problemStatementRepository;
-    private final CommonClient commonClient;
     private final NotificationClient notificationClient;
 
     @Transactional
@@ -58,7 +56,7 @@ public class TeamService {
         }
 
         Team team = Team.builder()
-                .id(commonClient.getUuid())
+                .id(UUID.randomUUID().toString())
                 .name(request.getName())
                 .eventId(eventId)
                 .leaderId(request.getUserId())
@@ -69,7 +67,7 @@ public class TeamService {
         Team savedTeam = teamRepository.save(team);
 
         TeamMember leader = TeamMember.builder()
-                .id(commonClient.getUuid())
+                .id(UUID.randomUUID().toString())
                 .team(savedTeam)
                 .userId(request.getUserId())
                 .username(request.getUsername())
@@ -131,7 +129,7 @@ public class TeamService {
         }
 
         TeamMember member = TeamMember.builder()
-                .id(commonClient.getUuid())
+                .id(UUID.randomUUID().toString())
                 .team(team)
                 .userId(request.getUserId())
                 .username(request.getUsername())
@@ -183,7 +181,7 @@ public class TeamService {
         }
 
         TeamMember member = TeamMember.builder()
-                .id(commonClient.getUuid())
+                .id(UUID.randomUUID().toString())
                 .team(team)
                 .userId(request.getUserId())
                 .username(request.getUsername())

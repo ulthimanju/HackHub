@@ -10,7 +10,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import com.ehub.auth.client.CommonClient;
 import com.ehub.auth.client.NotificationClient;
 import com.ehub.common.enums.UserRole;
 import com.ehub.auth.util.MessageKeys;
@@ -22,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,7 +33,6 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final NotificationClient notificationClient;
-    private final CommonClient commonClient;
 
     public void requestRegistrationOtp(String email) {
         if (repository.existsByEmail(email)) {
@@ -52,11 +51,7 @@ public class AuthService {
             throw new RuntimeException(MessageKeys.USER_ALREADY_EXISTS.getMessage());
         }
 
-        // 2. Get UUID from Common Service
-        String uuid = commonClient.getUuid();
-        if (uuid == null || uuid.isBlank()) {
-            throw new RuntimeException("Failed to generate user ID. Please try again.");
-        }
+        String uuid = UUID.randomUUID().toString();
 
         var user = User.builder()
                 .id(uuid)
