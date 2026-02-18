@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -55,8 +56,8 @@ public class AuthController {
     }
 
     @PostMapping("/register/otp")
-    public ResponseEntity<String> requestRegistrationOtp(@RequestParam String email) {
-        service.requestRegistrationOtp(email);
+    public ResponseEntity<String> requestRegistrationOtp(@RequestBody Map<String, String> body) {
+        service.requestRegistrationOtp(body.get("email"));
         return ResponseEntity.ok(MessageKeys.REGISTRATION_OTP_SENT.getMessage());
     }
 
@@ -72,8 +73,8 @@ public class AuthController {
     }
 
     @PostMapping("/upgrade-role/otp")
-    public ResponseEntity<String> requestRoleUpgradeOtp(@RequestParam String email) {
-        service.requestRoleUpgradeOtp(email);
+    public ResponseEntity<String> requestRoleUpgradeOtp(@RequestBody Map<String, String> body) {
+        service.requestRoleUpgradeOtp(body.get("email"));
         return ResponseEntity.ok(MessageKeys.REGISTRATION_OTP_SENT.getMessage());
     }
 

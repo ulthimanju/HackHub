@@ -1,8 +1,9 @@
+# syntax=docker/dockerfile:1
 # Stage 1: Build
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY client-service/package*.json ./
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm npm install
 COPY client-service/ .
 RUN npm run build
 
