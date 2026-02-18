@@ -6,10 +6,6 @@ WORKDIR /home/app
 COPY pom.xml .
 RUN mvn install -N
 
-# Copy and install shared-kernel
-COPY shared-kernel /home/app/shared-kernel
-RUN mvn -f shared-kernel/pom.xml clean install -DskipTests
-
 # Build auth-service
 COPY auth-service /home/app/auth-service
 RUN mvn -f auth-service/pom.xml clean package -DskipTests

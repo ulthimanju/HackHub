@@ -6,10 +6,6 @@ WORKDIR /home/app
 COPY pom.xml .
 RUN mvn install -N
 
-# Copy and install shared-kernel
-COPY shared-kernel /home/app/shared-kernel
-RUN mvn -f shared-kernel/pom.xml clean install -DskipTests
-
 # Build event-service
 COPY event-service /home/app/event-service
 RUN mvn -f event-service/pom.xml clean package -DskipTests

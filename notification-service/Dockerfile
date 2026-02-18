@@ -6,10 +6,6 @@ WORKDIR /home/app
 COPY pom.xml .
 RUN mvn install -N
 
-# Copy and install shared-kernel
-COPY shared-kernel /home/app/shared-kernel
-RUN mvn -f shared-kernel/pom.xml clean install -DskipTests
-
 # Build notification-service
 COPY notification-service /home/app/notification-service
 RUN mvn -f notification-service/pom.xml clean package -DskipTests
