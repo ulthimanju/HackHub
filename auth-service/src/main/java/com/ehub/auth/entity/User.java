@@ -1,6 +1,6 @@
 package com.ehub.auth.entity;
 
-import com.ehub.common.enums.UserRole;
+import com.ehub.auth.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;

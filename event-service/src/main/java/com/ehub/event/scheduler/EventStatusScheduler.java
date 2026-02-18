@@ -3,7 +3,7 @@ package com.ehub.event.scheduler;
 import com.ehub.event.entity.Event;
 import com.ehub.event.repository.EventRepository;
 import com.ehub.event.service.MissionNotificationService;
-import com.ehub.common.enums.EventStatus;
+import com.ehub.event.enums.EventStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;

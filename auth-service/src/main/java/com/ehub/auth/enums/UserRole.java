@@ -1,4 +1,4 @@
-package com.ehub.common.enums;
+package com.ehub.auth.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 

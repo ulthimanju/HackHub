@@ -3,7 +3,7 @@ package com.ehub.event.controller;
 import com.ehub.event.dto.*;
 import com.ehub.event.service.EventService;
 import com.ehub.event.util.MessageKeys;
-import com.ehub.common.enums.RegistrationStatus;
+import com.ehub.event.enums.RegistrationStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

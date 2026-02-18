@@ -1,7 +1,7 @@
 package com.ehub.event.dto;
 
-import com.ehub.common.enums.TeamMemberStatus;
-import com.ehub.common.enums.TeamRole;
+import com.ehub.event.enums.TeamMemberStatus;
+import com.ehub.event.enums.TeamRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

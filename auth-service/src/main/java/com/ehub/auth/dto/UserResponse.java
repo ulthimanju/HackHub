@@ -1,6 +1,6 @@
 package com.ehub.auth.dto;
 
-import com.ehub.common.enums.UserRole;
+import com.ehub.auth.enums.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

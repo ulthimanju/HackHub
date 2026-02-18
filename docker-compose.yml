@@ -26,14 +26,11 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
-      common-services:
-        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/ehub_auth_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
       APPLICATION_NOTIFICATION_SERVICE_URL: http://notification-service:8082/notifications/password-reset/validate
-      APPLICATION_COMMON_SERVICE_URL: http://common-services:8083/common
     secrets:
       - source: db-password
         target: SPRING_DATASOURCE_PASSWORD
@@ -115,13 +112,10 @@ services:
     depends_on:
       event-db:
         condition: service_healthy
-      common-services:
-        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/ehub_event_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
-      APPLICATION_COMMON_SERVICE_URL: http://common-services:8083/common
       APPLICATION_NOTIFICATION_SERVICE_URL: http://notification-service:8082/notifications/send-alert
     secrets:
       - source: db-password
@@ -149,14 +143,6 @@ services:
         target: GOOGLE_API_KEY
       - source: github-token
         target: GITHUB_TOKEN
-    networks:
-      - ehub-network
-
-  common-services:
-    build:
-      context: .
-      dockerfile: shared-kernel/Dockerfile
-    container_name: common-services
     networks:
       - ehub-network
 

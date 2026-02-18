@@ -4,7 +4,7 @@ import com.ehub.auth.dto.*;
 import com.ehub.auth.entity.User;
 import com.ehub.auth.service.AuthService;
 import com.ehub.auth.util.MessageKeys;
-import com.ehub.common.enums.UserRole;
+import com.ehub.auth.enums.UserRole;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -19,7 +19,6 @@
     <description>Parent POM for EHub Microservices</description>
 
     <modules>
-        <module>shared-kernel</module>
         <module>auth-service</module>
         <module>event-service</module>
         <module>ai-service</module>
@@ -31,7 +30,6 @@
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <jjwt.version>0.11.5</jjwt.version>
-        <shared-kernel.version>0.0.1-SNAPSHOT</shared-kernel.version>
         <google-genai.version>1.0.0</google-genai.version>
         <github-api.version>1.318</github-api.version>
     </properties>
@@ -45,13 +43,6 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <!-- Internal Shared Kernel -->
-            <dependency>
-                <groupId>com.ehub</groupId>
-                <artifactId>shared-kernel</artifactId>
-                <version>${shared-kernel.version}</version>
             </dependency>
 
             <!-- JWT -->
