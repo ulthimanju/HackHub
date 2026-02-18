@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { X, Plus } from 'lucide-react';
 import Input from '../../../common/Input/Input';
 import Button from '../../../common/Button/Button';
 
-const SkillTags = ({ skills, newSkill, onNewSkillChange, onAddSkill, onRemoveSkill }) => {
+const SkillTags = memo(({ skills, newSkill, onNewSkillChange, onAddSkill, onRemoveSkill }) => {
   return (
     <div className="space-y-4">
       <label className="block text-sm font-bold text-gray-700 tracking-wide uppercase">Skills & Technologies</label>
@@ -36,6 +36,6 @@ const SkillTags = ({ skills, newSkill, onNewSkillChange, onAddSkill, onRemoveSki
       </div>
     </div>
   );
-};
-
+});
+SkillTags.displayName = 'SkillTags';
 export default SkillTags;

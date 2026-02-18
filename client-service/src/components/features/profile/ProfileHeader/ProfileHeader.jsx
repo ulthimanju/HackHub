@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Mail, Edit2, Check, X } from 'lucide-react';
 import Badge from '../../../common/Badge/Badge';
 import Button from '../../../common/Button/Button';
 import profileSvg from '../../../../assets/images/profile.svg';
 
-const ProfileHeader = ({ user, isEditing, onEdit, onCancel, onSave, loading }) => {
+const ProfileHeader = memo(({ user, isEditing, onEdit, onCancel, onSave, loading }) => {
   return (
     <div className="flex flex-col md:flex-row items-center gap-8 bg-white p-8 rounded-2xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
       <div className="relative group">
@@ -55,6 +55,6 @@ const ProfileHeader = ({ user, isEditing, onEdit, onCancel, onSave, loading }) =
       </div>
     </div>
   );
-};
-
+});
+ProfileHeader.displayName = 'ProfileHeader';
 export default ProfileHeader;

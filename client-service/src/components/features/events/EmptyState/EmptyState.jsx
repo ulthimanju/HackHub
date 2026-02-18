@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Button from '../../../common/Button/Button';
 
-const EmptyState = ({ icon: Icon, title, message, actionLabel, onActionClick }) => {
+const EmptyState = memo(({ icon: Icon, title, message, actionLabel, onActionClick }) => {
   return (
     <div className="bg-white border border-gray-100 rounded-3xl p-12 text-center space-y-4 shadow-sm">
       {Icon && (
@@ -20,6 +20,6 @@ const EmptyState = ({ icon: Icon, title, message, actionLabel, onActionClick }) 
       )}
     </div>
   );
-};
-
+});
+EmptyState.displayName = 'EmptyState';
 export default EmptyState;

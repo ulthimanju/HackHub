@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { CalendarDays, MapPin, Users, Crown } from 'lucide-react';
 import Badge from '../../../common/Badge/Badge';
 import Button from '../../../common/Button/Button';
 
-const EventCard = ({ event, user, onJoin, onManage }) => {
+const EventCard = memo(({ event, user, onJoin, onManage }) => {
   const isOrganizer = event.organizerId === user?.id;
   const eventStatus = event.status?.toLowerCase() || 'upcoming';
 
@@ -65,6 +65,6 @@ const EventCard = ({ event, user, onJoin, onManage }) => {
       </div>
     </div>
   );
-};
-
+});
+EventCard.displayName = 'EventCard';
 export default EventCard;

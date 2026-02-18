@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Button from '../../../common/Button/Button';
 import { PlusCircle } from 'lucide-react';
 
-const EventsHeader = ({ title, description, showCreateButton, onCreateClick }) => {
+const EventsHeader = memo(({ title, description, showCreateButton, onCreateClick }) => {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
@@ -22,6 +22,6 @@ const EventsHeader = ({ title, description, showCreateButton, onCreateClick }) =
       )}
     </div>
   );
-};
-
+});
+EventsHeader.displayName = 'EventsHeader';
 export default EventsHeader;

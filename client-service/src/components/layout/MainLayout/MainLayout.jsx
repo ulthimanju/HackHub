@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Bell, Settings, Home, Folder, Users, Calendar, Check, LogOut, LayoutDashboard, User, PlusCircle } from 'lucide-react';
+import React, { memo, useState, useEffect } from 'react';
+import { Bell, LogOut, LayoutDashboard, User, Calendar, Users, Settings } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import NavItem from '../NavItem/NavItem';
 import Button from '../../common/Button/Button';
+import { theme } from '../../../utils/theme';
 
-const MainLayout = () => {
+const MainLayout = memo(() => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,13 +33,13 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className={`min-h-screen ${theme.surface.page} flex flex-col`}>
+      <header className={theme.surface.header}>
         <div className="w-full px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
               <h1 
-                className="text-xl font-bold text-orange-600 cursor-pointer"
+                className={`text-xl font-bold ${theme.primary.text} cursor-pointer`}
                 onClick={() => handlePageChange('dashboard')}
               >
                 EHub
@@ -50,10 +51,10 @@ const MainLayout = () => {
               </Button>
               <div className="h-6 w-px bg-gray-200 mx-1"></div>
               <div 
-                className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer transition-colors ${currentPage === 'profile' ? 'bg-orange-50 ring-1 ring-orange-200' : 'hover:bg-gray-100'}`}
+                className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer transition-colors ${currentPage === 'profile' ? `${theme.primary.bgLight} ring-1 ${theme.primary.ring}` : 'hover:bg-gray-100'}`}
                 onClick={() => handlePageChange('profile')}
               >
-                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                <div className={`w-8 h-8 ${theme.primary.bg} rounded-full flex items-center justify-center text-white text-sm font-medium`}>
                   {user?.username?.substring(0, 2).toUpperCase() || 'U'}
                 </div>
                 <div className="hidden sm:block">
@@ -76,8 +77,7 @@ const MainLayout = () => {
       </header>
 
       <div className="flex-1 flex w-full">
-        {/* Sidebar */}
-        <aside className="hidden lg:block w-64 py-8 px-6 border-r border-gray-200">
+        <aside className={`hidden lg:block w-64 py-8 px-6 ${theme.surface.sidebar}`}>
           <nav className="space-y-1">
             <NavItem 
               icon={LayoutDashboard} 
@@ -102,7 +102,7 @@ const MainLayout = () => {
             </NavItem>
             <NavItem icon={Users}>My Teams</NavItem>
             
-            <div className="pt-4 mt-4 border-t border-gray-100">
+            <div className={`pt-4 mt-4 border-t ${theme.surface.divider}`}>
               <NavItem 
                 icon={User} 
                 active={currentPage === 'profile'}
@@ -115,13 +115,12 @@ const MainLayout = () => {
           </nav>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 px-6 py-8 overflow-y-auto text-shadow-sm">
           <Outlet />
         </main>
       </div>
     </div>
   );
-};
-
+});
+MainLayout.displayName = 'MainLayout';
 export default MainLayout;

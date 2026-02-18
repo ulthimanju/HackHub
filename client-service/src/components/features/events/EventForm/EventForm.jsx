@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import Input from '../../../common/Input/Input';
 import Button from '../../../common/Button/Button';
 import Textarea from '../../../common/Textarea/Textarea';
 import Checkbox from '../../../common/Checkbox/Checkbox';
 import { Calendar, Mail, MapPin, Users, Trophy, BookOpen, Plus, X, Check } from 'lucide-react';
 
-const EventForm = ({ onSubmit, onCancel, loading }) => {
+const EventForm = memo(({ onSubmit, onCancel, loading }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
@@ -333,6 +333,6 @@ const EventForm = ({ onSubmit, onCancel, loading }) => {
       </div>
     </div>
   );
-};
-
+});
+EventForm.displayName = 'EventForm';
 export default EventForm;

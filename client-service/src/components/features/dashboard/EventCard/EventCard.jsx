@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Calendar, ChevronRight } from 'lucide-react';
 import Badge from '../../../common/Badge/Badge';
 
-const EventCard = ({ status, title, description, date, onEnter }) => {
+const EventCard = memo(({ status, title, description, date, onEnter }) => {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow max-w-md">
       <div className="flex items-start justify-between mb-4">
@@ -32,6 +32,6 @@ const EventCard = ({ status, title, description, date, onEnter }) => {
       </div>
     </div>
   );
-};
-
+});
+EventCard.displayName = 'EventCard';
 export default EventCard;

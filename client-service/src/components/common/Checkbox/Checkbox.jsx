@@ -1,23 +1,18 @@
-import React from 'react';
+import React, { memo } from 'react';
+import { theme } from '../../../../utils/theme';
 
-const Checkbox = ({ label, id, checked, onChange, ...props }) => {
-  return (
-    <div className="flex items-center gap-2">
-      <input
-        type="checkbox"
-        id={id}
-        checked={checked}
-        onChange={onChange}
-        className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
-        {...props}
-      />
-      {label && (
-        <label htmlFor={id} className="text-sm font-semibold text-gray-700 cursor-pointer">
-          {label}
-        </label>
-      )}
-    </div>
-  );
-};
-
+const Checkbox = memo(({ label, id, checked, onChange, ...props }) => (
+  <div className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      id={id}
+      checked={checked}
+      onChange={onChange}
+      className={`w-4 h-4 border-gray-300 rounded ${theme.primary.focus} focus:ring-2`}
+      {...props}
+    />
+    {label && <label htmlFor={id} className={`text-sm cursor-pointer ${theme.text.label}`}>{label}</label>}
+  </div>
+));
+Checkbox.displayName = 'Checkbox';
 export default Checkbox;

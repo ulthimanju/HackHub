@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Section from '../../../common/Section/Section';
 import Input from '../../../common/Input/Input';
 import { Search as SearchIcon } from 'lucide-react';
 
-const EventsFilters = ({ onSearchChange, onStatusChange }) => {
+const EventsFilters = memo(({ onSearchChange, onStatusChange }) => {
   return (
     <Section title="Filters">
       <div className="space-y-4">
@@ -31,6 +31,6 @@ const EventsFilters = ({ onSearchChange, onStatusChange }) => {
       </div>
     </Section>
   );
-};
-
+});
+EventsFilters.displayName = 'EventsFilters';
 export default EventsFilters;

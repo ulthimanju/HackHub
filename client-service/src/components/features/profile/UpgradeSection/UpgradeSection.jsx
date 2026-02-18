@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { ShieldAlert, Key, Send } from 'lucide-react';
 import Input from '../../../common/Input/Input';
 import Button from '../../../common/Button/Button';
 import Section from '../../../common/Section/Section';
 
-const UpgradeSection = ({ 
+const UpgradeSection = memo(({ 
   showOtpInput, 
   otp, 
   onOtpChange, 
@@ -79,6 +79,6 @@ const UpgradeSection = ({
       </div>
     </Section>
   );
-};
-
+});
+UpgradeSection.displayName = 'UpgradeSection';
 export default UpgradeSection;

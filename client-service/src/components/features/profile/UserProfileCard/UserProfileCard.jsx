@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Badge from '../../../common/Badge/Badge';
 
-const UserProfileCard = ({ username, role, email, accountId }) => {
+const UserProfileCard = memo(({ username, role, email, accountId }) => {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-8">
       <div className="flex flex-col items-center text-center">
@@ -43,6 +43,6 @@ const UserProfileCard = ({ username, role, email, accountId }) => {
       </div>
     </div>
   );
-};
-
+});
+UserProfileCard.displayName = 'UserProfileCard';
 export default UserProfileCard;
