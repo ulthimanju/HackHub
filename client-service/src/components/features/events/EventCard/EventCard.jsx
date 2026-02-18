@@ -3,8 +3,8 @@ import { CalendarDays, MapPin, Users, Crown } from 'lucide-react';
 import Badge from '../../../common/Badge/Badge';
 import Button from '../../../common/Button/Button';
 
-const EventCard = ({ event, onJoin, onManage }) => {
-  const isOrganizer = event.organizerId === 'current_user_id'; // Placeholder for actual user check
+const EventCard = ({ event, user, onJoin, onManage }) => {
+  const isOrganizer = event.organizerId === user?.id;
   const eventStatus = event.status?.toLowerCase() || 'upcoming';
 
   const statusVariants = {

@@ -62,11 +62,11 @@ const Profile = () => {
     setSuccess('');
     setLoading(true);
     try {
-      const response = await authService.upgradeRole(user.email, otp);
+      await authService.upgradeRole(user.email, otp);
+      // Fetch fresh profile so role reflects exactly what the server stored
+      const updatedProfile = await authService.getProfile();
+      updateUserData(updatedProfile);
       setSuccess('Your account has been upgraded to ORGANIZER successfully!');
-      // Update the user context and local storage with the new role
-      updateUserData({ ...user, role: 'organizer' }); // Assuming role becomes 'organizer'
-      // Optionally hide OTP input after successful upgrade
       setShowOtpInput(false);
       setOtp('');
     } catch (err) {
@@ -82,10 +82,9 @@ const Profile = () => {
     setLoading(true);
     try {
       const updatedUser = await authService.updateProfile(formData);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      updateUserData(updatedUser);
       setSuccess('Profile updated successfully!');
       setIsEditing(false);
-      setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update profile.');
     } finally {

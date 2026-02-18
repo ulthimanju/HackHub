@@ -49,8 +49,19 @@ const EventForm = ({ onSubmit, onCancel, loading }) => {
     } else if (currentStep === 2) {
       if (!formData.startDate) newErrors.startDate = 'Start date is required';
       if (!formData.endDate) newErrors.endDate = 'End date is required';
+      if (formData.startDate && formData.endDate && formData.endDate <= formData.startDate) {
+        newErrors.endDate = 'End date must be after start date';
+      }
+      if (formData.registrationStartDate && formData.registrationEndDate
+          && formData.registrationEndDate <= formData.registrationStartDate) {
+        newErrors.registrationEndDate = 'Registration end must be after registration start';
+      }
+      if (formData.registrationEndDate && formData.startDate
+          && formData.registrationEndDate > formData.startDate) {
+        newErrors.registrationEndDate = 'Registration must close before the event starts';
+      }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -68,8 +79,8 @@ const EventForm = ({ onSubmit, onCancel, loading }) => {
     if (validateStep(3)) {
       const formattedData = {
         ...formData,
-        maxParticipants: formData.maxParticipants ? parseInt(formData.maxParticipants) : null,
-        teamSize: formData.teamSize ? parseInt(formData.teamSize) : null,
+        maxParticipants: formData.maxParticipants ? parseInt(formData.maxParticipants, 10) : null,
+        teamSize: formData.teamSize ? parseInt(formData.teamSize, 10) : null,
       };
       onSubmit(formattedData);
     }

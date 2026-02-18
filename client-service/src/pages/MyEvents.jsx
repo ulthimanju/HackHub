@@ -116,7 +116,8 @@ const MyEvents = () => {
               {filteredEvents.map(event => (
                 <EventCard 
                   key={event.id} 
-                  event={event} 
+                  event={event}
+                  user={user}
                   onJoin={(eventId) => navigate(`/events/${eventId}`)} 
                   onManage={() => console.log('Manage', event.id)} // TODO: Implement manage logic
                 />

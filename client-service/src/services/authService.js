@@ -12,12 +12,12 @@ const authService = {
   },
 
   requestOtp: async (email) => {
-    const response = await api.post(`/auth/register/otp?email=${email}`);
+    const response = await api.post('/auth/register/otp', { email });
     return response.data;
   },
 
   requestRoleUpgradeOtp: async (email) => {
-    const response = await api.post(`/auth/upgrade-role/otp?email=${email}`);
+    const response = await api.post('/auth/upgrade-role/otp', { email });
     return response.data;
   },
 
