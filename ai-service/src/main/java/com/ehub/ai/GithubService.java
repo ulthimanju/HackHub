@@ -1,12 +1,15 @@
 package com.ehub.ai;
 
 import org.kohsuke.github.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.io.IOException;
 import java.util.*;
 
 @Service
 public class GithubService {
+
+    private static final int PER_FILE_LIMIT = 15_000; // 15KB per file
+    private static final int TOTAL_LIMIT    = 30_000; // 30KB total context
 
     private final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
         "java", "py", "js", "ts", "jsx", "tsx", "cpp", "c", "cs", "go", "rb", "php", "md", "txt"
@@ -16,18 +19,29 @@ public class GithubService {
         "node_modules", "target", "build", "dist", ".git", ".idea", ".vscode", "vendor"
     );
 
+    @Value("${GITHUB_TOKEN:}")
+    private String githubToken;
+
     public String fetchRepoContent(String repoUrl) {
         try {
-            // Basic URL parsing: https://github.com/user/repo
-            String path = repoUrl.replace("https://github.com/", "");
-            GitHub github = new GitHubBuilder().build(); // Anonymous access (rate limited)
+            String path = repoUrl.replace("https://github.com/", "").replaceAll("/$", "");
+
+            // Use authenticated access (5000 req/hr) if token provided, else anonymous (60 req/hr)
+            GitHub github = (githubToken != null && !githubToken.isBlank())
+                    ? new GitHubBuilder().withOAuthToken(githubToken).build()
+                    : new GitHubBuilder().build();
+
             GHRepository repository = github.getRepository(path);
-            
-            StringBuilder context = new StringBuilder();
-            context.append("PROJECT STRUCTURE AND CODE:\n\n");
-            
-            traverseAndCollect(repository.getTreeRecursive("main", 1).getTree(), context, 0);
-            
+            String defaultBranch = repository.getDefaultBranch(); // never hardcode "main"
+
+            StringBuilder context = new StringBuilder("PROJECT STRUCTURE AND CODE:\n\n");
+            List<GHTreeEntry> entries = repository.getTreeRecursive(defaultBranch, 1).getTree();
+
+            // Pass 1: README files first so Gemini understands project intent
+            collectFiles(entries, context, true);
+            // Pass 2: source code files
+            collectFiles(entries, context, false);
+
             return context.toString();
         } catch (Exception e) {
             System.err.println("GitHub Fetch Error: " + e.getMessage());
@@ -35,25 +49,26 @@ public class GithubService {
         }
     }
 
-    private void traverseAndCollect(List<GHTreeEntry> entries, StringBuilder context, int depth) throws IOException {
-        // Limit depth and total entries to prevent token overflow for massive repos
-        if (depth > 10 || context.length() > 500000) return; 
-
+    private void collectFiles(List<GHTreeEntry> entries, StringBuilder context, boolean readmeOnly) {
         for (GHTreeEntry entry : entries) {
+            if (context.length() >= TOTAL_LIMIT) return;
+            if (!"blob".equals(entry.getType())) continue;
+
             String path = entry.getPath();
-            
-            // Skip ignored directories
             if (IGNORED_DIRS.stream().anyMatch(path::contains)) continue;
 
-            if ("blob".equals(entry.getType())) {
-                String extension = getExtension(path);
-                if (ALLOWED_EXTENSIONS.contains(extension)) {
-                    context.append("--- File: ").append(path).append(" ---\
-");
-                    // Fetch file content
-                    String content = new String(entry.asBlob().read().readAllBytes());
-                    context.append(content).append("\n\n");
-                }
+            boolean isReadme = path.toLowerCase().contains("readme");
+            if (readmeOnly != isReadme) continue;
+
+            if (!ALLOWED_EXTENSIONS.contains(getExtension(path))) continue;
+            if (entry.getSize() > PER_FILE_LIMIT) continue; // skip large files
+
+            try {
+                String content = new String(entry.asBlob().read().readAllBytes());
+                context.append("--- File: ").append(path).append(" ---\n");
+                context.append(content).append("\n\n");
+            } catch (Exception e) {
+                System.err.println("Could not read file " + path + ": " + e.getMessage());
             }
         }
     }

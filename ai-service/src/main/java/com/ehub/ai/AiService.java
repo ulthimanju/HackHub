@@ -1,5 +1,6 @@
 package com.ehub.ai;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
 import jakarta.annotation.PostConstruct;
@@ -20,114 +21,146 @@ public class AiService {
     private final RestTemplate restTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
     private final GithubService githubService;
-    private static final String QUEUE_KEY = "ehub:ai:evaluation:queue";
-    private final AtomicBoolean isBulkEvaluating = new AtomicBoolean(false);
+    private final Client geminiClient;
+    private final ObjectMapper objectMapper;
 
-    @Value("${GEMINI_API_KEY}")
-    private String geminiApiKey;
+    private static final String QUEUE_KEY  = "ehub:ai:evaluation:queue";
+    private static final int    MAX_RETRIES = 3;
+    private final AtomicBoolean isBulkEvaluating = new AtomicBoolean(false);
 
     @Value("${APPLICATION_EVENT_SERVICE_URL}")
     private String eventServiceUrl;
 
     @PostConstruct
     public void startWorker() {
-        // ... worker logic (unchanged)
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Map<String, Object> context = (Map<String, Object>) redisTemplate.opsForList().rightPop(QUEUE_KEY, 5, TimeUnit.SECONDS);
+                    if (context != null) {
+                        processEvaluation(context);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Worker Error: " + e.getMessage());
+                }
+            }
+        }).start();
     }
 
-    // ... (queueEventEvaluation and evaluateTeam methods unchanged)
+    public void queueEventEvaluation(String eventId) {
+        if (isBulkEvaluating.getAndSet(true)) return;
+
+        new Thread(() -> {
+            try {
+                String url = eventServiceUrl + "/events/teams/event/" + eventId;
+                ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
+
+                if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                    List<Map<String, Object>> teams = response.getBody();
+                    for (Map<String, Object> team : teams) {
+                        team.put("retryCount", 0);
+                        redisTemplate.opsForList().leftPush(QUEUE_KEY, team);
+                    }
+                }
+            } finally {
+                isBulkEvaluating.set(false);
+            }
+        }).start();
+    }
+
+    public Double evaluateTeam(String teamId) {
+        String url = eventServiceUrl + "/events/teams/" + teamId;
+        Map<String, Object> team = restTemplate.getForObject(url, Map.class);
+        if (team != null) {
+            team.put("retryCount", 0);
+            return processEvaluation(team);
+        }
+        return 0.0;
+    }
 
     private Double processEvaluation(Map<String, Object> context) {
-        String teamId = context.get("teamId").toString();
-        String repoUrl = (String) context.get("repoUrl");
-        String problemStatement = (String) context.getOrDefault("problemStatement", "No problem statement provided.");
+        String teamId   = context.get("teamId").toString();
+        String repoUrl  = (String) context.get("repoUrl");
+        String problem  = (String) context.getOrDefault("problemStatement", "No problem statement provided.");
         String teamName = (String) context.get("teamName");
+        int retryCount  = context.get("retryCount") instanceof Number n ? n.intValue() : 0;
 
-        System.out.println("Processing deep evaluation for team: " + teamName + " (" + teamId + ")");
-        
+        System.out.println("Evaluating team: " + teamName + " (attempt " + (retryCount + 1) + ")");
+
         try {
-            // NEW: Fetch actual code content
             String sourceCode = githubService.fetchRepoContent(repoUrl);
-            
-            // Capture both score and summary
-            Map<String, Object> evaluationResult = callGeminiForEvaluation(teamName, problemStatement, repoUrl, sourceCode);
-            Double score = (Double) evaluationResult.get("score");
-            String summary = (String) evaluationResult.get("summary");
+            Map<String, Object> result = callGeminiForEvaluation(teamName, problem, repoUrl, sourceCode);
+            Double score   = (Double) result.get("score");
+            String summary = (String) result.get("summary");
 
             updateScoreInEventService(teamId, score, summary);
-            
-            // Broadcast update
-            Map<String, Object> broadcastPayload = new HashMap<>();
-            broadcastPayload.put("teamId", teamId);
-            broadcastPayload.put("teamName", teamName);
-            broadcastPayload.put("score", score);
-            broadcastPayload.put("summary", summary);
-            broadcastPayload.put("timestamp", System.currentTimeMillis());
-            
-            redisTemplate.convertAndSend("ehub:broadcast:leaderboard", broadcastPayload);
-            
+
+            Map<String, Object> broadcast = new HashMap<>();
+            broadcast.put("teamId",    teamId);
+            broadcast.put("teamName",  teamName);
+            broadcast.put("score",     score);
+            broadcast.put("summary",   summary);
+            broadcast.put("timestamp", System.currentTimeMillis());
+            redisTemplate.convertAndSend("ehub:broadcast:leaderboard", broadcast);
+
             return score;
         } catch (Exception e) {
-            System.err.println("Evaluation failed for team " + teamId + ": " + e.getMessage());
+            System.err.println("Evaluation failed for team " + teamId + " (attempt " + (retryCount + 1) + "): " + e.getMessage());
+            if (retryCount < MAX_RETRIES) {
+                context.put("retryCount", retryCount + 1);
+                redisTemplate.opsForList().leftPush(QUEUE_KEY, context);
+                System.out.println("Re-queued team " + teamId + " for retry " + (retryCount + 1));
+            } else {
+                System.err.println("Max retries reached for team " + teamId + ". Skipping.");
+            }
             return 0.0;
         }
     }
 
     private void updateScoreInEventService(String teamId, Double score, String summary) {
         try {
-            String scoreUrl = eventServiceUrl + "/events/teams/" + teamId + "/score?score=" + score + "&aiSummary=" + summary;
-            restTemplate.postForEntity(scoreUrl, null, String.class);
+            String url = eventServiceUrl + "/events/teams/" + teamId + "/score?score=" + score + "&aiSummary=" + summary;
+            restTemplate.postForEntity(url, null, String.class);
         } catch (Exception e) {
             System.err.println("Failed to update score for team " + teamId + ": " + e.getMessage());
         }
     }
 
-    private Map<String, Object> callGeminiForEvaluation(String teamName, String problemStatement, String repoUrl, String sourceCode) {
+    // Throws on Gemini API failure so processEvaluation can retry.
+    // JSON parse failures are handled locally (retrying won't fix a malformed response).
+    private Map<String, Object> callGeminiForEvaluation(String teamName, String problemStatement,
+                                                        String repoUrl, String sourceCode) throws Exception {
+        String prompt = String.format(
+            "You are an expert Senior Software Engineer and Judge. Evaluate the following hackathon project.\n\n" +
+            "PROBLEM STATEMENT:\n%s\n\n" +
+            "REPOSITORY URL: %s\n\n" +
+            "SOURCE CODE CONTENT:\n%s\n\n" +
+            "--- EVALUATION CRITERIA (Total 100%%) ---\n" +
+            "1. INNOVATION (20%%): Creative solutions, unique idea?\n" +
+            "2. TECHNICAL COMPLEXITY (20%%): Advanced algorithms/architecture?\n" +
+            "3. DESIGN & IMPLEMENTATION (20%%): Clean, readable, well-structured? (DRY, SOLID)\n" +
+            "4. POTENTIAL IMPACT (20%%): Does it fulfill the problem statement?\n" +
+            "5. THEME FIT (20%%): Relevant to the hackathon theme?\n\n" +
+            "Check for bugs, hardcoded secrets, or logic errors and penalize accordingly. " +
+            "If source code could not be fetched, score from README only but penalize significantly.\n\n" +
+            "Respond ONLY with a valid JSON object: {\"score\": <number 0-100>, \"summary\": \"<max 200 chars>\"}",
+            problemStatement, repoUrl, sourceCode
+        );
+
+        // This call throws on network/API failure → triggers retry in processEvaluation
+        GenerateContentResponse response = geminiClient.models.generateContent("gemini-2.0-flash", prompt, null);
+
+        String text = response.text().replaceAll("```json", "").replaceAll("```", "").trim();
+
         Map<String, Object> result = new HashMap<>();
         result.put("score", 0.0);
         result.put("summary", "No evaluation available.");
-
         try {
-            Client client = new Client(); 
-            
-            String prompt = String.format(
-                "You are an expert Senior Software Engineer and Judge. Evaluate the following hackathon project based on the provided source code and problem statement.\n\n" +
-                "PROBLEM STATEMENT:\n%s\n\n" +
-                "REPOSITORY URL: %s\n\n" +
-                "SOURCE CODE CONTENT:\n%s\n\n" +
-                "--- EVALUATION CRITERIA (Total 100%%) ---\n" +
-                "1. INNOVATION (20%%): Does the code use creative solutions? Is the idea unique?\n" +
-                "2. TECHNICAL COMPLEXITY (20%%): Are the algorithms/architecture advanced? Does it solve a hard problem?\n" +
-                "3. DESIGN & IMPLEMENTATION (20%%): Is the code clean, readable, and well-structured? (Check for patterns, DRY, SOLID)\n" +
-                "4. POTENTIAL IMPACT (20%%): Does the implementation actually fulfill the goal described in the problem statement?\n" +
-                "5. THEME FIT (20%%): Is the solution relevant to the hackathon theme?\n\n" +
-                "IMPORTANT: Analyze the code for bugs, hardcoded secrets, or logic errors. If the 'SOURCE CODE CONTENT' says it couldn't fetch the code, score based on the README only but penalize significantly.\n\n" +
-                "Respond ONLY with a JSON object containing a field 'score' (0-100) and a field 'summary' (max 200 chars explaining the score).\n" +
-                "Example: {\"score\": 82.5, \"summary\": \"Clean React structure and innovative use of WebSockets, but missing error handling in the API layer.\"}",
-                problemStatement, repoUrl, sourceCode
-            );
-
-            GenerateContentResponse response = client.models.generateContent(
-                "gemini-3-flash-preview", 
-                prompt, 
-                null
-            );
-
-            String text = response.text();
-            String jsonStr = text.replaceAll("```json", "").replaceAll("```", "").trim();
-            
-            if (jsonStr.contains("\"score\":")) {
-                // Parse score
-                String scorePart = jsonStr.split("\"score\":")[1].split(",")[0].replace("}", "").replace("]", "").trim();
-                result.put("score", Double.parseDouble(scorePart));
-                
-                // Parse summary
-                if (jsonStr.contains("\"summary\":")) {
-                    String summaryPart = jsonStr.split("\"summary\":")[1].split("\"")[1].trim();
-                    result.put("summary", summaryPart);
-                }
-            }
+            Map<String, Object> parsed = objectMapper.readValue(text, Map.class);
+            result.put("score",   ((Number) parsed.get("score")).doubleValue());
+            result.put("summary", parsed.get("summary").toString());
         } catch (Exception e) {
-            System.err.println("Gemini SDK call failed: " + e.getMessage());
+            System.err.println("JSON parsing failed for Gemini response: " + e.getMessage() + " | Raw: " + text);
         }
         return result;
     }
