@@ -3,12 +3,11 @@ package com.ehub.auth.client;
 import com.ehub.auth.util.MessageKeys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.Duration;
 import java.util.Map;
 
 @Component
@@ -21,10 +20,10 @@ public class NotificationClient {
     private String baseUrl;
 
     public NotificationClient() {
-        this.restTemplate = new RestTemplateBuilder()
-                .connectTimeout(Duration.ofSeconds(3))
-                .readTimeout(Duration.ofSeconds(4))
-                .build();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(3000);
+        factory.setReadTimeout(4000);
+        this.restTemplate = new RestTemplate(factory);
     }
 
     public void sendOtp(String email) {
