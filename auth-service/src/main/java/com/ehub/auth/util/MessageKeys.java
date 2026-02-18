@@ -13,7 +13,9 @@ public enum MessageKeys {
     ROLE_UPGRADE_SUCCESS("Role upgraded to organizer successfully"),
     ROLE_ALREADY_ORGANIZER("User is already an organizer"),
     REGISTRATION_OTP_SENT("Registration OTP sent successfully"),
-    LOGOUT_SUCCESS("Logged out successfully");
+    LOGOUT_SUCCESS("Logged out successfully"),
+    SKILLS_UPDATED("Skills updated successfully"),
+    NOTIFICATION_SERVICE_UNAVAILABLE("Notification service unavailable. Please try again later.");
 
     private final String message;
 }

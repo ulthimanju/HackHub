@@ -1,5 +1,6 @@
 package com.ehub.auth.client;
 
+import com.ehub.auth.util.MessageKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -34,7 +35,7 @@ public class NotificationClient {
             );
             return Boolean.TRUE.equals(isValid);
         } catch (RestClientException e) {
-            throw new RuntimeException("Notification service unavailable. Please try again later.");
+            throw new RuntimeException(MessageKeys.NOTIFICATION_SERVICE_UNAVAILABLE.getMessage());
         }
     }
 }

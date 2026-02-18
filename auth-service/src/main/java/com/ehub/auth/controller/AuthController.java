@@ -41,7 +41,7 @@ public class AuthController {
     @PutMapping("/profile/skills")
     public ResponseEntity<String> updateSkills(Authentication authentication, @RequestBody List<String> skills) {
         service.updateSkills(authentication.getName(), skills);
-        return ResponseEntity.ok("Skills updated successfully");
+        return ResponseEntity.ok(MessageKeys.SKILLS_UPDATED.getMessage());
     }
 
     @PostMapping("/search/by-skills")

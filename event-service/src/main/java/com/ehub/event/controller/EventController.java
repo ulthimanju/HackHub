@@ -72,14 +72,14 @@ public class EventController {
             @PathVariable String id,
             @Valid @RequestBody EventRequest request) {
         eventService.updateEvent(id, request, getCurrentUserId());
-        return ResponseEntity.ok("Event updated successfully");
+        return ResponseEntity.ok(MessageKeys.EVENT_UPDATED.getMessage());
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> deleteEvent(@PathVariable String id) {
         eventService.deleteEvent(id, getCurrentUserId());
-        return ResponseEntity.ok("Event deleted successfully");
+        return ResponseEntity.ok(MessageKeys.EVENT_DELETED.getMessage());
     }
 
     @PostMapping("/{eventId}/problemstatements/bulk")
@@ -106,21 +106,21 @@ public class EventController {
             @PathVariable String id,
             @Valid @RequestBody ProblemStatementRequest request) {
         eventService.updateProblemStatement(id, request, getCurrentUserId());
-        return ResponseEntity.ok("Problem statement updated successfully");
+        return ResponseEntity.ok(MessageKeys.PROBLEM_UPDATED.getMessage());
     }
 
     @DeleteMapping("/problemstatements/{id}")
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> deleteProblemStatement(@PathVariable String id) {
         eventService.deleteProblemStatement(id, getCurrentUserId());
-        return ResponseEntity.ok("Problem statement deleted successfully");
+        return ResponseEntity.ok(MessageKeys.PROBLEM_DELETED.getMessage());
     }
 
     @PatchMapping("/{id}/finalize-results")
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> finalizeResults(@PathVariable String id) {
         eventService.finalizeResults(id, getCurrentUserId());
-        return ResponseEntity.ok("Results finalized successfully");
+        return ResponseEntity.ok(MessageKeys.RESULTS_FINALIZED.getMessage());
     }
 
     @PostMapping("/{eventId}/register")

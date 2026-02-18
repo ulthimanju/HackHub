@@ -142,7 +142,7 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
 
         if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException("Unauthorized: Only the event creator can manage this mission.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
         event.setName(request.getName());
@@ -173,7 +173,7 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         
         if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException("Unauthorized: Only the event creator can delete this mission.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
         
         eventRepository.deleteById(id);
@@ -185,7 +185,7 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         
         if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException("Unauthorized: Only the event creator can finalize results.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
         event.setJudging(false);
@@ -207,7 +207,7 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         
         if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException("Unauthorized: Only the event creator can add challenges.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
         int currentCount = event.getProblemStatements().size();
@@ -233,7 +233,7 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         
         if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException("Unauthorized: Only the event creator can add challenges.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
         String id = UUID.randomUUID().toString();
@@ -252,10 +252,10 @@ public class EventService {
     @Transactional
     public void updateProblemStatement(String id, ProblemStatementRequest request, String requesterId) {
         ProblemStatement problem = problemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Problem statement not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.PROBLEM_NOT_FOUND.getMessage()));
         
         if (!problem.getEvent().getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException("Unauthorized: Only the event creator can update challenges.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
         problem.setStatement(request.getStatement());
@@ -265,10 +265,10 @@ public class EventService {
     @Transactional
     public void deleteProblemStatement(String id, String requesterId) {
         ProblemStatement problem = problemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Problem statement not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.PROBLEM_NOT_FOUND.getMessage()));
         
         if (!problem.getEvent().getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException("Unauthorized: Only the event creator can delete challenges.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
         problemRepository.deleteById(id);
@@ -278,7 +278,7 @@ public class EventService {
     public void registerForEvent(String eventId, RegistrationRequest request, String currentUserId) {
         // Enforce that the registration is for the authenticated user
         if (!currentUserId.equals(request.getUserId())) {
-            throw new RuntimeException("Unauthorized: Cannot register on behalf of another user.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_SELF_REGISTER.getMessage());
         }
 
         if (registrationRepository.existsByEventIdAndUserId(eventId, currentUserId)) {
@@ -290,7 +290,7 @@ public class EventService {
 
         // Constraint: Check registration deadline
         if (event.getRegistrationEndDate() != null && LocalDateTime.now().isAfter(event.getRegistrationEndDate())) {
-            throw new RuntimeException("Registration for this event has already closed.");
+            throw new RuntimeException(MessageKeys.REGISTRATION_CLOSED.getMessage());
         }
 
         // Constraint: Check max participants capacity
@@ -299,7 +299,7 @@ public class EventService {
                     .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
                     .count();
             if (approvedCount >= event.getMaxParticipants()) {
-                throw new RuntimeException("Event capacity reached. No more participants can be approved.");
+                throw new RuntimeException(MessageKeys.EVENT_CAPACITY_REACHED.getMessage());
             }
         }
 
@@ -348,7 +348,7 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException(MessageKeys.REGISTRATION_NOT_FOUND.getMessage()));
         
         if (!registration.getUserId().equals(currentUserId)) {
-             throw new RuntimeException("Unauthorized: Only the participant can cancel their registration.");
+             throw new RuntimeException(MessageKeys.UNAUTHORIZED_CANCEL_REGISTRATION.getMessage());
         }
 
         registrationRepository.delete(registration);
@@ -363,7 +363,7 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
 
         if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException("Unauthorized: Only the event creator can manage registrations.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_MANAGE_REGISTRATIONS.getMessage());
         }
 
         registration.setStatus(status);

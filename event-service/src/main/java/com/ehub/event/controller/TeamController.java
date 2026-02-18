@@ -84,7 +84,7 @@ public class TeamController {
             @RequestParam String leaderId,
             @RequestParam(required = false) String problemId) {
         teamService.updateProblemStatement(teamId, leaderId, problemId);
-        return ResponseEntity.ok("Problem statement updated successfully");
+        return ResponseEntity.ok(MessageKeys.PROBLEM_UPDATED.getMessage());
     }
 
     @PostMapping("/{teamId}/submit")
@@ -93,7 +93,7 @@ public class TeamController {
             @RequestParam String userId,
             @Valid @RequestBody TeamSubmissionRequest request) {
         teamService.submitProject(teamId, userId, request);
-        return ResponseEntity.ok("Project submitted successfully");
+        return ResponseEntity.ok(MessageKeys.PROJECT_SUBMITTED_SUCCESS.getMessage());
     }
 
     @GetMapping("/{teamId}/evaluation-context")

@@ -1,5 +1,6 @@
 package com.ehub.ai;
 
+import com.ehub.ai.util.MessageKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,7 +16,7 @@ public class AiController {
     @PostMapping("/evaluate/{teamId}")
     public ResponseEntity<String> evaluateTeam(@PathVariable String teamId) {
         aiService.evaluateTeam(teamId);
-        return ResponseEntity.ok("Evaluation queued for team: " + teamId);
+        return ResponseEntity.ok(String.format(MessageKeys.EVALUATION_QUEUED_TEAM.getMessage(), teamId));
     }
 
     @PostMapping("/evaluate-event/{eventId}")
@@ -23,7 +24,7 @@ public class AiController {
     public ResponseEntity<String> evaluateEvent(@PathVariable String eventId) {
         try {
             aiService.queueEventEvaluation(eventId);
-            return ResponseEntity.ok("Evaluation queued for event: " + eventId);
+            return ResponseEntity.ok(String.format(MessageKeys.EVALUATION_QUEUED_EVENT.getMessage(), eventId));
         } catch (RuntimeException e) {
             return ResponseEntity.status(409).body(e.getMessage());
         }

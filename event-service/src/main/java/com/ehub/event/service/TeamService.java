@@ -15,6 +15,7 @@ import com.ehub.event.enums.EventStatus;
 import com.ehub.event.enums.RegistrationStatus;
 import com.ehub.event.enums.TeamMemberStatus;
 import com.ehub.event.enums.TeamRole;
+import com.ehub.event.util.MessageKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,23 +37,23 @@ public class TeamService {
     @Transactional
     public void createTeam(String eventId, TeamCreateRequest request) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
 
         // Constraint: Check if event has already started
         if (event.getStartDate() != null && java.time.LocalDateTime.now().isAfter(event.getStartDate())) {
-            throw new RuntimeException("Teams cannot be formed once the event has started.");
+            throw new RuntimeException(MessageKeys.TEAM_EVENT_STARTED.getMessage());
         }
 
         // Constraint: User must have an APPROVED registration for this event
         Registration registration = registrationRepository.findByEventIdAndUserId(eventId, request.getUserId())
-                .orElseThrow(() -> new RuntimeException("You must be registered for this event to create a team."));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.MUST_BE_REGISTERED_TO_CREATE_TEAM.getMessage()));
         if (registration.getStatus() != RegistrationStatus.APPROVED) {
-            throw new RuntimeException("Your registration for this event must be approved before you can create a team.");
+            throw new RuntimeException(MessageKeys.REGISTRATION_NOT_APPROVED_TEAM.getMessage());
         }
 
         // Constraint: User can only be in ONE team per event
         if (teamMemberRepository.existsByTeamEventIdAndUserIdAndStatus(eventId, request.getUserId(), TeamMemberStatus.ACCEPTED)) {
-            throw new RuntimeException("You are already an accepted member of another team in this event.");
+            throw new RuntimeException(MessageKeys.ALREADY_IN_TEAM_THIS_EVENT.getMessage());
         }
 
         Team team = Team.builder()
@@ -86,37 +87,37 @@ public class TeamService {
 
     public TeamResponse getTeamByShortCode(String shortCode) {
         Team team = teamRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
         return mapToTeamResponse(team);
     }
 
     @Transactional
     public void inviteMember(String teamId, TeamInviteRequest request, String requesterId) {
         if (teamMemberRepository.existsByTeamIdAndUserId(teamId, request.getUserId())) {
-            throw new RuntimeException("User is already a member or has a pending association with this team");
+            throw new RuntimeException(MessageKeys.USER_ALREADY_ASSOCIATED.getMessage());
         }
 
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
 
         if (!team.getLeaderId().equals(requesterId)) {
-            throw new RuntimeException("Unauthorized: Only the team leader can invite members.");
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_TEAM_INVITE.getMessage());
         }
 
         // Constraint: Check team size limit
         Event event = eventRepository.findById(team.getEventId())
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         
         // Constraint: User must have an APPROVED registration for this event
         Registration registration = registrationRepository.findByEventIdAndUserId(event.getId(), request.getUserId())
-                .orElseThrow(() -> new RuntimeException("The user must be registered for this event to be invited."));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_REGISTERED_FOR_INVITE.getMessage()));
         if (registration.getStatus() != RegistrationStatus.APPROVED) {
-            throw new RuntimeException("The user's registration must be approved before they can be invited.");
+            throw new RuntimeException(MessageKeys.INVITE_REGISTRATION_NOT_APPROVED.getMessage());
         }
 
         // Constraint: User can only be in ONE team per event
         if (teamMemberRepository.existsByTeamEventIdAndUserIdAndStatus(event.getId(), request.getUserId(), TeamMemberStatus.ACCEPTED)) {
-            throw new RuntimeException("This user is already an accepted member of another team in this event.");
+            throw new RuntimeException(MessageKeys.USER_ALREADY_IN_OTHER_TEAM.getMessage());
         }
 
         if (event.getTeamSize() != null) {
@@ -124,7 +125,7 @@ public class TeamService {
                     .filter(m -> m.getStatus() == TeamMemberStatus.ACCEPTED || m.getStatus() == TeamMemberStatus.INVITED)
                     .count();
             if (currentMembers >= event.getTeamSize()) {
-                throw new RuntimeException("Team has reached its maximum size capacity.");
+                throw new RuntimeException(MessageKeys.TEAM_AT_MAX_CAPACITY.getMessage());
             }
         }
 
@@ -149,26 +150,26 @@ public class TeamService {
     @Transactional
     public void requestToJoin(String teamId, TeamInviteRequest request) {
         if (teamMemberRepository.existsByTeamIdAndUserId(teamId, request.getUserId())) {
-            throw new RuntimeException("You have already requested to join or are already a member of this team");
+            throw new RuntimeException(MessageKeys.ALREADY_REQUESTED_OR_MEMBER.getMessage());
         }
 
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
 
         // Constraint: Check team size limit
         Event event = eventRepository.findById(team.getEventId())
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         
         // Constraint: User must have an APPROVED registration for this event
         Registration registration = registrationRepository.findByEventIdAndUserId(event.getId(), request.getUserId())
-                .orElseThrow(() -> new RuntimeException("You must be registered for this event to join a team."));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.MUST_BE_REGISTERED_TO_JOIN.getMessage()));
         if (registration.getStatus() != RegistrationStatus.APPROVED) {
-            throw new RuntimeException("Your registration for this event must be approved before you can join a team.");
+            throw new RuntimeException(MessageKeys.REGISTRATION_NOT_APPROVED_JOIN.getMessage());
         }
 
         // Constraint: User can only be in ONE team per event
         if (teamMemberRepository.existsByTeamEventIdAndUserIdAndStatus(event.getId(), request.getUserId(), TeamMemberStatus.ACCEPTED)) {
-            throw new RuntimeException("You are already an accepted member of another team in this event.");
+            throw new RuntimeException(MessageKeys.ALREADY_IN_TEAM_THIS_EVENT.getMessage());
         }
 
         if (event.getTeamSize() != null) {
@@ -176,7 +177,7 @@ public class TeamService {
                     .filter(m -> m.getStatus() == TeamMemberStatus.ACCEPTED)
                     .count();
             if (currentMembers >= event.getTeamSize()) {
-                throw new RuntimeException("This team is already full.");
+                throw new RuntimeException(MessageKeys.TEAM_FULL.getMessage());
             }
         }
 
@@ -196,15 +197,15 @@ public class TeamService {
     @Transactional
     public void respondToInvite(String teamId, String userId, boolean accept) {
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
-                .orElseThrow(() -> new RuntimeException("Membership not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.MEMBERSHIP_NOT_FOUND.getMessage()));
 
         if (accept) {
             Team team = teamRepository.findById(teamId)
-                    .orElseThrow(() -> new RuntimeException("Team not found"));
+                    .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
             
             // Constraint: User can only be in ONE team per event
             if (teamMemberRepository.existsByTeamEventIdAndUserIdAndStatus(team.getEventId(), userId, TeamMemberStatus.ACCEPTED)) {
-                throw new RuntimeException("You are already an accepted member of another team in this event.");
+                throw new RuntimeException(MessageKeys.ALREADY_IN_TEAM_THIS_EVENT.getMessage());
             }
 
             member.setStatus(TeamMemberStatus.ACCEPTED);
@@ -217,10 +218,10 @@ public class TeamService {
     @Transactional
     public void dismantleTeam(String teamId, String leaderId) {
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
 
         if (!team.getLeaderId().equals(leaderId)) {
-            throw new RuntimeException("Only leader can dismantle team");
+            throw new RuntimeException(MessageKeys.ONLY_LEADER_CAN_DISMANTLE.getMessage());
         }
 
         teamRepository.delete(team);
@@ -229,16 +230,16 @@ public class TeamService {
     @Transactional
     public void transferLeadership(String teamId, String currentLeaderId, String newLeaderId) {
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
 
         if (!team.getLeaderId().equals(currentLeaderId)) {
-            throw new RuntimeException("Only leader can transfer leadership");
+            throw new RuntimeException(MessageKeys.ONLY_LEADER_CAN_TRANSFER.getMessage());
         }
 
         TeamMember currentLeader = teamMemberRepository.findByTeamIdAndUserId(teamId, currentLeaderId)
-                .orElseThrow(() -> new RuntimeException("Leader not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.LEADER_NOT_FOUND.getMessage()));
         TeamMember nextLeader = teamMemberRepository.findByTeamIdAndUserId(teamId, newLeaderId)
-                .orElseThrow(() -> new RuntimeException("Member not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.MEMBER_NOT_FOUND.getMessage()));
 
         currentLeader.setRole(TeamRole.MEMBER);
         nextLeader.setRole(TeamRole.LEADER);
@@ -252,10 +253,10 @@ public class TeamService {
     @Transactional
     public void leaveTeam(String teamId, String userId) {
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
-                .orElseThrow(() -> new RuntimeException("Membership not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.MEMBERSHIP_NOT_FOUND.getMessage()));
 
         if (member.getRole() == TeamRole.LEADER) {
-            throw new RuntimeException("Leader cannot leave. Dismantle or transfer leadership first.");
+            throw new RuntimeException(MessageKeys.LEADER_CANNOT_LEAVE.getMessage());
         }
 
         teamMemberRepository.delete(member);
@@ -264,10 +265,10 @@ public class TeamService {
     @Transactional
     public void updateProblemStatement(String teamId, String leaderId, String problemId) {
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
 
         if (!team.getLeaderId().equals(leaderId)) {
-            throw new RuntimeException("Only team leader can select problem statement");
+            throw new RuntimeException(MessageKeys.ONLY_LEADER_CAN_SELECT_PROBLEM.getMessage());
         }
 
         team.setProblemStatementId(problemId);
@@ -277,21 +278,21 @@ public class TeamService {
     @Transactional
     public void submitProject(String teamId, String userId, TeamSubmissionRequest request) {
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
 
         if (!team.getLeaderId().equals(userId)) {
-            throw new RuntimeException("Only team leader can submit project");
+            throw new RuntimeException(MessageKeys.ONLY_LEADER_CAN_SUBMIT.getMessage());
         }
 
         // Constraint: Check if event is ongoing
         Event event = eventRepository.findById(team.getEventId())
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         
         if (event.getStatus() != EventStatus.ONGOING) {
             if (java.time.LocalDateTime.now().isBefore(event.getStartDate())) {
-                throw new RuntimeException("Submissions haven't opened yet. The event starts on " + event.getStartDate());
+                throw new RuntimeException(String.format(MessageKeys.SUBMISSIONS_NOT_OPEN.getMessage(), event.getStartDate()));
             } else {
-                throw new RuntimeException("Submissions are closed. The event ended on " + event.getEndDate());
+                throw new RuntimeException(String.format(MessageKeys.SUBMISSIONS_CLOSED.getMessage(), event.getEndDate()));
             }
         }
 
@@ -302,7 +303,7 @@ public class TeamService {
 
     public Map<String, Object> getTeamForEvaluation(String teamId) {
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
         return mapToEvaluationMap(team);
     }
 
@@ -317,7 +318,7 @@ public class TeamService {
     @Transactional
     public void updateScore(String teamId, Double score, String aiSummary) {
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
         team.setScore(score);
         team.setAiSummary(aiSummary);
         teamRepository.save(team);
