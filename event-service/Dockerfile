@@ -1,15 +1,21 @@
+# Build stage
 FROM maven:3.8.4-openjdk-17 AS build
+WORKDIR /home/app
 
-# Install shared-kernel first
-COPY shared-kernel /home/shared-kernel
-RUN mvn -f /home/shared-kernel/pom.xml clean install -DskipTests
+# Copy the parent pom and install it locally
+COPY pom.xml .
+RUN mvn install -N
+
+# Copy and install shared-kernel
+COPY shared-kernel /home/app/shared-kernel
+RUN mvn -f shared-kernel/pom.xml clean install -DskipTests
 
 # Build event-service
-COPY event-service/src /home/app/src
-COPY event-service/pom.xml /home/app
-RUN mvn -f /home/app/pom.xml clean package -DskipTests
+COPY event-service /home/app/event-service
+RUN mvn -f event-service/pom.xml clean package -DskipTests
 
+# Package stage
 FROM eclipse-temurin:17-jdk-alpine
-COPY --from=build /home/app/target/*.jar app.jar
+COPY --from=build /home/app/event-service/target/*.jar app.jar
 EXPOSE 8084
 ENTRYPOINT ["java","-jar","/app.jar"]

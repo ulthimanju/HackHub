@@ -4,11 +4,14 @@ import com.ehub.auth.dto.*;
 import com.ehub.auth.entity.User;
 import com.ehub.auth.service.AuthService;
 import com.ehub.auth.util.MessageKeys;
+import com.ehub.common.enums.UserRole;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
@@ -18,11 +21,20 @@ public class AuthController {
     private final AuthService service;
 
     @GetMapping("/profile")
-    public ResponseEntity<User> getProfile(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof User user) {
-            return ResponseEntity.ok(user);
-        }
-        return ResponseEntity.ok(service.getProfile(authentication.getName()));
+    public ResponseEntity<UserResponse> getProfile(Authentication authentication) {
+        User user = service.getProfile(authentication.getName());
+        return ResponseEntity.ok(UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .skills(user.getSkills())
+                .build());
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<UserResponse> updateProfile(Authentication authentication, @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(service.updateProfile(authentication.getName(), request));
     }
 
     @PutMapping("/profile/skills")

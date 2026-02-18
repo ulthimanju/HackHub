@@ -66,6 +66,7 @@ public class AuthService {
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
+                .user(mapToUserResponse(user))
                 .build();
     }
 
@@ -81,6 +82,17 @@ public class AuthService {
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
+                .user(mapToUserResponse(user))
+                .build();
+    }
+
+    private UserResponse mapToUserResponse(User user) {
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .skills(user.getSkills())
                 .build();
     }
 
@@ -133,8 +145,27 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
     }
 
-    public void updateSkills(String userId, List<String> skills) {
-        User user = repository.findById(userId)
+    public UserResponse updateProfile(String currentUsername, UpdateProfileRequest request) {
+        User user = repository.findByUsername(currentUsername)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
+
+        if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
+            if (repository.existsByUsername(request.getUsername())) {
+                throw new RuntimeException(MessageKeys.USER_ALREADY_EXISTS.getMessage());
+            }
+            user.setUsername(request.getUsername());
+        }
+
+        if (request.getSkills() != null) {
+            user.setSkills(request.getSkills());
+        }
+
+        repository.save(user);
+        return mapToUserResponse(user);
+    }
+
+    public void updateSkills(String username, List<String> skills) {
+        User user = repository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
         user.setSkills(skills);
         repository.save(user);

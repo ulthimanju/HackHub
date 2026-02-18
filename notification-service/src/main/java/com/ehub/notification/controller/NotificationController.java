@@ -33,10 +33,24 @@ public class NotificationController {
 
     @PostMapping("/password-reset/otp")
     public ResponseEntity<String> sendPasswordResetOtp(@Valid @RequestBody OtpRequest request) {
-        String otp = otpService.generateOtp(request.getEmail());
+        return sendOtp(request.getEmail(), "Password Reset OTP");
+    }
+
+    @PostMapping("/registration/otp")
+    public ResponseEntity<String> sendRegistrationOtp(@Valid @RequestBody OtpRequest request) {
+        return sendOtp(request.getEmail(), "Registration OTP");
+    }
+
+    @PostMapping("/role-upgrade/otp")
+    public ResponseEntity<String> sendRoleUpgradeOtp(@Valid @RequestBody OtpRequest request) {
+        return sendOtp(request.getEmail(), "Role Upgrade OTP");
+    }
+
+    private ResponseEntity<String> sendOtp(String email, String subject) {
+        String otp = otpService.generateOtp(email);
         Map<String, Object> variables = new HashMap<>();
         variables.put("otp", otp);
-        emailService.sendHtmlEmail(request.getEmail(), "Password Reset OTP", NotificationTemplate.OTP.getValue(), variables);
+        emailService.sendHtmlEmail(email, subject, NotificationTemplate.OTP.getValue(), variables);
         return ResponseEntity.ok(MessageKeys.OTP_SENT_SUCCESS.getMessage());
     }
 
@@ -44,5 +58,15 @@ public class NotificationController {
     public ResponseEntity<Boolean> validateOtp(@Valid @RequestBody OtpValidationRequest request) {
         boolean isValid = otpService.validateOtp(request.getEmail(), request.getOtp());
         return ResponseEntity.ok(isValid);
+    }
+
+    @PostMapping("/registration/validate")
+    public ResponseEntity<Boolean> validateRegistrationOtp(@Valid @RequestBody OtpValidationRequest request) {
+        return validateOtp(request);
+    }
+
+    @PostMapping("/role-upgrade/validate")
+    public ResponseEntity<Boolean> validateRoleUpgradeOtp(@Valid @RequestBody OtpValidationRequest request) {
+        return validateOtp(request);
     }
 }

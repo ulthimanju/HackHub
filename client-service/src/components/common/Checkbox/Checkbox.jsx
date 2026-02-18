@@ -12,7 +12,7 @@ const Checkbox = ({ label, id, checked, onChange, ...props }) => {
         {...props}
       />
       {label && (
-        <label htmlFor={id} className="text-sm text-gray-700">
+        <label htmlFor={id} className="text-sm font-semibold text-gray-700 cursor-pointer">
           {label}
         </label>
       )}

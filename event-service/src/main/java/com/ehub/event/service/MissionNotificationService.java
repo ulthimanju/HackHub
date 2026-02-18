@@ -3,7 +3,7 @@ package com.ehub.event.service;
 import com.ehub.event.client.NotificationClient;
 import com.ehub.event.entity.Event;
 import com.ehub.event.repository.RegistrationRepository;
-import com.ehub.event.util.EventStatus;
+import com.ehub.common.enums.EventStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

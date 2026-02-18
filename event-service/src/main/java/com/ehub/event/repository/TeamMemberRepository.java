@@ -1,7 +1,7 @@
 package com.ehub.event.repository;
 
 import com.ehub.event.entity.TeamMember;
-import com.ehub.event.util.TeamMemberStatus;
+import com.ehub.common.enums.TeamMemberStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;

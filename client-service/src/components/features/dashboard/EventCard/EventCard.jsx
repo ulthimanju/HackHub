@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar, ChevronRight } from 'lucide-react';
-import Badge from './Badge';
+import Badge from '../../../common/Badge/Badge';
 
 const EventCard = ({ status, title, description, date, onEnter }) => {
   return (

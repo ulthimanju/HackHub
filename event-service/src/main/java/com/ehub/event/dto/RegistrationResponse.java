@@ -1,6 +1,6 @@
 package com.ehub.event.dto;
 
-import com.ehub.event.util.RegistrationStatus;
+import com.ehub.common.enums.RegistrationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

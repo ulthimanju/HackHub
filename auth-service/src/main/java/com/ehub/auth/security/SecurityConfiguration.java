@@ -24,13 +24,10 @@ public class SecurityConfiguration {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/auth/register", 
-                    "/auth/register/otp", 
-                    "/auth/login",
-                    "/auth/upgrade-role",
-                    "/auth/upgrade-role/otp"
-                ).permitAll()
+                .requestMatchers("/auth/register", "/auth/register/**").permitAll()
+                .requestMatchers("/auth/login", "/auth/login/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/auth/register/otp").permitAll()
+                .requestMatchers("/auth/register/otp/**").permitAll() // Keep this for other potential methods or sub-paths
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

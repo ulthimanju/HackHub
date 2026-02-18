@@ -5,59 +5,47 @@ Follow these instructions to set up and run the EHub Unified Hackathon Platform 
 ## 📋 Prerequisites
 
 Ensure you have the following installed:
-- **Docker & Docker Compose** (Recommended for easiest setup)
+- **Docker & Docker Compose** (The system is optimized for a container-first, platform-independent workflow)
 - **Java 17 JDK** (For local development)
 - **Node.js 18+** (For local frontend development)
-- **Maven 3.8+** (For building JARs)
 - **Git**
 
 ---
 
-## 🛠️ Step 1: Environment Configuration
+## 🛠️ Step 1: Configuration (Secrets)
 
-The system requires several environment variables for security, email notifications, and AI evaluation.
+EHub uses a deterministic, file-based secrets management system that is platform-independent.
 
-1. Create a `.env` file in the root directory:
+1. Ensure the `.secrets` directory exists in the root:
    ```bash
-   touch .env
+   mkdir .secrets
    ```
 
-2. Add the following variables to `.env` (Replace with your actual credentials):
-   ```env
-   # Gmail Credentials (required for notification-service)
-   # You must use a Gmail App Password, not your account password
-   GMAIL_USERNAME=your-email@gmail.com
-   GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
-
-   # Gemini AI Key (required for ai-service)
-   # Obtain from: https://aistudio.google.com/app/apikey
-   GEMINI_API_KEY=your_gemini_api_key
-
-   # OTP Rate Limiting
-   APP_ITEM_LIMIT=5
-   APP_TIME_LIMIT=30
-
-   # Security
-   APPLICATION_SECURITY_JWT_SECRET_KEY=your_random_64_char_hex_string
-   ```
+2. Populate the following files in `.secrets/` with your actual credentials:
+   - `db-password.txt`: Password for PostgreSQL databases.
+   - `gemini-api-key.txt`: Obtain from [Google AI Studio](https://aistudio.google.com/app/apikey).
+   - `gmail-username.txt`: Your Gmail address (e.g., `user@gmail.com`).
+   - `gmail-app-password.txt`: Gmail App Password (not your account password).
+   - `jwt-secret.txt`: A random 64-character hex string for signing tokens.
+   - `app-item-limit.txt`: OTP rate limit (e.g., `5`).
+   - `app-time-limit.txt`: OTP rate limit time window in minutes (e.g., `30`).
 
 ---
 
 ## 🐳 Step 2: Running with Docker (Recommended)
 
-EHub is fully containerized. You can start all 10+ services with a single command.
+EHub is fully containerized and deterministic. All dependencies are explicitly defined in the `docker-compose.yml`.
 
 1. **Build and Start Services**:
    ```bash
-   docker compose up -d --build
+   docker compose up -d --build --quiet-pull
    ```
 
 2. **Verify Containers**:
-   Wait a few minutes for the databases to initialize. Check the status:
+   Wait for the databases to initialize (health checks are built-in):
    ```bash
    docker compose ps
    ```
-   Ensure `ehub-auth-db` and `ehub-event-db` show as `healthy`.
 
 3. **Access the Application**:
    - **Frontend**: [http://localhost:3000](http://localhost:3000)
@@ -67,22 +55,17 @@ EHub is fully containerized. You can start all 10+ services with a single comman
 
 ## 🏗️ Step 3: Local Development (Non-Docker)
 
-If you wish to run a specific service locally for debugging:
+While Docker is preferred for consistency, you can run services locally if Java 17 and Maven are installed.
 
 ### Backend Services (Spring Boot)
 1. Navigate to the service folder (e.g., `event-service`).
-2. Build the JAR:
-   ```bash
-   mvn clean install -DskipTests
-   ```
-3. Run the application:
+2. Run the application (Note: Local environment must mimic Docker secrets via properties if not using Docker):
    ```bash
    mvn spring-boot:run
    ```
-   *Note: Ensure you have local instances of PostgreSQL (Ports 5433/5434) and Redis (6379) running.*
 
 ### Web Client (React)
-1. Navigate to `web-client`.
+1. Navigate to `client-service`.
 2. Install dependencies:
    ```bash
    npm install
@@ -96,16 +79,9 @@ If you wish to run a specific service locally for debugging:
 
 ## 🔍 Troubleshooting
 
-- **Database Connection Refused**: Ensure you are using the correct ports. In Docker, services use internal hostnames (e.g., `auth-db`). Locally, you must use the mapped ports defined in `docker-compose.yml` (`5433` for Auth, `5434` for Event).
-- **Email Not Sending**: Verify your `GMAIL_APP_PASSWORD`. Standard passwords will be rejected by Google SMTP.
-- **AI Evaluation Fails**: Ensure your `GEMINI_API_KEY` is valid and has not reached its rate limit.
-- **Port Conflicts**: Ensure ports `8000`, `3000`, `8081`, `8082`, `6379`, `5433`, and `5434` are not being used by other applications.
-
----
-
-## 📈 System Health
-You can monitor logs for any service using:
-```bash
-docker compose logs -f [service-name]
-```
-Example: `docker compose logs -f ai-service`
+- **Configuration Errors**: Ensure all files in `.secrets/` are present and contain exact values without trailing newlines.
+- **Port Conflicts**: Ensure ports `8000`, `3000`, `8081`, `8082`, `8084`, `8085`, `6379`, and `5432` are not being used. (Note: Internal ports are isolated within the Docker network).
+- **Service Logs**: Monitor real-time logs:
+  ```bash
+  docker compose logs -f [service-name]
+  ```
