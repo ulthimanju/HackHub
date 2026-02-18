@@ -29,6 +29,7 @@ public class SecurityConfiguration {
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/auth/register/otp").permitAll()
                 .requestMatchers("/auth/register/otp/**").permitAll()
                 .requestMatchers("/auth/reset-password/**").permitAll()
+                .requestMatchers("/auth/logout").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
