@@ -107,6 +107,7 @@ public class EventService {
 
     public String createEvent(EventRequest request, String currentUserId) {
         String id = UUID.randomUUID().toString();
+        String shortCode = ShortCodeGenerator.generate(8);
         
         Event event = Event.builder()
                 .id(id)
