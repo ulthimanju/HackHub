@@ -36,7 +36,12 @@ const authService = {
     return response.data;
   },
 
-  logout: () => {
+  logout: async () => {
+    try {
+      await api.post('/auth/logout'); // best-effort server-side token blacklist
+    } catch (_) {
+      // ignore — clear client state regardless
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   },

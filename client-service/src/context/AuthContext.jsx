@@ -39,8 +39,8 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
   };
 
@@ -49,8 +49,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(newUserData));
   };
 
+  const updateAuth = (newToken, newUserData) => {
+    localStorage.setItem('token', newToken);
+    setUser(newUserData);
+    localStorage.setItem('user', JSON.stringify(newUserData));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUserData }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUserData, updateAuth }}>
       {children}
     </AuthContext.Provider>
   );

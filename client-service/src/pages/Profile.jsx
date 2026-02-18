@@ -14,7 +14,7 @@ import StatsCard from '../components/features/profile/StatsCard/StatsCard';
 import UpgradeSection from '../components/features/profile/UpgradeSection/UpgradeSection';
 
 const Profile = () => {
-  const { user, logout, updateUserData } = useAuth();
+  const { user, logout, updateUserData, updateAuth } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     username: user?.username || '',
@@ -63,12 +63,14 @@ const Profile = () => {
     setLoading(true);
     try {
       await authService.upgradeRole(user.email, otp);
-      // Fetch fresh profile so role reflects exactly what the server stored
+      // Fetch fresh profile to get updated role and a new token
       const updatedProfile = await authService.getProfile();
       updateUserData(updatedProfile);
-      setSuccess('Your account has been upgraded to ORGANIZER successfully!');
+      // Old token is now blacklisted server-side; force re-login to get token with ORGANIZER role
+      setSuccess('Your account has been upgraded to ORGANIZER! Please log in again to activate your new permissions.');
       setShowOtpInput(false);
       setOtp('');
+      setTimeout(() => logout(), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Role upgrade failed.');
     } finally {

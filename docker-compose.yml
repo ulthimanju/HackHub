@@ -26,11 +26,15 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/ehub_auth_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
       APPLICATION_NOTIFICATION_SERVICE_URL: http://notification-service:8082/notifications/password-reset/validate
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     secrets:
       - source: db-password
         target: SPRING_DATASOURCE_PASSWORD

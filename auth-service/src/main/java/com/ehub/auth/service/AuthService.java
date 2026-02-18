@@ -4,6 +4,7 @@ import com.ehub.auth.dto.*;
 import com.ehub.auth.entity.User;
 import com.ehub.auth.repository.UserRepository;
 import com.ehub.auth.security.JwtService;
+import com.ehub.auth.security.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,6 +34,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final NotificationClient notificationClient;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public void requestRegistrationOtp(String email) {
         if (repository.existsByEmail(email)) {
@@ -124,7 +126,7 @@ public class AuthService {
         notificationClient.sendOtp(email);
     }
 
-    public void upgradeToOrganizer(RoleUpgradeRequest request) {
+    public void upgradeToOrganizer(RoleUpgradeRequest request, String currentToken) {
         // 1. Validate OTP
         if (!notificationClient.validateOtp(request.getEmail(), request.getOtp())) {
             throw new RuntimeException(MessageKeys.INVALID_OTP.getMessage());
@@ -133,14 +135,25 @@ public class AuthService {
         // 2. Update Role
         var user = repository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
-        
+
         user.setRole(UserRole.ORGANIZER);
         repository.save(user);
+
+        // 3. Blacklist old token so it can no longer be used with PARTICIPANT claims
+        if (currentToken != null) {
+            tokenBlacklistService.blacklist(
+                    jwtService.extractJti(currentToken),
+                    jwtService.getExpirationMillis(currentToken)
+            );
+        }
     }
 
-    private void validateOtp(String email, String otp) {
-        if (!notificationClient.validateOtp(email, otp)) {
-            throw new RuntimeException(MessageKeys.INVALID_OTP.getMessage());
+    public void logout(String token) {
+        if (token != null) {
+            tokenBlacklistService.blacklist(
+                    jwtService.extractJti(token),
+                    jwtService.getExpirationMillis(token)
+            );
         }
     }
 

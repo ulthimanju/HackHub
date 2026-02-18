@@ -5,6 +5,7 @@ import com.ehub.auth.entity.User;
 import com.ehub.auth.service.AuthService;
 import com.ehub.auth.util.MessageKeys;
 import com.ehub.auth.enums.UserRole;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -77,8 +78,10 @@ public class AuthController {
     }
 
     @PostMapping("/upgrade-role")
-    public ResponseEntity<String> upgradeToOrganizer(@Valid @RequestBody RoleUpgradeRequest request) {
-        service.upgradeToOrganizer(request);
+    public ResponseEntity<String> upgradeToOrganizer(
+            @Valid @RequestBody RoleUpgradeRequest request,
+            HttpServletRequest httpRequest) {
+        service.upgradeToOrganizer(request, extractToken(httpRequest));
         return ResponseEntity.ok(MessageKeys.ROLE_UPGRADE_SUCCESS.getMessage());
     }
 
@@ -88,9 +91,13 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
-        // In a stateless JWT implementation, logout is typically handled on the client side 
-        // by deleting the token. Server-side logout can involve blacklisting (not implemented here).
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        service.logout(extractToken(request));
         return ResponseEntity.ok(MessageKeys.LOGOUT_SUCCESS.getMessage());
+    }
+
+    private String extractToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        return (header != null && header.startsWith("Bearer ")) ? header.substring(7) : null;
     }
 }
