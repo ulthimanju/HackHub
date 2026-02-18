@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import org.springframework.web.client.RestClientException;
+
 import java.util.Map;
 
 @Component
@@ -24,12 +26,15 @@ public class NotificationClient {
     }
 
     public boolean validateOtp(String email, String otp) {
-        // baseUrl is http://notification-service:8082/notifications/password-reset/validate
-        Boolean isValid = restTemplate.postForObject(
-                baseUrl,
-                Map.of("email", email, "otp", otp),
-                Boolean.class
-        );
-        return Boolean.TRUE.equals(isValid);
+        try {
+            Boolean isValid = restTemplate.postForObject(
+                    baseUrl,
+                    Map.of("email", email, "otp", otp),
+                    Boolean.class
+            );
+            return Boolean.TRUE.equals(isValid);
+        } catch (RestClientException e) {
+            throw new RuntimeException("Notification service unavailable. Please try again later.");
+        }
     }
 }

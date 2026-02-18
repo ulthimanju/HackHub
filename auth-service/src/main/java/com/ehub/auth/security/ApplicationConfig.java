@@ -12,9 +12,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.core.userdetails.User;
-
-import java.util.ArrayList;
 
 @Configuration
 @RequiredArgsConstructor
@@ -24,8 +21,8 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
+        // Return the entity directly — it implements UserDetails with proper getAuthorities()
         return username -> repository.findByUsernameOrEmail(username, username)
-                .map(user -> new User(user.getUsername(), user.getPassword(), new ArrayList<>()))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 

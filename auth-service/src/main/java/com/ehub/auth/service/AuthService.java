@@ -5,6 +5,7 @@ import com.ehub.auth.entity.User;
 import com.ehub.auth.repository.UserRepository;
 import com.ehub.auth.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -53,6 +54,9 @@ public class AuthService {
 
         // 2. Get UUID from Common Service
         String uuid = commonClient.getUuid();
+        if (uuid == null || uuid.isBlank()) {
+            throw new RuntimeException("Failed to generate user ID. Please try again.");
+        }
 
         var user = User.builder()
                 .id(uuid)
@@ -62,7 +66,12 @@ public class AuthService {
                 .enabled(true)
                 .role(UserRole.PARTICIPANT)
                 .build();
-        repository.save(user);
+        try {
+            repository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            // Handles race condition where another request registered the same username/email concurrently
+            throw new RuntimeException(MessageKeys.USER_ALREADY_EXISTS.getMessage());
+        }
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
@@ -149,13 +158,8 @@ public class AuthService {
         User user = repository.findByUsername(currentUsername)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
 
-        if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
-            if (repository.existsByUsername(request.getUsername())) {
-                throw new RuntimeException(MessageKeys.USER_ALREADY_EXISTS.getMessage());
-            }
-            user.setUsername(request.getUsername());
-        }
-
+        // Username changes are intentionally disallowed: the JWT subject is the username,
+        // so changing it would silently invalidate all existing tokens.
         if (request.getSkills() != null) {
             user.setSkills(request.getSkills());
         }
