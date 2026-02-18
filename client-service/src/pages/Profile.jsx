@@ -62,15 +62,12 @@ const Profile = () => {
     setSuccess('');
     setLoading(true);
     try {
-      await authService.upgradeRole(user.email, otp);
-      // Fetch fresh profile to get updated role and a new token
-      const updatedProfile = await authService.getProfile();
-      updateUserData(updatedProfile);
-      // Old token is now blacklisted server-side; force re-login to get token with ORGANIZER role
-      setSuccess('Your account has been upgraded to ORGANIZER! Please log in again to activate your new permissions.');
+      const data = await authService.upgradeRole(user.email, otp);
+      // Update token and user in auth context — new token has ORGANIZER role
+      updateAuth(data.token, data.user);
+      setSuccess('Your account has been upgraded to ORGANIZER! Your session has been refreshed.');
       setShowOtpInput(false);
       setOtp('');
-      setTimeout(() => logout(), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Role upgrade failed.');
     } finally {

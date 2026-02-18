@@ -79,11 +79,10 @@ public class AuthController {
     }
 
     @PostMapping("/upgrade-role")
-    public ResponseEntity<String> upgradeToOrganizer(
+    public ResponseEntity<AuthenticationResponse> upgradeToOrganizer(
             @Valid @RequestBody RoleUpgradeRequest request,
             HttpServletRequest httpRequest) {
-        service.upgradeToOrganizer(request, extractToken(httpRequest));
-        return ResponseEntity.ok(MessageKeys.ROLE_UPGRADE_SUCCESS.getMessage());
+        return ResponseEntity.ok(service.upgradeToOrganizer(request, extractToken(httpRequest)));
     }
 
     @GetMapping("/validate-token")

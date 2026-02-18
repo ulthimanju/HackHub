@@ -126,7 +126,7 @@ public class AuthService {
         notificationClient.sendOtp(email);
     }
 
-    public void upgradeToOrganizer(RoleUpgradeRequest request, String currentToken) {
+    public AuthenticationResponse upgradeToOrganizer(RoleUpgradeRequest request, String currentToken) {
         // 1. Validate OTP
         if (!notificationClient.validateOtp(request.getEmail(), request.getOtp())) {
             throw new RuntimeException(MessageKeys.INVALID_OTP.getMessage());
@@ -146,6 +146,13 @@ public class AuthService {
                     jwtService.getExpirationMillis(currentToken)
             );
         }
+
+        // 4. Issue a new token with updated ORGANIZER role
+        var newToken = jwtService.generateToken(user);
+        return AuthenticationResponse.builder()
+                .token(newToken)
+                .user(mapToUserResponse(user))
+                .build();
     }
 
     public void logout(String token) {
