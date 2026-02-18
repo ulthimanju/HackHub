@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
-import { theme } from '../../../../utils/theme';
+import { theme } from '../../../utils/theme';
 
 const icons = {
   success: CheckCircle,

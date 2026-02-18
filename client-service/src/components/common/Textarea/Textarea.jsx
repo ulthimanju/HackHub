@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { theme } from '../../../../utils/theme';
+import { theme } from '../../../utils/theme';
 
 const Textarea = memo(({ label, rows = 3, error, className = '', ...props }) => (
   <div>

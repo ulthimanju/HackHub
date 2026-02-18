@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { theme } from '../../../../utils/theme';
+import { theme } from '../../../utils/theme';
 
 const Button = memo(({ variant = 'primary', size = 'md', fullWidth = false, icon: Icon, children, loading, className = '', ...props }) => {
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-5 py-2.5 text-sm', lg: 'px-8 py-3.5 text-base' };

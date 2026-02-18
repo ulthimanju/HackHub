@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { theme } from '../../../../utils/theme';
+import { theme } from '../../../utils/theme';
 
 const Tab = memo(({ active, onClick, children }) => (
   <button

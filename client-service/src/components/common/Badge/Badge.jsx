@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { X } from 'lucide-react';
-import { theme } from '../../../../utils/theme';
+import { theme } from '../../../utils/theme';
 
 const Badge = memo(({ children, variant = 'info', removable, onRemove, className = '', ...props }) => (
   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase border transition-all ${theme.badge[variant] || theme.badge.info} ${className}`} {...props}>

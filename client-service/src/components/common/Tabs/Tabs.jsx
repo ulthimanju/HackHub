@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import { theme } from '../../../../utils/theme';
+import { theme } from '../../../utils/theme';
 
 const Tabs = memo(({ tabs, defaultActiveTab = 0 }) => {
   const [activeTab, setActiveTab] = useState(defaultActiveTab);

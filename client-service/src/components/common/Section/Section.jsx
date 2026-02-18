@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { theme } from '../../../../utils/theme';
+import { theme } from '../../../utils/theme';
 
 const Section = memo(({ title, children }) => (
   <div className={`${theme.surface.card} p-6`}>

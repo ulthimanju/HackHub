@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { theme } from '../../../../utils/theme';
+import { theme } from '../../../utils/theme';
 
 const Checkbox = memo(({ label, id, checked, onChange, ...props }) => (
   <div className="flex items-center gap-2">
