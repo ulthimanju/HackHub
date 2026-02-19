@@ -1,8 +1,6 @@
 package com.ehub.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.genai.Client;
-import com.google.genai.types.GenerateContentResponse;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,15 +19,18 @@ public class AiService {
     private final RestTemplate restTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
     private final GithubService githubService;
-    private final Client geminiClient;
     private final ObjectMapper objectMapper;
 
     private static final String QUEUE_KEY  = "ehub:ai:evaluation:queue";
     private static final int    MAX_RETRIES = 3;
+    private static final String GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
     private final AtomicBoolean isBulkEvaluating = new AtomicBoolean(false);
 
     @Value("${APPLICATION_EVENT_SERVICE_URL}")
     private String eventServiceUrl;
+
+    @Value("${GROQ_API_KEY:}")
+    private String groqApiKey;
 
     @PostConstruct
     public void startWorker() {
@@ -110,9 +111,13 @@ public class AiService {
         } catch (Exception e) {
             System.err.println("Evaluation failed for team " + teamId + " (attempt " + (retryCount + 1) + "): " + e.getMessage());
             if (retryCount < MAX_RETRIES) {
-                context.put("retryCount", retryCount + 1);
-                redisTemplate.opsForList().leftPush(QUEUE_KEY, context);
-                System.out.println("Re-queued team " + teamId + " for retry " + (retryCount + 1));
+                try {
+                    context.put("retryCount", retryCount + 1);
+                    redisTemplate.opsForList().leftPush(QUEUE_KEY, context);
+                    System.out.println("Re-queued team " + teamId + " for retry " + (retryCount + 1));
+                } catch (Exception redisEx) {
+                    System.err.println("Failed to re-queue team " + teamId + ": " + redisEx.getMessage());
+                }
             } else {
                 System.err.println("Max retries reached for team " + teamId + ". Skipping.");
             }
@@ -129,7 +134,7 @@ public class AiService {
         }
     }
 
-    // Throws on Gemini API failure so processEvaluation can retry.
+    // Throws on API failure so processEvaluation can retry.
     // JSON parse failures are handled locally (retrying won't fix a malformed response).
     private Map<String, Object> callGeminiForEvaluation(String teamName, String problemStatement,
                                                         String requirements, String theme,
@@ -153,10 +158,24 @@ public class AiService {
             theme, problemStatement, requirements, repoUrl, sourceCode
         );
 
-        // This call throws on network/API failure → triggers retry in processEvaluation
-        GenerateContentResponse response = geminiClient.models.generateContent("gemini-2.0-flash", prompt, null);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(groqApiKey.strip());
 
-        String text = response.text().replaceAll("```json", "").replaceAll("```", "").trim();
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", "llama-3.3-70b-versatile");
+        body.put("temperature", 0.2);
+        body.put("messages", List.of(Map.of("role", "user", "content", prompt)));
+
+        System.out.println("Calling Groq API for team: " + teamName);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(GROQ_API_URL, request, Map.class);
+        System.out.println("Groq API responded with status: " + response.getStatusCode());
+
+        List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
+        Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+        String text = message.get("content").toString()
+            .replaceAll("```json", "").replaceAll("```", "").trim();
 
         Map<String, Object> result = new HashMap<>();
         result.put("score", 0.0);
@@ -166,7 +185,7 @@ public class AiService {
             result.put("score",   ((Number) parsed.get("score")).doubleValue());
             result.put("summary", parsed.get("summary").toString());
         } catch (Exception e) {
-            System.err.println("JSON parsing failed for Gemini response: " + e.getMessage() + " | Raw: " + text);
+            System.err.println("JSON parsing failed for Groq response: " + e.getMessage() + " | Raw: " + text);
         }
         return result;
     }

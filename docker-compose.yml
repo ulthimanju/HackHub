@@ -145,10 +145,8 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       APPLICATION_EVENT_SERVICE_URL: http://event-service:8084
     secrets:
-      - source: gemini-api-key
-        target: GEMINI_API_KEY
-      - source: gemini-api-key
-        target: GOOGLE_API_KEY
+      - source: groq-api-key
+        target: GROQ_API_KEY
       - source: github-token
         target: GITHUB_TOKEN
     networks:
@@ -171,8 +169,8 @@ secrets:
     file: .secrets/db-password.txt
   jwt-secret:
     file: .secrets/jwt-secret.txt
-  gemini-api-key:
-    file: .secrets/gemini-api-key.txt
+  groq-api-key:
+    file: .secrets/groq-api-key.txt
   gmail-app-password:
     file: .secrets/gmail-app-password.txt
   gmail-username:

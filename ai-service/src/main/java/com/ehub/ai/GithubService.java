@@ -4,12 +4,14 @@ import org.kohsuke.github.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.util.*;
+import java.util.concurrent.*;
 
 @Service
 public class GithubService {
 
-    // Gemini 2.0 Flash supports ~1M tokens (~750KB text). Leave headroom for the prompt itself.
-    private static final int GEMINI_MAX_CHARS = 700_000;
+    // Groq free tier TPM limit for llama-3.3-70b-versatile is 12K — keep content under ~30KB (~7.5K tokens)
+    private static final int GEMINI_MAX_CHARS = 30_000;
+    private static final int FETCH_TIMEOUT_SECONDS = 90;
 
     // Whitelist: only raw source code and docs — compiled/binary files are excluded by definition
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
@@ -40,20 +42,38 @@ public class GithubService {
     @Value("${GITHUB_TOKEN:}")
     private String githubToken;
 
-    public String fetchRepoContent(String repoUrl) {
+    public String fetchRepoContent(String repoUrl) throws Exception {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<String> future = executor.submit(() -> doFetch(repoUrl));
+        try {
+            return future.get(FETCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw new RuntimeException("GitHub fetch timed out after " + FETCH_TIMEOUT_SECONDS + "s for: " + repoUrl);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private String doFetch(String repoUrl) throws Exception {
         try {
             String path = repoUrl.replace("https://github.com/", "").replaceAll("/$", "");
 
-            GitHub github = (githubToken != null && !githubToken.isBlank())
-                    ? new GitHubBuilder().withOAuthToken(githubToken).build()
+            String token = (githubToken != null) ? githubToken.strip() : "";
+            System.out.println("GitHub token present: " + !token.isBlank() + " (length=" + token.length() + ")");
+
+            GitHub github = !token.isBlank()
+                    ? new GitHubBuilder().withOAuthToken(token).build()
                     : new GitHubBuilder().build();
 
+            System.out.println("Fetching repo tree for: " + path);
             GHRepository repository = github.getRepository(path);
             String defaultBranch = repository.getDefaultBranch();
 
             List<GHTreeEntry> allEntries = repository.getTreeRecursive(defaultBranch, 1).getTree();
+            System.out.println("Tree fetched: " + allEntries.size() + " entries. Collecting source files...");
 
-            // Always show full file tree so Gemini understands complete project scope
+            // Always show full file tree so the AI understands complete project scope
             StringBuilder context = new StringBuilder();
             context.append("=== FULL PROJECT FILE TREE (source files only) ===\n");
             allEntries.stream()
@@ -69,29 +89,28 @@ public class GithubService {
                     .append(" (").append(e.getSize()).append(" bytes)\n"));
             context.append("\n=== SOURCE CODE ===\n\n");
 
-            // Collect ALL files — no size limit during collection
+            // Collect files — stop downloading once we hit the size limit
             collectFiles(allEntries, context, true);  // README first
             collectFiles(allEntries, context, false); // then everything else
+            System.out.println("Files collected: " + context.length() + " chars total.");
 
-            // Only truncate if we exceed Gemini's context window
             if (context.length() > GEMINI_MAX_CHARS) {
-                String truncated = context.substring(0, GEMINI_MAX_CHARS);
-                return truncated +
-                    "\n\n[... CONTENT TRUNCATED: total repo content exceeded Gemini's context limit (" +
-                    GEMINI_MAX_CHARS / 1000 + "KB). The above is the maximum that can be evaluated. " +
-                    "Files listed in the project tree but not fully included should still be " +
-                    "considered when assessing completeness. ...]";
+                return context.substring(0, GEMINI_MAX_CHARS) +
+                    "\n\n[... CONTENT TRUNCATED at 30KB. Files listed in the project tree " +
+                    "but not fully included should still be considered when assessing completeness. ...]";
             }
 
             return context.toString();
         } catch (Exception e) {
             System.err.println("GitHub Fetch Error: " + e.getMessage());
-            return "Could not fetch code content: " + e.getMessage();
+            throw new RuntimeException("GitHub fetch failed: " + e.getMessage(), e);
         }
     }
 
     private void collectFiles(List<GHTreeEntry> entries, StringBuilder context, boolean readmeOnly) {
         for (GHTreeEntry entry : entries) {
+            if (context.length() >= GEMINI_MAX_CHARS) break; // stop downloading once limit reached
+
             if (!"blob".equals(entry.getType())) continue;
 
             String path = entry.getPath();

@@ -16,6 +16,6 @@ spring:
           time-between-eviction-runs: 30000
         shutdown-timeout: 200ms
 
-GEMINI_API_KEY: ${GEMINI_API_KEY:YOUR_DEFAULT_KEY_HERE}
+GROQ_API_KEY: ${GROQ_API_KEY:}
 GITHUB_TOKEN: ${GITHUB_TOKEN:}
 APPLICATION_EVENT_SERVICE_URL: ${APPLICATION_EVENT_SERVICE_URL:http://event-service:8084}
