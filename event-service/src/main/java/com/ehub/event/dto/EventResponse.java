@@ -43,6 +43,8 @@ public class EventResponse {
     public static class ProblemStatementResponse {
         private String id;
         private String statementId;
+        private String name;
         private String statement;
+        private String requirements;
     }
 }

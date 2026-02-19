@@ -80,8 +80,14 @@ public class TeamService {
         teamMemberRepository.save(leader);
     }
 
-    public List<TeamResponse> getTeamsByEvent(String eventId) {
+    public List<TeamResponse> getTeamsByEvent(String eventId, String name) {
         List<Team> teams = teamRepository.findByEventId(eventId);
+        if (name != null && !name.isBlank()) {
+            String lower = name.toLowerCase();
+            teams = teams.stream()
+                    .filter(t -> t.getName().toLowerCase().contains(lower))
+                    .toList();
+        }
         return teams.stream().map(this::mapToTeamResponse).toList();
     }
 
@@ -336,8 +342,16 @@ public class TeamService {
 
         if (team.getProblemStatementId() != null) {
             problemStatementRepository.findById(team.getProblemStatementId())
-                    .ifPresent(ps -> map.put("problemStatement", ps.getStatement()));
+                    .ifPresent(ps -> {
+                        map.put("problemStatement", ps.getStatement());
+                        if (ps.getRequirements() != null) map.put("requirements", ps.getRequirements());
+                    });
         }
+
+        eventRepository.findById(team.getEventId())
+                .ifPresent(event -> {
+                    if (event.getTheme() != null) map.put("theme", event.getTheme());
+                });
 
         return map;
     }

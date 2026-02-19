@@ -6,12 +6,17 @@ import com.ehub.event.entity.Event;
 import com.ehub.event.entity.ProblemStatement;
 import com.ehub.event.entity.Registration;
 import com.ehub.event.entity.Team;
+import com.ehub.event.entity.TeamMember;
 import com.ehub.event.repository.EventRepository;
 import com.ehub.event.repository.ProblemStatementRepository;
 import com.ehub.event.repository.RegistrationRepository;
+import com.ehub.event.repository.TeamMemberRepository;
+import com.ehub.event.repository.TeamRepository;
 import com.ehub.event.util.MessageKeys;
 import com.ehub.event.enums.RegistrationStatus;
 import com.ehub.event.enums.EventStatus;
+import com.ehub.event.enums.TeamMemberStatus;
+import com.ehub.event.enums.TeamRole;
 import com.ehub.event.util.ShortCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -21,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,6 +37,8 @@ public class EventService {
     private final EventRepository eventRepository;
     private final ProblemStatementRepository problemRepository;
     private final RegistrationRepository registrationRepository;
+    private final TeamRepository teamRepository;
+    private final TeamMemberRepository teamMemberRepository;
     private final NotificationClient notificationClient;
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -101,7 +109,9 @@ public class EventService {
         return EventResponse.ProblemStatementResponse.builder()
                 .id(ps.getId())
                 .statementId(ps.getStatementId())
+                .name(ps.getName())
                 .statement(ps.getStatement())
+                .requirements(ps.getRequirements())
                 .build();
     }
 
@@ -220,7 +230,9 @@ public class EventService {
             ProblemStatement problem = ProblemStatement.builder()
                     .id(id)
                     .statementId(autoStatementId)
+                    .name(requests.get(i).getName())
                     .statement(requests.get(i).getStatement())
+                    .requirements(requests.get(i).getRequirements())
                     .event(event)
                     .build();
             
@@ -243,7 +255,9 @@ public class EventService {
         ProblemStatement problem = ProblemStatement.builder()
                 .id(id)
                 .statementId(autoStatementId)
+                .name(request.getName())
                 .statement(request.getStatement())
+                .requirements(request.getRequirements())
                 .event(event)
                 .build();
         
@@ -259,7 +273,9 @@ public class EventService {
             throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
+        problem.setName(request.getName());
         problem.setStatement(request.getStatement());
+        problem.setRequirements(request.getRequirements());
         problemRepository.save(problem);
     }
 
@@ -329,6 +345,20 @@ public class EventService {
         }
     }
 
+    public List<RegistrationResponse> getMyRegistrations(String userId) {
+        return registrationRepository.findByUserId(userId).stream()
+                .map(reg -> RegistrationResponse.builder()
+                        .id(reg.getId())
+                        .eventId(reg.getEventId())
+                        .userId(reg.getUserId())
+                        .username(reg.getUsername())
+                        .userEmail(reg.getUserEmail())
+                        .status(reg.getStatus())
+                        .registrationTime(reg.getRegistrationTime())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public List<RegistrationResponse> getEventRegistrations(String eventId) {
         return registrationRepository.findByEventId(eventId).stream()
                 .map(reg -> RegistrationResponse.builder()
@@ -369,6 +399,20 @@ public class EventService {
 
         registration.setStatus(status);
         registrationRepository.save(registration);
+
+        // If rejected, remove user from any team they belong to in this event
+        if (status == RegistrationStatus.REJECTED) {
+            Optional<TeamMember> membership = teamMemberRepository
+                    .findByTeamEventIdAndUserId(registration.getEventId(), registration.getUserId());
+            membership.ifPresent(m -> {
+                if (m.getRole() == TeamRole.LEADER) {
+                    // Dismantle entire team if user was the leader
+                    teamRepository.deleteById(m.getTeam().getId());
+                } else {
+                    teamMemberRepository.delete(m);
+                }
+            });
+        }
 
         // Broadcast to specific user via WebSocket bridge
         Map<String, Object> payload = new HashMap<>();

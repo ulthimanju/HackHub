@@ -10,6 +10,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, String> 
     List<TeamMember> findByUserId(String userId);
     List<TeamMember> findByTeamId(String teamId);
     Optional<TeamMember> findByTeamIdAndUserId(String teamId, String userId);
+    Optional<TeamMember> findByTeamEventIdAndUserId(String eventId, String userId);
     boolean existsByTeamIdAndUserId(String teamId, String userId);
     boolean existsByTeamEventIdAndUserIdAndStatus(String eventId, String userId, TeamMemberStatus status);
 }

@@ -11,6 +11,7 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Home from './pages/Home';
 import MyEvents from './pages/MyEvents';
+import ExploreEvents from './pages/ExploreEvents';
 import EventDetails from './pages/EventDetails';
 
 function ProtectedRoute({ children }) {
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/my-events" element={<MyEvents />} />
+        <Route path="/explore" element={<ExploreEvents />} />
         <Route path="/events/:id" element={<EventDetails />} />
       </Route>
 

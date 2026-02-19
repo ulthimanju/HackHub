@@ -24,8 +24,10 @@ public class TeamController {
     }
 
     @GetMapping("/{eventId}")
-    public ResponseEntity<List<TeamResponse>> getTeamsByEvent(@PathVariable String eventId) {
-        return ResponseEntity.ok(teamService.getTeamsByEvent(eventId));
+    public ResponseEntity<List<TeamResponse>> getTeamsByEvent(
+            @PathVariable String eventId,
+            @RequestParam(required = false) String name) {
+        return ResponseEntity.ok(teamService.getTeamsByEvent(eventId, name));
     }
 
     @GetMapping("/code/{shortCode}")

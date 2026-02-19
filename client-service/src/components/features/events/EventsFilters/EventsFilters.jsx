@@ -16,7 +16,7 @@ const EventsFilters = memo(({ onSearchChange, onStatusChange }) => {
         <div className="space-y-2">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</p>
           <div className="space-y-1">
-            {['Upcoming', 'Ongoing', 'Completed'].map(status => (
+            {['Upcoming', 'Registration Open', 'Ongoing', 'Judging', 'Results Announced', 'Completed'].map(status => (
               <label key={status} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors group">
                 <input 
                   type="checkbox" 

@@ -4,26 +4,35 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import eventService from '../services/eventService';
 
-// Reusable Components
 import EventsHeader from '../components/features/events/EventsHeader/EventsHeader';
-import EventsFilters from '../components/features/events/EventsFilters/EventsFilters';
 import EmptyState from '../components/features/events/EmptyState/EmptyState';
 import Modal from '../components/common/Modal/Modal';
 import EventForm from '../components/features/events/EventForm/EventForm';
 import Alert from '../components/common/Alert/Alert';
-import EventCard from '../components/features/events/EventCard/EventCard'; // Corrected import
+import EventCard from '../components/features/events/EventCard/EventCard';
+
+const STATUS_TABS = [
+  { label: 'All',                value: 'all' },
+  { label: 'Upcoming',          value: 'upcoming' },
+  { label: 'Registration Open', value: 'registration_open' },
+  { label: 'Ongoing',           value: 'ongoing' },
+  { label: 'Judging',           value: 'judging' },
+  { label: 'Results',           value: 'results_announced' },
+  { label: 'Completed',         value: 'completed' },
+];
 
 const MyEvents = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
+  const [registrationStatuses, setRegistrationStatuses] = useState({});
   const [loading, setLoading] = useState(true);
   const [createLoading, setCreateLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatuses, setSelectedStatuses] = useState([]);
 
   const isOrganizer = user?.role === 'organizer';
 
@@ -34,27 +43,40 @@ const MyEvents = () => {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const data = isOrganizer 
-        ? await eventService.getOrganizerEvents()
-        : await eventService.getParticipantEvents();
-      setEvents(data || []);
+      if (isOrganizer) {
+        const data = await eventService.getOrganizerEvents();
+        setEvents(data || []);
+      } else {
+        const [data, regs] = await Promise.all([
+          eventService.getParticipantEvents(),
+          eventService.getMyRegistrationStatuses(),
+        ]);
+        setEvents(data || []);
+        const statusMap = {};
+        (regs || []).forEach(r => { statusMap[r.eventId] = r; });
+        setRegistrationStatuses(statusMap);
+      }
     } catch (err) {
       setError('Failed to fetch events. Please try again later.');
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
 
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          event.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = selectedStatuses.length === 0 || 
-                          selectedStatuses.includes(event.status?.toLowerCase() || '');
-    
-    return matchesSearch && matchesStatus;
+    const matchesTab = activeTab === 'all' || event.status?.toLowerCase() === activeTab;
+    const matchesSearch = !searchQuery.trim() ||
+      event.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesTab && matchesSearch;
   });
+
+  const tabCounts = STATUS_TABS.reduce((acc, t) => {
+    acc[t.value] = t.value === 'all'
+      ? events.length
+      : events.filter(e => e.status?.toLowerCase() === t.value).length;
+    return acc;
+  }, {});
 
   const handleCreateEvent = async (eventData) => {
     setCreateLoading(true);
@@ -63,26 +85,18 @@ const MyEvents = () => {
       await eventService.createEvent(eventData);
       setSuccess('Event created successfully!');
       setIsModalOpen(false);
-      fetchEvents(); // Refresh list
+      fetchEvents();
       setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create event. Please check your details.');
-    }
-    finally {
+    } finally {
       setCreateLoading(false);
     }
   };
 
-  const handleStatusChange = (status, checked) => {
-    const s = status.toLowerCase();
-    setSelectedStatuses(prev => 
-      checked ? [...prev, s] : prev.filter(item => item !== s)
-    );
-  };
-
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500">
-      <EventsHeader 
+    <div className="w-full space-y-6 animate-in fade-in duration-500">
+      <EventsHeader
         title="My Events"
         description="Manage and track your hackathon participations"
         showCreateButton={isOrganizer}
@@ -96,49 +110,62 @@ const MyEvents = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Filters Sidebar */}
-        <div className="space-y-6">
-          <EventsFilters 
-            onSearchChange={setSearchQuery}
-            onStatusChange={handleStatusChange}
-          />
-        </div>
-
-        {/* Events Content */}
-        <div className="lg:col-span-3 space-y-6">
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
-            </div>
-          ) : filteredEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredEvents.map(event => (
-                <EventCard 
-                  key={event.id} 
-                  event={event}
-                  user={user}
-                  onJoin={(eventId) => navigate(`/events/${eventId}`)} 
-                  onManage={() => console.log('Manage', event.id)} // TODO: Implement manage logic
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState 
-              icon={Calendar}
-              title={searchQuery || selectedStatuses.length > 0 ? "No matches found" : "No events found"}
-              message={searchQuery || selectedStatuses.length > 0 
-                ? "Try adjusting your filters or search query to find what you're looking for."
-                : (isOrganizer 
-                    ? "You haven't created any events yet. Start by creating your first hackathon!" 
-                    : "You haven't joined any events yet. Explore the dashboard to find exciting hackathons!")
-              }
-              actionLabel={!isOrganizer && !searchQuery && selectedStatuses.length === 0 ? "Explore Events" : null}
-              onActionClick={() => console.log('Explore')}
-            />
-          )}
-        </div>
+      {/* Status filter tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {STATUS_TABS.map(tab => {
+          const count = tabCounts[tab.value] ?? 0;
+          const isActive = activeTab === tab.value;
+          return (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
+                isActive
+                  ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600'
+              }`}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Content */}
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin" />
+        </div>
+      ) : filteredEvents.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredEvents.map(event => (
+            <EventCard
+              key={event.id}
+              event={event}
+              user={user}
+              registrationStatus={registrationStatuses[event.id]}
+              onJoin={(eventId) => navigate(`/events/${eventId}`)}
+              onManage={(eventId) => navigate(`/events/${eventId}`)}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          icon={Calendar}
+          title={activeTab !== 'all' ? 'No matches found' : 'No events found'}
+          message={activeTab !== 'all'
+            ? 'Try a different status filter.'
+            : (isOrganizer
+                ? "You haven't created any events yet. Start by creating your first hackathon!"
+                : "You haven't joined any events yet. Explore the dashboard to find exciting hackathons!")
+          }
+        />
+      )}
 
       {/* Create Event Modal */}
       <Modal
@@ -146,7 +173,7 @@ const MyEvents = () => {
         onClose={() => setIsModalOpen(false)}
         title="Create New Hackathon"
       >
-        <EventForm 
+        <EventForm
           onSubmit={handleCreateEvent}
           onCancel={() => setIsModalOpen(false)}
           loading={createLoading}

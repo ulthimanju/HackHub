@@ -34,6 +34,11 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventsByParticipant(getCurrentUserId()));
     }
 
+    @GetMapping("/my-registrations/status")
+    public ResponseEntity<List<RegistrationResponse>> getMyRegistrationStatuses() {
+        return ResponseEntity.ok(eventService.getMyRegistrations(getCurrentUserId()));
+    }
+
     @GetMapping("/organizer/{organizerId}")
     public ResponseEntity<List<EventResponse>> getEventsByOrganizer(@PathVariable String organizerId) {
         return ResponseEntity.ok(eventService.getEventsByOrganizer(organizerId));

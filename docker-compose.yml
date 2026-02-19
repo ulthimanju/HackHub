@@ -116,11 +116,15 @@ services:
     depends_on:
       event-db:
         condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/ehub_event_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
       APPLICATION_NOTIFICATION_SERVICE_URL: http://notification-service:8082/notifications/send-alert
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     secrets:
       - source: db-password
         target: SPRING_DATASOURCE_PASSWORD

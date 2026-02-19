@@ -68,7 +68,7 @@ export const theme = {
   },
 
   nav: {
-    active:   'text-white bg-orange-500 hover:bg-orange-600 shadow-sm',
+    active:   'text-white bg-orange-500 hover:bg-orange-600 hover:text-white shadow-sm',
     inactive: 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
     icon:     'text-orange-500',
   },

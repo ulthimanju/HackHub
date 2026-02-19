@@ -42,6 +42,7 @@ public class AiService {
                     }
                 } catch (Exception e) {
                     System.err.println("Worker Error: " + e.getMessage());
+                    try { Thread.sleep(5000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
                 }
             }
         }).start();
@@ -52,7 +53,7 @@ public class AiService {
 
         new Thread(() -> {
             try {
-                String url = eventServiceUrl + "/events/teams/event/" + eventId;
+                String url = eventServiceUrl + "/events/teams/event/" + eventId + "/evaluation-context";
                 ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
 
                 if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
@@ -69,7 +70,7 @@ public class AiService {
     }
 
     public Double evaluateTeam(String teamId) {
-        String url = eventServiceUrl + "/events/teams/" + teamId;
+        String url = eventServiceUrl + "/events/teams/" + teamId + "/evaluation-context";
         Map<String, Object> team = restTemplate.getForObject(url, Map.class);
         if (team != null) {
             team.put("retryCount", 0);
@@ -82,6 +83,8 @@ public class AiService {
         String teamId   = context.get("teamId").toString();
         String repoUrl  = (String) context.get("repoUrl");
         String problem  = (String) context.getOrDefault("problemStatement", "No problem statement provided.");
+        String requirements = (String) context.getOrDefault("requirements", "No specific requirements provided.");
+        String theme    = (String) context.getOrDefault("theme", "No specific theme provided.");
         String teamName = (String) context.get("teamName");
         int retryCount  = context.get("retryCount") instanceof Number n ? n.intValue() : 0;
 
@@ -89,7 +92,7 @@ public class AiService {
 
         try {
             String sourceCode = githubService.fetchRepoContent(repoUrl);
-            Map<String, Object> result = callGeminiForEvaluation(teamName, problem, repoUrl, sourceCode);
+            Map<String, Object> result = callGeminiForEvaluation(teamName, problem, requirements, theme, repoUrl, sourceCode);
             Double score   = (Double) result.get("score");
             String summary = (String) result.get("summary");
 
@@ -129,22 +132,25 @@ public class AiService {
     // Throws on Gemini API failure so processEvaluation can retry.
     // JSON parse failures are handled locally (retrying won't fix a malformed response).
     private Map<String, Object> callGeminiForEvaluation(String teamName, String problemStatement,
+                                                        String requirements, String theme,
                                                         String repoUrl, String sourceCode) throws Exception {
         String prompt = String.format(
             "You are an expert Senior Software Engineer and Judge. Evaluate the following hackathon project.\n\n" +
+            "HACKATHON THEME: %s\n\n" +
             "PROBLEM STATEMENT:\n%s\n\n" +
+            "REQUIREMENTS:\n%s\n\n" +
             "REPOSITORY URL: %s\n\n" +
             "SOURCE CODE CONTENT:\n%s\n\n" +
             "--- EVALUATION CRITERIA (Total 100%%) ---\n" +
             "1. INNOVATION (20%%): Creative solutions, unique idea?\n" +
             "2. TECHNICAL COMPLEXITY (20%%): Advanced algorithms/architecture?\n" +
             "3. DESIGN & IMPLEMENTATION (20%%): Clean, readable, well-structured? (DRY, SOLID)\n" +
-            "4. POTENTIAL IMPACT (20%%): Does it fulfill the problem statement?\n" +
+            "4. POTENTIAL IMPACT (20%%): Does it fulfill the problem statement and requirements?\n" +
             "5. THEME FIT (20%%): Relevant to the hackathon theme?\n\n" +
             "Check for bugs, hardcoded secrets, or logic errors and penalize accordingly. " +
             "If source code could not be fetched, score from README only but penalize significantly.\n\n" +
             "Respond ONLY with a valid JSON object: {\"score\": <number 0-100>, \"summary\": \"<max 200 chars>\"}",
-            problemStatement, repoUrl, sourceCode
+            theme, problemStatement, requirements, repoUrl, sourceCode
         );
 
         // This call throws on network/API failure → triggers retry in processEvaluation

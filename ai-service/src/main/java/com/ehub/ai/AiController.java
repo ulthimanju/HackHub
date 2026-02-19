@@ -14,6 +14,7 @@ public class AiController {
     private final AiService aiService;
 
     @PostMapping("/evaluate/{teamId}")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> evaluateTeam(@PathVariable String teamId) {
         aiService.evaluateTeam(teamId);
         return ResponseEntity.ok(String.format(MessageKeys.EVALUATION_QUEUED_TEAM.getMessage(), teamId));

@@ -8,6 +8,13 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:redis}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+          min-idle: 1
+          time-between-eviction-runs: 30000
+        shutdown-timeout: 200ms
 
 GEMINI_API_KEY: ${GEMINI_API_KEY:YOUR_DEFAULT_KEY_HERE}
 GITHUB_TOKEN: ${GITHUB_TOKEN:}

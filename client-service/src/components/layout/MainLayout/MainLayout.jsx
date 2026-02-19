@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect } from 'react';
-import { Bell, LogOut, LayoutDashboard, User, Calendar, Users, Settings } from 'lucide-react';
+import { Bell, LogOut, User, Calendar, Compass, Search, X } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet, useSearchParams } from 'react-router-dom';
 import NavItem from '../NavItem/NavItem';
 import Button from '../../common/Button/Button';
 import { theme } from '../../../utils/theme';
@@ -18,17 +18,29 @@ const MainLayout = memo(() => {
       setCurrentPage('profile');
     } else if (location.pathname === '/my-events') {
       setCurrentPage('my-events');
+    } else if (location.pathname === '/explore') {
+      setCurrentPage('explore');
     } else if (location.pathname === '/') {
       setCurrentPage('dashboard');
     }
   }, [location.pathname]);
 
   const isOrganizer = user?.role === 'organizer';
+  const isEventDetails = location.pathname.startsWith('/events/');
+  const isExplorePage = currentPage === 'explore';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q') || '';
+
+  const handleSearchChange = (val) => {
+    if (val) setSearchParams({ q: val });
+    else setSearchParams({});
+  };
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
     if (page === 'profile') navigate('/profile');
     else if (page === 'my-events') navigate('/my-events');
+    else if (page === 'explore') navigate('/explore');
     else navigate('/');
   };
 
@@ -45,6 +57,24 @@ const MainLayout = memo(() => {
                 EHub
               </h1>
             </div>
+            {/* Search — only on Explore page */}
+            {isExplorePage && (
+              <div className="relative w-72 hidden sm:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search events…"
+                  value={searchQuery}
+                  onChange={e => handleSearchChange(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 bg-white"
+                />
+                {searchQuery && (
+                  <button onClick={() => handleSearchChange('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" className="p-2 rounded-lg">
                 <Bell className="w-5 h-5 text-gray-600" />
@@ -77,22 +107,9 @@ const MainLayout = memo(() => {
       </header>
 
       <div className="flex-1 flex w-full">
+        {!isEventDetails && (
         <aside className={`hidden lg:block w-64 py-8 px-6 ${theme.surface.sidebar}`}>
           <nav className="space-y-1">
-            <NavItem 
-              icon={LayoutDashboard} 
-              active={currentPage === 'dashboard'}
-              onClick={() => handlePageChange('dashboard')}
-            >
-              Overview
-            </NavItem>
-            <Button 
-              variant="secondary" 
-              fullWidth
-              className="bg-white/10 border-white/10 text-white hover:bg-white hover:text-gray-900 relative z-10"
-            >
-              Explore Documentation
-            </Button>
             <NavItem 
               icon={Calendar}
               active={currentPage === 'my-events'}
@@ -100,20 +117,21 @@ const MainLayout = memo(() => {
             >
               My Events
             </NavItem>
-            <NavItem icon={Users}>My Teams</NavItem>
+            {!isOrganizer && (
+              <NavItem
+                icon={Compass}
+                active={currentPage === 'explore'}
+                onClick={() => handlePageChange('explore')}
+              >
+                Explore Events
+              </NavItem>
+            )}
             
             <div className={`pt-4 mt-4 border-t ${theme.surface.divider}`}>
-              <NavItem 
-                icon={User} 
-                active={currentPage === 'profile'}
-                onClick={() => handlePageChange('profile')}
-              >
-                Profile Settings
-              </NavItem>
-              <NavItem icon={Settings}>General</NavItem>
             </div>
           </nav>
         </aside>
+        )}
 
         <main className="flex-1 px-6 py-8 overflow-y-auto text-shadow-sm">
           <Outlet />

@@ -21,6 +21,11 @@ const eventService = {
     return response.data;
   },
 
+  getMyRegistrationStatuses: async () => {
+    const response = await api.get('/events/my-registrations/status');
+    return response.data;
+  },
+
   createEvent: async (eventData) => {
     const response = await api.post('/events', eventData);
     return response.data;
@@ -56,7 +61,27 @@ const eventService = {
   cancelRegistration: async (registrationId) => {
     const response = await api.delete(`/events/registrations/${registrationId}`);
     return response.data;
-  }
+  },
+
+  addProblemStatement: async (eventId, data) => {
+    const response = await api.post(`/events/${eventId}/problemstatements`, data);
+    return response.data;
+  },
+
+  addProblemStatementsBulk: async (eventId, statements) => {
+    const response = await api.post(`/events/${eventId}/problemstatements/bulk`, statements);
+    return response.data;
+  },
+
+  deleteProblemStatement: async (problemId) => {
+    const response = await api.delete(`/events/problemstatements/${problemId}`);
+    return response.data;
+  },
+
+  updateProblemStatement: async (problemId, data) => {
+    const response = await api.put(`/events/problemstatements/${problemId}`, data);
+    return response.data;
+  },
 };
 
 export default eventService;

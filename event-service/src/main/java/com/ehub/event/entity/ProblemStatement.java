@@ -18,7 +18,13 @@ public class ProblemStatement {
     private String statementId;
 
     @Column(nullable = false, columnDefinition = "TEXT")
+    private String name;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String statement;
+
+    @Column(columnDefinition = "TEXT")
+    private String requirements;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id")
