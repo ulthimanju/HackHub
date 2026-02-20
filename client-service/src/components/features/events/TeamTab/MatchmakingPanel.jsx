@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { Sparkles, UserPlus, Search, X, RefreshCw } from 'lucide-react';
+import { Sparkles, UserPlus, RefreshCw } from 'lucide-react';
 import { ALL_SKILLS } from '../../../../constants/skills';
+import TagAutocomplete from '../../../common/TagAutocomplete/TagAutocomplete';
 import teamService from '../../../../services/teamService';
 
 /**
@@ -11,24 +12,10 @@ import teamService from '../../../../services/teamService';
  */
 export default function MatchmakingPanel({ team, onInvite, onSkillsSaved }) {
   const [skills, setSkills] = useState(team.skillsNeeded ?? []);
-  const [skillInput, setSkillInput] = useState('');
-  const [suggestions, setSuggestions] = useState(null); // null = not fetched
+  const [suggestions, setSuggestions] = useState(null);
   const [loadingSuggest, setLoadingSuggest] = useState(false);
   const [loadingSave, setLoadingSave] = useState(false);
   const [error, setError] = useState('');
-
-  const filteredOptions = skillInput.trim()
-    ? ALL_SKILLS.filter(
-        s => s.toLowerCase().includes(skillInput.toLowerCase()) && !skills.includes(s)
-      ).slice(0, 8)
-    : [];
-
-  const addSkill = (s) => {
-    if (!skills.includes(s)) setSkills(prev => [...prev, s]);
-    setSkillInput('');
-  };
-
-  const removeSkill = (s) => setSkills(prev => prev.filter(x => x !== s));
 
   const saveSkills = async () => {
     setLoadingSave(true);
@@ -69,41 +56,13 @@ export default function MatchmakingPanel({ team, onInvite, onSkillsSaved }) {
         </div>
         <p className="text-xs text-gray-500">Add skills your team needs — we'll suggest matching participants.</p>
 
-        {/* Skill chips */}
-        <div className="flex flex-wrap gap-2 min-h-[36px]">
-          {skills.map(s => (
-            <span key={s} className="inline-flex items-center gap-1.5 bg-orange-50 text-orange-700 border border-orange-100 px-3 py-1 rounded-full text-xs font-semibold">
-              {s}
-              <button onClick={() => removeSkill(s)} className="hover:text-red-500">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
-          {skills.length === 0 && <span className="text-xs text-gray-400 italic">No skills added yet</span>}
-        </div>
-
-        {/* Autocomplete input */}
-        <div className="relative">
-          <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-orange-300 focus-within:border-orange-400">
-            <Search className="w-4 h-4 text-gray-400 shrink-0" />
-            <input
-              className="flex-1 text-sm outline-none placeholder-gray-400"
-              placeholder="Search skills to add…"
-              value={skillInput}
-              onChange={e => setSkillInput(e.target.value)}
-            />
-          </div>
-          {filteredOptions.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden">
-              {filteredOptions.map(s => (
-                <button key={s} onClick={() => addSkill(s)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors">
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <TagAutocomplete
+          items={ALL_SKILLS}
+          selected={skills}
+          onChange={setSkills}
+          placeholder="Search skills to add…"
+          emptyText="No skills added yet"
+        />
 
         {error && <p className="text-xs text-red-500">{error}</p>}
 
