@@ -7,6 +7,7 @@ import Modal from '../components/common/Modal/Modal';
 import Alert from '../components/common/Alert/Alert';
 import EventCard from '../components/features/events/EventCard/EventCard';
 import { Search, CheckCircle2 } from 'lucide-react';
+import { ALL_THEMES } from '../constants/themes';
 
 const STATUS_TABS = [
   { label: 'All', value: 'all' },
@@ -32,6 +33,7 @@ const ExploreEvents = () => {
   const [error, setError] = useState('');
 
   const [activeTab, setActiveTab] = useState('all');
+  const [activeTheme, setActiveTheme] = useState('');
 
   const [registerEvent, setRegisterEvent] = useState(null); // event object to register for
   const [registering, setRegistering] = useState(false);
@@ -69,9 +71,11 @@ const ExploreEvents = () => {
         e.name?.toLowerCase().includes(search.toLowerCase()) ||
         e.description?.toLowerCase().includes(search.toLowerCase()) ||
         e.theme?.toLowerCase().includes(search.toLowerCase());
-      return matchesTab && matchesSearch;
+      const matchesTheme = !activeTheme ||
+        (e.theme && e.theme.split(',').map(t => t.trim()).includes(activeTheme));
+      return matchesTab && matchesSearch && matchesTheme;
     });
-  }, [events, activeTab, search]);
+  }, [events, activeTab, search, activeTheme]);
 
   const handleRegister = async () => {
     if (!registerEvent) return;
@@ -140,6 +144,34 @@ const ExploreEvents = () => {
         })}
       </div>
 
+      {/* Theme filter pills */}
+      <div className="flex gap-2 flex-wrap items-center">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1">Theme</span>
+        <button
+          onClick={() => setActiveTheme('')}
+          className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+            !activeTheme
+              ? 'bg-blue-500 text-white border-blue-500'
+              : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
+          }`}
+        >
+          All
+        </button>
+        {ALL_THEMES.map(t => (
+          <button
+            key={t}
+            onClick={() => setActiveTheme(activeTheme === t ? '' : t)}
+            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+              activeTheme === t
+                ? 'bg-blue-500 text-white border-blue-500'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-24">
@@ -156,8 +188,8 @@ const ExploreEvents = () => {
           <p className="text-sm text-gray-400 max-w-xs">
             {search ? `No events match "${search}"` : 'There are no events in this category yet.'}
           </p>
-          {(search || activeTab !== 'all') && (
-            <Button variant="secondary" size="sm" onClick={() => setActiveTab('all')}>
+          {(search || activeTab !== 'all' || activeTheme) && (
+            <Button variant="secondary" size="sm" onClick={() => { setActiveTab('all'); setActiveTheme(''); }}>
               Clear filters
             </Button>
           )}
