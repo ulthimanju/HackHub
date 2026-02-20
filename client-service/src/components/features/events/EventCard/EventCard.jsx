@@ -28,16 +28,7 @@ const getDaysLeft = (endDate) => {
   return Math.ceil((new Date(endDate) - new Date()) / (1000 * 60 * 60 * 24));
 };
 
-const parsePrizeTotal = (prizes) => {
-  if (!prizes?.length) return null;
-  const total = prizes.reduce((sum, p) => {
-    const m = p.match(/[\d,]+/);
-    return sum + (m ? parseInt(m[0].replace(/,/g, ''), 10) : 0);
-  }, 0);
-  return total > 0
-    ? `$${total.toLocaleString()} in prizes`
-    : `${prizes.length} prize${prizes.length !== 1 ? 's' : ''}`;
-};
+const getFirstPrize = (prizes) => prizes?.length ? prizes[0] : null;
 
 /**
  * Props:
@@ -55,7 +46,7 @@ const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage, can
   const statusCfg   = STATUS_VARIANTS[eventStatus] || STATUS_VARIANTS.upcoming;
 
   const daysLeft   = getDaysLeft(event.endDate);
-  const prizeLabel = parsePrizeTotal(event.prizes);
+  const prizeLabel = getFirstPrize(event.prizes);
   const location   = event.isVirtual ? 'Online' : (event.location || event.venue || 'Offline');
   const themes     = event.theme ? event.theme.split(',').map(t => t.trim()).filter(Boolean) : [];
   const regCfg     = registrationStatus ? (REG_STATUS_CONFIG[registrationStatus.status] || null) : null;
@@ -91,9 +82,9 @@ const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage, can
           {/* Prizes + participants */}
           <div className="flex items-center gap-5 flex-wrap text-sm">
             {prizeLabel && (
-              <span>
-                <span className="font-bold text-gray-900">{prizeLabel.split(' ')[0]}</span>
-                {' '}<span className="text-gray-500">{prizeLabel.split(' ').slice(1).join(' ')}</span>
+              <span className="flex items-center gap-1 text-sm">
+                <span className="font-bold text-gray-900">🏆</span>
+                <span className="text-gray-700 truncate">{prizeLabel}</span>
               </span>
             )}
             {event.maxParticipants && (
