@@ -17,7 +17,8 @@ import RegistrationsTab from '../components/features/events/RegistrationsTab/Reg
 import OrgTeamsTab from '../components/features/events/OrgTeamsTab/OrgTeamsTab';
 import SubmissionsTab from '../components/features/events/SubmissionsTab/SubmissionsTab';
 import LeaderboardTab from '../components/features/events/LeaderboardTab/LeaderboardTab';
-import { ArrowLeft, Hash, Check } from 'lucide-react';
+import EventForm from '../components/features/events/EventForm/EventForm';
+import { ArrowLeft, Hash, Check, X } from 'lucide-react';
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -47,6 +48,9 @@ const EventDetails = () => {
   const [finalizeError, setFinalizeError]         = useState('');
   const [leaderboardTeams, setLeaderboardTeams]   = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [showEditModal, setShowEditModal]         = useState(false);
+  const [editLoading, setEditLoading]             = useState(false);
+  const [editError, setEditError]                 = useState('');
 
   const permissions = useEventPermissions(eventDetails, user);
 
@@ -63,6 +67,21 @@ const EventDetails = () => {
     navigator.clipboard.writeText(eventDetails.contactEmail);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2000);
+  };
+
+  const handleEditSubmit = async (formData) => {
+    setEditLoading(true);
+    setEditError('');
+    try {
+      await eventService.updateEvent(id, formData);
+      const updated = await eventService.getEventById(id);
+      setEventDetails(updated);
+      setShowEditModal(false);
+    } catch (e) {
+      setEditError(e.response?.data?.message || 'Failed to update event.');
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const handleStatusUpdate = async (registrationId, status) => {
@@ -234,6 +253,7 @@ const EventDetails = () => {
           setConfirmAdvance={setConfirmAdvance}
           copiedEmail={copiedEmail}
           copyEmail={copyEmail}
+          onEditClick={() => { setEditError(''); setShowEditModal(true); }}
         />
       ),
     },
@@ -321,6 +341,29 @@ const EventDetails = () => {
         onCancel={() => setConfirmFinalize(false)}
         onConfirm={handleFinalizeConfirm}
       />
+
+      {/* Edit Event Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm overflow-y-auto py-8 px-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">Edit Event</h3>
+              <button onClick={() => setShowEditModal(false)} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-6 py-4">
+              {editError && <p className="text-sm text-red-500 mb-4">{editError}</p>}
+              <EventForm
+                initialData={eventDetails}
+                onSubmit={handleEditSubmit}
+                onCancel={() => setShowEditModal(false)}
+                loading={editLoading}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center gap-4">

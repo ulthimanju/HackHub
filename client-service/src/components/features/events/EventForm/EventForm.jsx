@@ -15,9 +15,32 @@ const INITIAL_FORM = {
   maxParticipants: '', teamSize: '1', prizes: [], rules: [],
 };
 
-const EventForm = memo(({ onSubmit, onCancel, loading }) => {
+// Converts an ISO datetime string from the server to datetime-local input format
+const toInputDate = (iso) => iso ? iso.slice(0, 16) : '';
+
+const buildInitial = (data) => data ? {
+  name:                  data.name                  ?? '',
+  description:           data.description           ?? '',
+  theme:                 data.theme                 ?? '',
+  contactEmail:          data.contactEmail          ?? '',
+  startDate:             toInputDate(data.startDate),
+  endDate:               toInputDate(data.endDate),
+  registrationStartDate: toInputDate(data.registrationStartDate),
+  registrationEndDate:   toInputDate(data.registrationEndDate),
+  resultsDate:           toInputDate(data.resultsDate),
+  venue:                 data.venue                 ?? '',
+  isVirtual:             data.isVirtual             ?? false,
+  location:              data.location              ?? '',
+  maxParticipants:       data.maxParticipants != null ? String(data.maxParticipants) : '',
+  teamSize:              data.teamSize        != null ? String(data.teamSize)        : '1',
+  prizes:                data.prizes                ?? [],
+  rules:                 data.rules                 ?? [],
+} : INITIAL_FORM;
+
+const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
+  const isEditing = !!initialData;
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState(INITIAL_FORM);
+  const [formData, setFormData] = useState(() => buildInitial(initialData));
   const [newPrize, setNewPrize] = useState('');
   const [newRule, setNewRule] = useState('');
   const [errors, setErrors] = useState({});
@@ -114,7 +137,7 @@ const EventForm = memo(({ onSubmit, onCancel, loading }) => {
           <div className="flex gap-3">
             {step < 3
               ? <Button type="button" variant="primary" onClick={nextStep} size="lg">Continue</Button>
-              : <Button type="button" variant="primary" onClick={handleSubmit} loading={loading} size="lg">Create Event</Button>
+              : <Button type="button" variant="primary" onClick={handleSubmit} loading={loading} size="lg">{isEditing ? 'Update Event' : 'Create Event'}</Button>
             }
           </div>
         </div>

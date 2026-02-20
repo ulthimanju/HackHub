@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   CalendarDays, MapPin, Users, Mail, Trophy, BookOpen, Clock,
-  Globe, ArrowRight, Check, ChevronRight,
+  Globe, ArrowRight, Check, ChevronRight, Pencil,
 } from 'lucide-react';
 
 const formatDateShort = (d) => {
@@ -33,7 +33,7 @@ const FLOW = [
  *   copiedEmail     – boolean
  *   copyEmail       – () => void
  */
-export default function OverviewTab({ event, permissions, advancingStatus, advanceError, setConfirmAdvance, copiedEmail, copyEmail }) {
+export default function OverviewTab({ event, permissions, advancingStatus, advanceError, setConfirmAdvance, copiedEmail, copyEmail, onEditClick }) {
   const currentIdx = FLOW.findIndex(s => s.status === event.status);
   const current = FLOW[currentIdx];
   const canAdvance = current && current.next !== null;
@@ -96,9 +96,19 @@ export default function OverviewTab({ event, permissions, advancingStatus, advan
       )}
 
       {/* Section title */}
-      <div className="flex items-center gap-3">
-        <div className="w-1 h-6 bg-orange-500 rounded-full" />
-        <h3 className="text-lg font-bold text-gray-900">Key Information</h3>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-6 bg-orange-500 rounded-full" />
+          <h3 className="text-lg font-bold text-gray-900">Key Information</h3>
+        </div>
+        {permissions.isEventOwner && (
+          <button
+            onClick={onEditClick}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-orange-600 border border-orange-200 bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit Event
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
