@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { CalendarDays, Globe, MapPin, Flag, Tag, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { CalendarDays, Globe, MapPin, Flag, Tag } from 'lucide-react';
 
 const STATUS_VARIANTS = {
   upcoming:           { label: 'Upcoming',           color: 'text-blue-600 border-blue-200 bg-blue-50' },
@@ -11,9 +11,9 @@ const STATUS_VARIANTS = {
 };
 
 const REG_STATUS_CONFIG = {
-  PENDING:  { label: 'Pending Approval', cls: 'text-yellow-600 bg-yellow-50 border-yellow-100', Icon: Clock },
-  APPROVED: { label: 'Approved',         cls: 'text-green-600 bg-green-50 border-green-100',   Icon: CheckCircle2 },
-  REJECTED: { label: 'Rejected',         cls: 'text-red-500 bg-red-50 border-red-100',         Icon: XCircle },
+  PENDING:  { label: 'Pending Approval', cls: 'text-yellow-600 bg-yellow-50 border-yellow-100' },
+  APPROVED: { label: 'Approved',         cls: 'text-green-600 bg-green-50 border-green-100'   },
+  REJECTED: { label: 'Rejected',         cls: 'text-red-500 bg-red-50 border-red-100'         },
 };
 
 const formatDateRange = (start, end) => {
@@ -49,7 +49,6 @@ const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage, can
   const prizeLabel = getFirstPrize(event.prizes);
   const location   = event.isVirtual ? 'Online' : (event.location || event.venue || 'Offline');
   const themes     = event.theme ? event.theme.split(',').map(t => t.trim()).filter(Boolean) : [];
-  const regCfg     = registrationStatus ? (REG_STATUS_CONFIG[registrationStatus.status] || null) : null;
 
   return (
     <div
@@ -94,14 +93,6 @@ const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage, can
               </span>
             )}
           </div>
-
-          {/* Registration status */}
-          {regCfg && (
-            <div className={`inline-flex items-center gap-1 text-xs font-semibold border px-2 py-0.5 rounded-full ${regCfg.cls}`}>
-              <regCfg.Icon className="w-3 h-3" />
-              {regCfg.label}
-            </div>
-          )}
 
           {/* Register button */}
           {canRegister && (
