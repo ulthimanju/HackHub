@@ -1,6 +1,14 @@
 import React, { memo } from 'react';
-import { CalendarDays, MapPin, Crown, Clock, CheckCircle2, XCircle } from 'lucide-react';
-import Badge from '../../../common/Badge/Badge';
+import { CalendarDays, Globe, MapPin, Flag, Tag, Clock, CheckCircle2, XCircle } from 'lucide-react';
+
+const STATUS_VARIANTS = {
+  upcoming:           { label: 'Upcoming',           color: 'text-blue-600 border-blue-200 bg-blue-50' },
+  registration_open:  { label: 'Registration Open',  color: 'text-green-600 border-green-200 bg-green-50' },
+  ongoing:            { label: 'Ongoing',             color: 'text-orange-600 border-orange-200 bg-orange-50' },
+  judging:            { label: 'Judging',             color: 'text-yellow-600 border-yellow-200 bg-yellow-50' },
+  results_announced:  { label: 'Results Announced',  color: 'text-cyan-600 border-cyan-200 bg-cyan-50' },
+  completed:          { label: 'Completed',           color: 'text-gray-500 border-gray-200 bg-gray-50' },
+};
 
 const REG_STATUS_CONFIG = {
   PENDING:  { label: 'Pending Approval', cls: 'text-yellow-600 bg-yellow-50 border-yellow-100', Icon: Clock },
@@ -8,79 +16,152 @@ const REG_STATUS_CONFIG = {
   REJECTED: { label: 'Rejected',         cls: 'text-red-500 bg-red-50 border-red-100',         Icon: XCircle },
 };
 
-const statusVariants = {
-  upcoming: 'blue',
-  registration_open: 'success',
-  ongoing: 'orange',
-  judging: 'warning',
-  results_announced: 'info',
-  completed: 'secondary',
+const formatDateRange = (start, end) => {
+  const opts = { day: 'numeric', month: 'short', year: 'numeric' };
+  const s = start ? new Date(start).toLocaleDateString('en-GB', opts) : 'TBD';
+  const e = end   ? new Date(end).toLocaleDateString('en-GB', opts)   : 'TBD';
+  return `${s} – ${e}`;
 };
 
-const formatDate = (dateString) => {
-  if (!dateString) return 'TBD';
-  return new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const getDaysLeft = (endDate) => {
+  if (!endDate) return null;
+  return Math.ceil((new Date(endDate) - new Date()) / (1000 * 60 * 60 * 24));
 };
 
-const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage }) => {
+const parsePrizeTotal = (prizes) => {
+  if (!prizes?.length) return null;
+  const total = prizes.reduce((sum, p) => {
+    const m = p.match(/[\d,]+/);
+    return sum + (m ? parseInt(m[0].replace(/,/g, ''), 10) : 0);
+  }, 0);
+  return total > 0
+    ? `$${total.toLocaleString()} in prizes`
+    : `${prizes.length} prize${prizes.length !== 1 ? 's' : ''}`;
+};
+
+/**
+ * Props:
+ *   event             – EventResponse object
+ *   user              – current user
+ *   registrationStatus – { status: 'PENDING'|'APPROVED'|'REJECTED' } or null
+ *   onJoin            – fn(eventId) navigate to event
+ *   onManage          – fn(eventId) navigate to event (organizer)
+ *   canRegister       – boolean — show Register Now button
+ *   onRegister        – fn() open registration modal
+ */
+const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage, canRegister, onRegister }) => {
   const isOrganizer = event.organizerId === user?.id;
   const eventStatus = event.status?.toLowerCase() || 'upcoming';
+  const statusCfg   = STATUS_VARIANTS[eventStatus] || STATUS_VARIANTS.upcoming;
+
+  const daysLeft   = getDaysLeft(event.endDate);
+  const prizeLabel = parsePrizeTotal(event.prizes);
+  const location   = event.isVirtual ? 'Online' : (event.location || event.venue || 'Offline');
+  const themes     = event.theme ? event.theme.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const regCfg     = registrationStatus ? (REG_STATUS_CONFIG[registrationStatus.status] || null) : null;
 
   return (
     <div
-      className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm flex flex-col cursor-pointer hover:shadow-md hover:border-orange-200 transition-all"
-      onClick={() => isOrganizer ? onManage(event.id) : onJoin(event.id)}
+      className="bg-white border border-gray-100 rounded-3xl shadow-sm cursor-pointer hover:shadow-md hover:border-orange-200 transition-all overflow-hidden"
+      onClick={() => isOrganizer ? onManage?.(event.id) : onJoin?.(event.id)}
     >
-      {/* Title + statuses */}
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-snug">{event.name}</h3>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {!isOrganizer && registrationStatus && (() => {
-            const cfg = REG_STATUS_CONFIG[registrationStatus.status] || REG_STATUS_CONFIG.PENDING;
-            return (
-              <div className={`flex items-center gap-1 text-xs font-semibold border px-2 py-0.5 rounded-full ${cfg.cls}`}>
-                <cfg.Icon className="w-3 h-3" />
-                {cfg.label}
-              </div>
-            );
-          })()}
-          <Badge variant={statusVariants[eventStatus] || 'info'}>
-            {eventStatus.replace(/_/g, ' ')}
-          </Badge>
-        </div>
-      </div>
+      <div className="flex">
+        {/* ── Left column ── */}
+        <div className="flex-1 p-5 space-y-3 min-w-0">
+          <h3 className="text-lg font-bold text-gray-900 leading-snug line-clamp-2">{event.name}</h3>
 
-      {/* Description */}
-      <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">
-        {event.description || 'No description provided.'}
-      </p>
-
-      {/* Meta info */}
-      <div className="space-y-1.5 text-sm text-gray-600 mb-5">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-orange-400 shrink-0" />
-          <span className="truncate">{formatDate(event.startDate)}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-orange-400 shrink-0" />
-          <span className="truncate">{event.isVirtual ? 'Virtual' : event.location || event.venue || 'Offline'}</span>
-        </div>
-        {isOrganizer && (
-          <div className="flex items-center gap-2">
-            <Crown className="w-4 h-4 text-purple-400 shrink-0" />
-            <span className="font-semibold text-purple-600">Organizer</span>
+          {/* Days left + location */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {daysLeft !== null && daysLeft > 0 ? (
+              <span className="inline-flex items-center gap-1.5 bg-teal-500 text-white text-xs font-semibold px-3 py-1 rounded-full shrink-0">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
+              </span>
+            ) : daysLeft !== null && daysLeft <= 0 ? (
+              <span className="inline-flex items-center gap-1.5 bg-gray-200 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full shrink-0">Ended</span>
+            ) : null}
+            <span className="flex items-center gap-1.5 text-sm text-gray-600">
+              {event.isVirtual
+                ? <Globe className="w-4 h-4 text-gray-400 shrink-0" />
+                : <MapPin className="w-4 h-4 text-gray-400 shrink-0" />}
+              {location}
+            </span>
           </div>
-        )}
-      </div>
 
-      {/* Footer — organizer label only */}
-      {isOrganizer && (
-        <div className="mt-auto pt-3 border-t border-gray-100">
-          <span className="text-xs font-semibold text-purple-500 uppercase tracking-wide">Your Event</span>
+          {/* Prizes + participants */}
+          <div className="flex items-center gap-5 flex-wrap text-sm">
+            {prizeLabel && (
+              <span>
+                <span className="font-bold text-gray-900">{prizeLabel.split(' ')[0]}</span>
+                {' '}<span className="text-gray-500">{prizeLabel.split(' ').slice(1).join(' ')}</span>
+              </span>
+            )}
+            {event.maxParticipants && (
+              <span>
+                <span className="font-bold text-gray-900">{event.maxParticipants}</span>
+                {' '}<span className="text-gray-500">participants</span>
+              </span>
+            )}
+          </div>
+
+          {/* Registration status */}
+          {regCfg && (
+            <div className={`inline-flex items-center gap-1 text-xs font-semibold border px-2 py-0.5 rounded-full ${regCfg.cls}`}>
+              <regCfg.Icon className="w-3 h-3" />
+              {regCfg.label}
+            </div>
+          )}
+
+          {/* Register button */}
+          {canRegister && (
+            <div>
+              <button
+                onClick={e => { e.stopPropagation(); onRegister?.(); }}
+                className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-full transition-colors"
+              >
+                Register Now
+              </button>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* ── Divider ── */}
+        <div className="w-px bg-gray-100 self-stretch my-4" />
+
+        {/* ── Right column ── */}
+        <div className="w-52 shrink-0 p-5 space-y-3">
+          {/* Status pill */}
+          <div className="flex items-center gap-2">
+            <Flag className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${statusCfg.color}`}>
+              {statusCfg.label}
+            </span>
+          </div>
+
+          {/* Date range */}
+          <div className="flex items-start gap-2 text-gray-600">
+            <CalendarDays className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
+            <span className="text-xs leading-snug">{formatDateRange(event.startDate, event.endDate)}</span>
+          </div>
+
+          {/* Theme tags */}
+          {themes.length > 0 && (
+            <div className="flex items-start gap-2">
+              <Tag className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
+              <div className="flex flex-wrap gap-1">
+                {themes.map(t => (
+                  <span key={t} className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 });
+
 EventCard.displayName = 'EventCard';
 export default EventCard;

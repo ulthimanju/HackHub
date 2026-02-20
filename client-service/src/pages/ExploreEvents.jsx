@@ -2,13 +2,11 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import eventService from '../services/eventService';
-import Badge from '../components/common/Badge/Badge';
 import Button from '../components/common/Button/Button';
 import Modal from '../components/common/Modal/Modal';
 import Alert from '../components/common/Alert/Alert';
-import {
-  CalendarDays, MapPin, Users, Search, Trophy, CheckCircle2
-} from 'lucide-react';
+import EventCard from '../components/features/events/EventCard/EventCard';
+import { Search, CheckCircle2 } from 'lucide-react';
 
 const STATUS_TABS = [
   { label: 'All', value: 'all' },
@@ -20,19 +18,6 @@ const STATUS_TABS = [
   { label: 'Completed', value: 'completed' },
 ];
 
-const STATUS_VARIANTS = {
-  upcoming: 'blue',
-  registration_open: 'success',
-  ongoing: 'orange',
-  judging: 'warning',
-  results_announced: 'info',
-  completed: 'secondary',
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return 'TBD';
-  return new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-};
 
 const ExploreEvents = () => {
   const { user } = useAuth();
@@ -178,73 +163,24 @@ const ExploreEvents = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map(event => {
             const status = event.status?.toLowerCase() || 'upcoming';
             const isRegistered = registeredIds.has(event.id);
             const myReg = registrationStatuses[event.id];
             const canRegister = status === 'registration_open' && !isRegistered;
 
-            const REG_STATUS = {
-              PENDING:  { label: 'Pending Approval', cls: 'text-yellow-600 bg-yellow-50 border-yellow-100' },
-              APPROVED: { label: 'Approved',         cls: 'text-green-600 bg-green-50 border-green-100'   },
-              REJECTED: { label: 'Rejected',         cls: 'text-red-500 bg-red-50 border-red-100'         },
-            };
-
             return (
-              <div
+              <EventCard
                 key={event.id}
-                onClick={() => navigate(`/events/${event.id}`)}
-                className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm flex flex-col cursor-pointer hover:shadow-md hover:border-orange-200 transition-all"
-              >
-                {/* Title + status */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-snug">{event.name}</h3>
-                  <Badge variant={STATUS_VARIANTS[status] || 'info'}>
-                    {status.replace(/_/g, ' ')}
-                  </Badge>
-                </div>
-
-                {/* Description */}
-                <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">
-                  {event.description || 'No description provided.'}
-                </p>
-
-                {/* Meta info */}
-                <div className="space-y-1.5 text-sm text-gray-600 mb-5">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="w-4 h-4 text-orange-400 shrink-0" />
-                    <span className="truncate">{formatDate(event.startDate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-orange-400 shrink-0" />
-                    <span className="truncate">{event.isVirtual ? 'Virtual' : event.location || event.venue || 'Offline'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-orange-400 shrink-0" />
-                    <span>Team size: {event.teamSize || 'N/A'} · Max: {event.maxParticipants || '∞'}</span>
-                  </div>
-                  {event.prizes?.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Trophy className="w-4 h-4 text-yellow-400 shrink-0" />
-                      <span className="truncate">{event.prizes[0]}{event.prizes.length > 1 ? ` +${event.prizes.length - 1} more` : ''}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer */}
-                {canRegister && (
-                  <div className="mt-auto">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={e => { e.stopPropagation(); setRegisterEvent(event); }}
-                    >
-                      Register Now
-                    </Button>
-                  </div>
-                )}
-              </div>
+                event={event}
+                user={user}
+                registrationStatus={myReg}
+                onJoin={(eventId) => navigate(`/events/${eventId}`)}
+                onManage={(eventId) => navigate(`/events/${eventId}`)}
+                canRegister={canRegister}
+                onRegister={() => setRegisterEvent(event)}
+              />
             );
           })}
         </div>
