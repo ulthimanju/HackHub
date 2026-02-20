@@ -59,6 +59,7 @@ const TeamTab = ({ event, myRegistration }) => {
   const [viewProblemOpen, setViewProblemOpen] = useState(false);
 
   const isApproved = myRegistration?.status === 'APPROVED';
+  const isLocked = ['judging', 'results_announced', 'completed'].includes(event.status?.toLowerCase());
 
   const fetchTeams = useCallback(async () => {
     setLoading(true);
@@ -418,7 +419,7 @@ const TeamTab = ({ event, myRegistration }) => {
           </div>
 
           {/* Pending join requests (leader only) */}
-          {isLeader && pendingRequests.length > 0 && (
+          {isLeader && !isLocked && pendingRequests.length > 0 && (
             <div className="px-6 py-4 border-b border-gray-100 bg-amber-50/40">
               <p className="text-xs font-bold tracking-widest text-amber-600 uppercase mb-3">
                 Join Requests ({pendingRequests.length})
@@ -840,9 +841,9 @@ const TeamTab = ({ event, myRegistration }) => {
                     size="sm"
                     fullWidth
                     onClick={() => handleRequestToJoin(team.id)}
-                    disabled={isFull || !!actionLoading}
+                    disabled={isFull || !!actionLoading || isLocked}
                   >
-                    {actionLoading === `req-${team.id}` ? 'Sending…' : isFull ? 'Team Full' : 'Request to Join'}
+                    {actionLoading === `req-${team.id}` ? 'Sending…' : isFull ? 'Team Full' : isLocked ? 'Event Locked' : 'Request to Join'}
                   </Button>
                 </div>
               );

@@ -69,7 +69,8 @@ public enum MessageKeys {
     PROJECT_SUBMITTED_SUCCESS("Project submitted successfully"),
     SUBMISSIONS_NOT_OPEN("Submissions haven't opened yet. The event starts on %s"),
     SUBMISSIONS_CLOSED("Submissions are closed. The event ended on %s"),
-    SUBMISSION_BLOCKED_SCORE_ANNOUNCED("Submissions are locked. Your team's score has already been announced.");
+    SUBMISSION_BLOCKED_SCORE_ANNOUNCED("Submissions are locked. Your team's score has already been announced."),
+    EVENT_LOCKED("This action is not allowed. The event has entered judging or results phase.");
 
     private final String message;
 }

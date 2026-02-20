@@ -127,6 +127,13 @@ public class EventController {
         return ResponseEntity.ok(MessageKeys.PROBLEM_DELETED.getMessage());
     }
 
+    @PatchMapping("/{id}/advance-status")
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<String> advanceEventStatus(@PathVariable String id) {
+        com.ehub.event.enums.EventStatus newStatus = eventService.advanceEventStatus(id, getCurrentUserId());
+        return ResponseEntity.ok(newStatus.name());
+    }
+
     @PatchMapping("/{id}/finalize-results")
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> finalizeResults(@PathVariable String id) {

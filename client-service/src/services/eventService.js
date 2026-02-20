@@ -97,6 +97,11 @@ const eventService = {
     const response = await api.patch(`/events/${eventId}/finalize-results`);
     return response.data;
   },
+
+  advanceEventStatus: async (eventId) => {
+    const response = await api.patch(`/events/${eventId}/advance-status`);
+    return response.data; // returns new status string e.g. "REGISTRATION_OPEN"
+  },
 };
 
 export default eventService;

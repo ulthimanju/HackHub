@@ -207,6 +207,72 @@ public class EventService {
     }
 
     @Transactional
+    public EventStatus advanceEventStatus(String id, String requesterId) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+
+        if (!event.getOrganizerId().equals(requesterId)) {
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
+        }
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        EventStatus current = event.calculateCurrentStatus();
+
+        switch (current) {
+            case UPCOMING -> {
+                // Open registration now
+                event.setRegistrationStartDate(now.minusSeconds(1));
+                if (event.getRegistrationEndDate() == null || !now.isBefore(event.getRegistrationEndDate())) {
+                    java.time.LocalDateTime anchor = event.getStartDate() != null && event.getStartDate().isAfter(now)
+                            ? event.getStartDate() : now.plusDays(7);
+                    event.setRegistrationEndDate(anchor);
+                }
+            }
+            case REGISTRATION_OPEN -> {
+                // Close registration and start the event now
+                event.setRegistrationEndDate(now.minusSeconds(1));
+                event.setStartDate(now.minusSeconds(1));
+                if (event.getEndDate() == null || !event.getEndDate().isAfter(now)) {
+                    event.setEndDate(now.plusDays(2));
+                }
+            }
+            case ONGOING -> {
+                // End the event and enter judging
+                event.setEndDate(now.minusSeconds(1));
+                event.setJudging(true);
+                if (event.getResultsDate() == null || !event.getResultsDate().isAfter(now)) {
+                    event.setResultsDate(now.plusDays(3));
+                }
+            }
+            case JUDGING -> {
+                // Publish results (same as finalize-results)
+                event.setJudging(false);
+                if (event.getResultsDate() == null || !event.getResultsDate().isAfter(now)) {
+                    event.setResultsDate(now.plusDays(1));
+                }
+                event.setStatus(event.calculateCurrentStatus());
+                eventRepository.save(event);
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("eventId", id);
+                payload.put("eventName", event.getName());
+                payload.put("status", "RESULTS_ANNOUNCED");
+                payload.put("message", "Judging complete! Results for " + event.getName() + " are now live.");
+                redisTemplate.convertAndSend("ehub:broadcast:global-alerts", payload);
+                return event.getStatus();
+            }
+            case RESULTS_ANNOUNCED -> {
+                // Mark as completed
+                event.setResultsDate(now.minusSeconds(1));
+            }
+            default -> throw new RuntimeException("Event cannot be advanced from status: " + current);
+        }
+
+        event.setStatus(event.calculateCurrentStatus());
+        eventRepository.save(event);
+        return event.getStatus();
+    }
+
+    @Transactional
     public void finalizeResults(String id, String requesterId) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));

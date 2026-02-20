@@ -113,7 +113,11 @@ public class TeamService {
         // Constraint: Check team size limit
         Event event = eventRepository.findById(team.getEventId())
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        
+
+        if (isEventLocked(event.getStatus())) {
+            throw new RuntimeException(MessageKeys.EVENT_LOCKED.getMessage());
+        }
+
         // Constraint: User must have an APPROVED registration for this event
         Registration registration = registrationRepository.findByEventIdAndUserId(event.getId(), request.getUserId())
                 .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_REGISTERED_FOR_INVITE.getMessage()));
@@ -165,7 +169,11 @@ public class TeamService {
         // Constraint: Check team size limit
         Event event = eventRepository.findById(team.getEventId())
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        
+
+        if (isEventLocked(event.getStatus())) {
+            throw new RuntimeException(MessageKeys.EVENT_LOCKED.getMessage());
+        }
+
         // Constraint: User must have an APPROVED registration for this event
         Registration registration = registrationRepository.findByEventIdAndUserId(event.getId(), request.getUserId())
                 .orElseThrow(() -> new RuntimeException(MessageKeys.MUST_BE_REGISTERED_TO_JOIN.getMessage()));
@@ -205,10 +213,17 @@ public class TeamService {
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.MEMBERSHIP_NOT_FOUND.getMessage()));
 
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
+
+        Event event = eventRepository.findById(team.getEventId())
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+
+        if (isEventLocked(event.getStatus())) {
+            throw new RuntimeException(MessageKeys.EVENT_LOCKED.getMessage());
+        }
+
         if (accept) {
-            Team team = teamRepository.findById(teamId)
-                    .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
-            
             // Constraint: User can only be in ONE team per event
             if (teamMemberRepository.existsByTeamEventIdAndUserIdAndStatus(team.getEventId(), userId, TeamMemberStatus.ACCEPTED)) {
                 throw new RuntimeException(MessageKeys.ALREADY_IN_TEAM_THIS_EVENT.getMessage());
@@ -228,6 +243,13 @@ public class TeamService {
 
         if (!team.getLeaderId().equals(leaderId)) {
             throw new RuntimeException(MessageKeys.ONLY_LEADER_CAN_DISMANTLE.getMessage());
+        }
+
+        Event event = eventRepository.findById(team.getEventId())
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+
+        if (isEventLocked(event.getStatus())) {
+            throw new RuntimeException(MessageKeys.EVENT_LOCKED.getMessage());
         }
 
         teamRepository.delete(team);
@@ -263,6 +285,16 @@ public class TeamService {
 
         if (member.getRole() == TeamRole.LEADER) {
             throw new RuntimeException(MessageKeys.LEADER_CANNOT_LEAVE.getMessage());
+        }
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
+
+        Event event = eventRepository.findById(team.getEventId())
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+
+        if (isEventLocked(event.getStatus())) {
+            throw new RuntimeException(MessageKeys.EVENT_LOCKED.getMessage());
         }
 
         teamMemberRepository.delete(member);
@@ -403,5 +435,11 @@ public class TeamService {
                 .role(m.getRole())
                 .status(m.getStatus())
                 .build();
+    }
+
+    private boolean isEventLocked(EventStatus status) {
+        return status == EventStatus.JUDGING
+                || status == EventStatus.RESULTS_ANNOUNCED
+                || status == EventStatus.COMPLETED;
     }
 }
