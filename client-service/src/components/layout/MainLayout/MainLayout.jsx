@@ -117,6 +117,7 @@ const MainLayout = memo(() => {
         {!isEventDetails && (
         <aside className={`hidden lg:block w-64 py-8 px-6 ${theme.surface.sidebar}`}>
           <nav className="space-y-1">
+            {isOrganizer && (
             <NavItem
               icon={LayoutDashboard}
               active={currentPage === 'dashboard'}
@@ -124,6 +125,7 @@ const MainLayout = memo(() => {
             >
               Dashboard
             </NavItem>
+            )}
             <NavItem 
               icon={Calendar}
               active={currentPage === 'my-events'}
