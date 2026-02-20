@@ -54,6 +54,8 @@ const EventDetails = () => {
   const [advancingStatus, setAdvancingStatus] = useState(false);
   const [advanceError, setAdvanceError] = useState('');
   const [confirmAdvance, setConfirmAdvance] = useState({ open: false, currentLabel: '', nextLabel: '', desc: '' });
+  const [confirmFinalize, setConfirmFinalize] = useState(false);
+  const [finalizeError, setFinalizeError] = useState('');
   const [leaderboardTeams, setLeaderboardTeams] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
@@ -1013,31 +1015,14 @@ const EventDetails = () => {
                     <span className="text-sm text-gray-400">{notSubmitted.length} pending</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {finalizeMsg && (
-                      <span className={`text-xs font-medium ${finalizeMsg.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>
-                        {finalizeMsg}
-                      </span>
-                    )}
                     {!['results_announced', 'completed'].includes(eventDetails.status?.toLowerCase()) && (
                       <Button
                         size="sm"
                         variant="outline"
                         icon={Flag}
-                        disabled={finalizingResults}
-                        onClick={async () => {
-                          setFinalizingResults(true);
-                          setFinalizeMsg('');
-                          try {
-                            await eventService.finalizeResults(id);
-                            setFinalizeMsg('✓ Results finalized');
-                          } catch (e) {
-                            setFinalizeMsg(e.response?.data || 'Failed to finalize');
-                          } finally {
-                            setFinalizingResults(false);
-                          }
-                        }}
+                        onClick={() => { setFinalizeError(''); setConfirmFinalize(true); }}
                       >
-                        {finalizingResults ? 'Finalizing…' : 'Finalize Results'}
+                        Finalize Results
                       </Button>
                     )}
                     {evaluateMsg && (
@@ -1392,6 +1377,66 @@ const EventDetails = () => {
                 {advancingStatus
                   ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Advancing…</>
                   : <><ChevronRight className="w-4 h-4" />Confirm Advance</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── Finalize Results Confirmation Modal ─────────────────────── */}
+      {confirmFinalize && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => !finalizingResults && setConfirmFinalize(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-300">
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-red-100 flex items-center justify-center shrink-0">
+                  <Flag className="w-5 h-5 text-red-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Finalize Results</h3>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                This will publish the final leaderboard and set the event status to <span className="font-semibold text-gray-800">Results Announced</span>. All participants will be notified and the leaderboard will become publicly visible.
+              </p>
+              <div className="flex items-start gap-2 mt-4 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                <span className="text-red-500 text-base leading-none mt-0.5">⚠</span>
+                <p className="text-xs text-red-700 font-medium">This action is irreversible. Results cannot be unpublished once finalized.</p>
+              </div>
+              {finalizeError && (
+                <p className="mt-3 text-sm text-red-500 font-medium">{finalizeError}</p>
+              )}
+            </div>
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-7 pb-7">
+              <button
+                onClick={() => setConfirmFinalize(false)}
+                disabled={finalizingResults}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setFinalizingResults(true);
+                  setFinalizeError('');
+                  try {
+                    await eventService.finalizeResults(id);
+                    const updated = await eventService.getEventById(id);
+                    setEventDetails(updated);
+                    setConfirmFinalize(false);
+                  } catch (e) {
+                    setFinalizeError(e.response?.data || 'Failed to finalize results');
+                  } finally {
+                    setFinalizingResults(false);
+                  }
+                }}
+                disabled={finalizingResults}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-60 transition-colors flex items-center gap-2"
+              >
+                {finalizingResults
+                  ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Finalizing…</>
+                  : <><Flag className="w-4 h-4" />Finalize Results</>
                 }
               </button>
             </div>

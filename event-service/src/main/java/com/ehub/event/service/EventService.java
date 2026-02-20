@@ -276,13 +276,18 @@ public class EventService {
     public void finalizeResults(String id, String requesterId) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        
+
         if (!event.getOrganizerId().equals(requesterId)) {
             throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
         event.setJudging(false);
-        event.setStatus(event.calculateCurrentStatus());
+        // Ensure resultsDate is in the future so calculateCurrentStatus returns RESULTS_ANNOUNCED, not COMPLETED
+        if (event.getResultsDate() == null || !event.getResultsDate().isAfter(now)) {
+            event.setResultsDate(now.plusDays(30));
+        }
+        event.setStatus(EventStatus.RESULTS_ANNOUNCED);
         eventRepository.save(event);
 
         // Broadcast global update
