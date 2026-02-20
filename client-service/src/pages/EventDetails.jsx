@@ -53,6 +53,7 @@ const EventDetails = () => {
   const [finalizeMsg, setFinalizeMsg] = useState('');
   const [advancingStatus, setAdvancingStatus] = useState(false);
   const [advanceError, setAdvanceError] = useState('');
+  const [confirmAdvance, setConfirmAdvance] = useState({ open: false, currentLabel: '', nextLabel: '', desc: '' });
   const [leaderboardTeams, setLeaderboardTeams] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
@@ -280,12 +281,12 @@ const EventDetails = () => {
           {/* ── Status Flow (organizer only) ───────────────────────────── */}
           {isOrganizer && eventDetails.organizerId === user?.id && (() => {
             const FLOW = [
-              { status: 'UPCOMING',            label: 'Upcoming',             next: 'Open Registration' },
-              { status: 'REGISTRATION_OPEN',   label: 'Registration Open',    next: 'Start Event' },
-              { status: 'ONGOING',             label: 'Ongoing',              next: 'Start Judging' },
-              { status: 'JUDGING',             label: 'Judging',              next: 'Publish Results' },
-              { status: 'RESULTS_ANNOUNCED',   label: 'Results Announced',    next: 'Mark Completed' },
-              { status: 'COMPLETED',           label: 'Completed',            next: null },
+              { status: 'UPCOMING',            label: 'Upcoming',             next: 'Open Registration', desc: 'Participants will be able to see and register for this event.' },
+              { status: 'REGISTRATION_OPEN',   label: 'Registration Open',    next: 'Start Event',       desc: 'Registration will close and the event will officially begin. No new registrations will be accepted.' },
+              { status: 'ONGOING',             label: 'Ongoing',              next: 'Start Judging',     desc: 'Submissions will close and the event will move to the judging phase. Teams will no longer be able to submit.' },
+              { status: 'JUDGING',             label: 'Judging',              next: 'Publish Results',   desc: 'Scores will be published and the leaderboard will become visible to all participants.' },
+              { status: 'RESULTS_ANNOUNCED',   label: 'Results Announced',    next: 'Mark Completed',    desc: 'The event will be marked as fully completed. This is the final stage.' },
+              { status: 'COMPLETED',           label: 'Completed',            next: null,                desc: '' },
             ];
             const currentIdx = FLOW.findIndex(s => s.status === eventDetails.status);
             const current = FLOW[currentIdx];
@@ -330,19 +331,9 @@ const EventDetails = () => {
                 {canAdvance ? (
                   <button
                     disabled={advancingStatus}
-                    onClick={async () => {
-                      if (!window.confirm(`Advance event to "${FLOW[currentIdx + 1]?.label}"?`)) return;
-                      setAdvancingStatus(true);
-                      setAdvanceError('');
-                      try {
-                        await eventService.advanceEventStatus(id);
-                        const updated = await eventService.getEventById(id);
-                        setEventDetails(updated);
-                      } catch (e) {
-                        setAdvanceError(e.response?.data || 'Failed to advance status');
-                      } finally {
-                        setAdvancingStatus(false);
-                      }
+                    onClick={() => {
+                      const next = FLOW[currentIdx + 1];
+                      setConfirmAdvance({ open: true, currentLabel: current.label, nextLabel: next.label, desc: current.desc });
                     }}
                     className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors"
                   >
@@ -1341,6 +1332,72 @@ const EventDetails = () => {
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* ── Advance Status Confirmation Modal ───────────────────────── */}
+      {confirmAdvance.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => !advancingStatus && setConfirmAdvance(s => ({ ...s, open: false }))} />
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-300">
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-orange-100 flex items-center justify-center shrink-0">
+                  <ChevronRight className="w-5 h-5 text-orange-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Advance Event Status</h3>
+              </div>
+              {/* Transition arrow */}
+              <div className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3 mb-4">
+                <span className="text-sm font-semibold text-gray-500 truncate">{confirmAdvance.currentLabel}</span>
+                <ArrowRight className="w-4 h-4 text-orange-500 shrink-0" />
+                <span className="text-sm font-bold text-orange-600 truncate">{confirmAdvance.nextLabel}</span>
+              </div>
+              {/* Description */}
+              <p className="text-sm text-gray-600 leading-relaxed">{confirmAdvance.desc}</p>
+              {/* Warning */}
+              <div className="flex items-start gap-2 mt-4 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5">
+                <span className="text-amber-500 text-base leading-none mt-0.5">⚠</span>
+                <p className="text-xs text-amber-700 font-medium">This action is irreversible. The event status cannot be rolled back.</p>
+              </div>
+              {advanceError && (
+                <p className="mt-3 text-sm text-red-500 font-medium">{advanceError}</p>
+              )}
+            </div>
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-7 pb-7">
+              <button
+                onClick={() => setConfirmAdvance(s => ({ ...s, open: false }))}
+                disabled={advancingStatus}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setAdvancingStatus(true);
+                  setAdvanceError('');
+                  try {
+                    await eventService.advanceEventStatus(id);
+                    const updated = await eventService.getEventById(id);
+                    setEventDetails(updated);
+                    setConfirmAdvance(s => ({ ...s, open: false }));
+                  } catch (e) {
+                    setAdvanceError(e.response?.data || 'Failed to advance status');
+                  } finally {
+                    setAdvancingStatus(false);
+                  }
+                }}
+                disabled={advancingStatus}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-60 transition-colors flex items-center gap-2"
+              >
+                {advancingStatus
+                  ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Advancing…</>
+                  : <><ChevronRight className="w-4 h-4" />Confirm Advance</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header: back | title + code badge (center) | status */}
       <div className="flex items-center gap-4">
         <Button variant="secondary" size="sm" icon={ArrowLeft} onClick={() => navigate('/my-events')}>
