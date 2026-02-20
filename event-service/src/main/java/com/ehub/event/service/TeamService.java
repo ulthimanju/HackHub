@@ -302,6 +302,11 @@ public class TeamService {
             }
         }
 
+        // Block if score has already been announced
+        if (team.getScore() != null && team.getScore() > 0) {
+            throw new RuntimeException(MessageKeys.SUBMISSION_BLOCKED_SCORE_ANNOUNCED.getMessage());
+        }
+
         team.setRepoUrl(request.getRepoUrl());
         team.setSubmissionTime(java.time.LocalDateTime.now());
         teamRepository.save(team);

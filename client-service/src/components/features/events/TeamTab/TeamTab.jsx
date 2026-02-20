@@ -301,7 +301,7 @@ const TeamTab = ({ event, myRegistration }) => {
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <SectionTitle>My Team</SectionTitle>
-          {isLeader && (
+          {isLeader && ['upcoming', 'registration_open'].includes(event.status?.toLowerCase()) && (
             <Button
               variant="secondary"
               size="sm"
@@ -318,6 +318,7 @@ const TeamTab = ({ event, myRegistration }) => {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Team header */}
           <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+            {/* Left: team name + copy code */}
             <div>
               <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-0.5">Team Name</p>
               <div className="flex items-center gap-2 flex-wrap">
@@ -336,6 +337,22 @@ const TeamTab = ({ event, myRegistration }) => {
                 </button>
               </div>
             </div>
+
+            {/* Center: score badge */}
+            {myTeam.score != null && myTeam.score > 0 && (
+              <div className="flex flex-col items-center gap-0.5 flex-1">
+                <span className="text-xs font-bold tracking-widest text-gray-400 uppercase">Score</span>
+                <span className={`text-2xl font-extrabold px-5 py-1.5 rounded-full ${
+                  myTeam.score >= 80 ? 'bg-green-100 text-green-700' :
+                  myTeam.score >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-red-100 text-red-600'
+                }`}>
+                  {myTeam.score}/100
+                </span>
+              </div>
+            )}
+
+            {/* Right: action button */}
             {['upcoming', 'registration_open'].includes(event.status?.toLowerCase()) ? (
               isLeader ? (
                 <button
@@ -492,9 +509,6 @@ const TeamTab = ({ event, myRegistration }) => {
                         {myTeam.repoUrl}
                       </a>
                     </div>
-                    {myTeam.score != null && myTeam.score > 0 && (
-                      <p className="text-sm font-bold text-green-600">Score: {myTeam.score}</p>
-                    )}
                     {myTeam.aiSummary && (
                       <p className="text-xs text-gray-500 line-clamp-2">{myTeam.aiSummary}</p>
                     )}
@@ -503,7 +517,9 @@ const TeamTab = ({ event, myRegistration }) => {
                   <p className="text-sm text-gray-400">Not submitted yet</p>
                 )}
                 {isLeader && (
-                  event.status?.toUpperCase() === 'ONGOING' ? (
+                  myTeam.score != null && myTeam.score > 0 ? (
+                    <p className="mt-2 text-xs text-green-600 font-semibold">Score announced — submissions locked</p>
+                  ) : event.status?.toUpperCase() === 'ONGOING' ? (
                     <button
                       onClick={() => setSubmitModal({ open: true, repoUrl: myTeam.repoUrl || '', demoUrl: myTeam.demoUrl || '' })}
                       className="mt-2 text-xs text-orange-500 hover:text-orange-600 font-semibold transition-colors"

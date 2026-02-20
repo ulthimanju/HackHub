@@ -6,6 +6,7 @@ import com.ehub.event.util.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,10 @@ import java.util.Map;
 public class TeamController {
 
     private final TeamService teamService;
+
+    private String getCurrentUserId() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
 
     @PostMapping("/{eventId}")
     public ResponseEntity<String> createTeam(@PathVariable String eventId, @Valid @RequestBody TeamCreateRequest request) {
@@ -37,10 +42,9 @@ public class TeamController {
 
     @PostMapping("/{teamId}/invite")
     public ResponseEntity<String> inviteMember(
-            @PathVariable String teamId, 
-            @RequestParam String leaderId,
+            @PathVariable String teamId,
             @RequestBody TeamInviteRequest request) {
-        teamService.inviteMember(teamId, request, leaderId);
+        teamService.inviteMember(teamId, request, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.TEAM_INVITE_SENT.getMessage());
     }
 
@@ -52,49 +56,45 @@ public class TeamController {
 
     @PatchMapping("/{teamId}/respond")
     public ResponseEntity<String> respondToInvite(
-            @PathVariable String teamId, 
-            @RequestParam String userId, 
+            @PathVariable String teamId,
             @RequestParam boolean accept) {
-        teamService.respondToInvite(teamId, userId, accept);
+        teamService.respondToInvite(teamId, getCurrentUserId(), accept);
         return ResponseEntity.ok(MessageKeys.TEAM_STATUS_UPDATED.getMessage());
     }
 
     @DeleteMapping("/{teamId}")
-    public ResponseEntity<String> dismantleTeam(@PathVariable String teamId, @RequestParam String leaderId) {
-        teamService.dismantleTeam(teamId, leaderId);
+    public ResponseEntity<String> dismantleTeam(@PathVariable String teamId) {
+        teamService.dismantleTeam(teamId, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.TEAM_DISMANTLED.getMessage());
     }
 
     @PatchMapping("/{teamId}/transfer")
     public ResponseEntity<String> transferLeadership(
-            @PathVariable String teamId, 
-            @RequestParam String currentLeaderId, 
+            @PathVariable String teamId,
             @RequestParam String newLeaderId) {
-        teamService.transferLeadership(teamId, currentLeaderId, newLeaderId);
+        teamService.transferLeadership(teamId, getCurrentUserId(), newLeaderId);
         return ResponseEntity.ok(MessageKeys.TEAM_LEADERSHIP_TRANSFERRED.getMessage());
     }
 
     @DeleteMapping("/{teamId}/leave")
-    public ResponseEntity<String> leaveTeam(@PathVariable String teamId, @RequestParam String userId) {
-        teamService.leaveTeam(teamId, userId);
+    public ResponseEntity<String> leaveTeam(@PathVariable String teamId) {
+        teamService.leaveTeam(teamId, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.TEAM_LEAVE_SUCCESS.getMessage());
     }
 
     @PatchMapping("/{teamId}/problem-statement")
     public ResponseEntity<String> selectProblemStatement(
             @PathVariable String teamId,
-            @RequestParam String leaderId,
             @RequestParam(required = false) String problemId) {
-        teamService.updateProblemStatement(teamId, leaderId, problemId);
+        teamService.updateProblemStatement(teamId, getCurrentUserId(), problemId);
         return ResponseEntity.ok(MessageKeys.PROBLEM_UPDATED.getMessage());
     }
 
     @PostMapping("/{teamId}/submit")
     public ResponseEntity<String> submitProject(
             @PathVariable String teamId,
-            @RequestParam String userId,
             @Valid @RequestBody TeamSubmissionRequest request) {
-        teamService.submitProject(teamId, userId, request);
+        teamService.submitProject(teamId, getCurrentUserId(), request);
         return ResponseEntity.ok(MessageKeys.PROJECT_SUBMITTED_SUCCESS.getMessage());
     }
 
@@ -110,7 +110,7 @@ public class TeamController {
 
     @PostMapping("/{teamId}/score")
     public ResponseEntity<Void> updateScore(
-            @PathVariable String teamId, 
+            @PathVariable String teamId,
             @RequestParam Double score,
             @RequestParam(required = false) String aiSummary) {
         teamService.updateScore(teamId, score, aiSummary);

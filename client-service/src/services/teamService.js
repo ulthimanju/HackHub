@@ -18,10 +18,8 @@ const teamService = {
     return response.data;
   },
 
-  inviteMember: async (teamId, leaderId, data) => {
-    const response = await api.post(`/events/teams/${teamId}/invite`, data, {
-      params: { leaderId },
-    });
+  inviteMember: async (teamId, _leaderId, data) => {
+    const response = await api.post(`/events/teams/${teamId}/invite`, data);
     return response.data;
   },
 
@@ -30,45 +28,39 @@ const teamService = {
     return response.data;
   },
 
-  respondToInvite: async (teamId, userId, accept) => {
+  respondToInvite: async (teamId, _userId, accept) => {
     const response = await api.patch(`/events/teams/${teamId}/respond`, null, {
-      params: { userId, accept },
+      params: { accept },
     });
     return response.data;
   },
 
-  dismantleTeam: async (teamId, leaderId) => {
-    const response = await api.delete(`/events/teams/${teamId}`, {
-      params: { leaderId },
-    });
+  dismantleTeam: async (teamId, _leaderId) => {
+    const response = await api.delete(`/events/teams/${teamId}`);
     return response.data;
   },
 
-  transferLeadership: async (teamId, currentLeaderId, newLeaderId) => {
+  transferLeadership: async (teamId, _currentLeaderId, newLeaderId) => {
     const response = await api.patch(`/events/teams/${teamId}/transfer`, null, {
-      params: { currentLeaderId, newLeaderId },
+      params: { newLeaderId },
     });
     return response.data;
   },
 
-  leaveTeam: async (teamId, userId) => {
-    const response = await api.delete(`/events/teams/${teamId}/leave`, {
-      params: { userId },
-    });
+  leaveTeam: async (teamId, _userId) => {
+    const response = await api.delete(`/events/teams/${teamId}/leave`);
     return response.data;
   },
 
-  selectProblemStatement: async (teamId, leaderId, problemId) => {
+  selectProblemStatement: async (teamId, _leaderId, problemId) => {
     const response = await api.patch(`/events/teams/${teamId}/problem-statement`, null, {
-      params: { leaderId, ...(problemId ? { problemId } : {}) },
+      params: problemId ? { problemId } : {},
     });
     return response.data;
   },
 
-  submitProject: async (teamId, userId, data) => {
-    const response = await api.post(`/events/teams/${teamId}/submit`, data, {
-      params: { userId },
-    });
+  submitProject: async (teamId, _userId, data) => {
+    const response = await api.post(`/events/teams/${teamId}/submit`, data);
     return response.data;
   },
 };
