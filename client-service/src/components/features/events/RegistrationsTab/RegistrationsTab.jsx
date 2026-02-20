@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useState, useMemo } from 'react';
 import { Users, UserCheck, UserX } from 'lucide-react';
 import Alert from '../../../common/Alert/Alert';
 
@@ -29,10 +29,13 @@ const FILTERS = [
  *   statusUpdateError  – string
  *   onStatusUpdate     – async (registrationId, status) => void
  */
-export default function RegistrationsTab({ registrations, loading, error, updatingId, statusUpdateError, onStatusUpdate }) {
+const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading, error, updatingId, statusUpdateError, onStatusUpdate }) {
   const [filter, setFilter] = useState('all');
 
-  const filtered = filter === 'all' ? registrations : registrations.filter(r => r.status === filter);
+  const filtered = useMemo(
+    () => filter === 'all' ? registrations : registrations.filter(r => r.status === filter),
+    [registrations, filter]
+  );
 
   return (
     <div className="space-y-4">
@@ -153,4 +156,7 @@ export default function RegistrationsTab({ registrations, loading, error, updati
       )}
     </div>
   );
-}
+});
+
+RegistrationsTab.displayName = 'RegistrationsTab';
+export default RegistrationsTab;

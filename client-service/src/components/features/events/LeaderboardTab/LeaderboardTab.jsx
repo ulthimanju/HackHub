@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Trophy, ExternalLink } from 'lucide-react';
 
 const medals = ['🥇', '🥈', '🥉'];
 
-/**
- * Props:
- *   eventStatus      – string (eventDetails.status)
- *   teams            – orgTeams (organizer) or leaderboardTeams (participant)
- *   loading          – boolean
- *   problemStatements – eventDetails.problemStatements array
- */
-export default function LeaderboardTab({ eventStatus, teams, loading, problemStatements }) {
+const LeaderboardTab = memo(function LeaderboardTab({ eventStatus, teams, loading, problemStatements }) {
   const status = eventStatus?.toLowerCase();
+
+  const ranked = useMemo(() => {
+    if (!teams) return [];
+    return [...teams]
+      .map(t => ({ ...t, finalScore: t.manualScore ?? t.score }))
+      .filter(t => t.finalScore != null)
+      .sort((a, b) => b.finalScore - a.finalScore);
+  }, [teams]);
 
   if (!['results_announced', 'completed'].includes(status)) {
     return (
@@ -30,11 +31,6 @@ export default function LeaderboardTab({ eventStatus, teams, loading, problemSta
       </div>
     );
   }
-
-  const ranked = [...teams]
-    .map(t => ({ ...t, finalScore: t.manualScore ?? t.score }))
-    .filter(t => t.finalScore != null)
-    .sort((a, b) => b.finalScore - a.finalScore);
 
   if (ranked.length === 0) {
     return (
@@ -97,4 +93,7 @@ export default function LeaderboardTab({ eventStatus, teams, loading, problemSta
       })}
     </div>
   );
-}
+});
+
+LeaderboardTab.displayName = 'LeaderboardTab';
+export default LeaderboardTab;

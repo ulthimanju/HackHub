@@ -43,9 +43,10 @@ public class EventService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     public List<EventResponse> getEventsByOrganizer(String organizerId) {
-        return eventRepository.findByOrganizerId(organizerId).stream()
-                .map(this::mapToEventResponse)
-                .collect(Collectors.toList());
+        List<Event> events = eventRepository.findByOrganizerId(organizerId);
+        Map<String, Long> counts = registrationRepository.countApprovedByEventIds(
+                events.stream().map(Event::getId).collect(Collectors.toList()));
+        return events.stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
     }
 
     public EventStatsResponse getEventStats(String eventId) {
@@ -66,33 +67,34 @@ public class EventService {
 
     public List<EventResponse> getEventsByParticipant(String userId) {
         List<String> eventIds = registrationRepository.findByUserId(userId).stream()
-                .map(Registration::getEventId)
-                .collect(Collectors.toList());
-        
-        return eventRepository.findAllById(eventIds).stream()
-                .map(this::mapToEventResponse)
-                .collect(Collectors.toList());
+                .map(Registration::getEventId).collect(Collectors.toList());
+        List<Event> events = eventRepository.findAllById(eventIds);
+        Map<String, Long> counts = registrationRepository.countApprovedByEventIds(eventIds);
+        return events.stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
     }
 
     public List<EventResponse> getAllEvents() {
-        return eventRepository.findAll().stream()
-                .map(this::mapToEventResponse)
-                .collect(Collectors.toList());
+        List<Event> events = eventRepository.findAll();
+        Map<String, Long> counts = registrationRepository.countApprovedByEventIds(
+                events.stream().map(Event::getId).collect(Collectors.toList()));
+        return events.stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
     }
 
     public EventResponse getEventById(String id) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        return mapToEventResponse(event);
+        long count = registrationRepository.countByEventIdAndStatus(id, RegistrationStatus.APPROVED);
+        return mapToEventResponse(event, Map.of(id, count));
     }
 
     public EventResponse getEventByShortCode(String shortCode) {
         Event event = eventRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        return mapToEventResponse(event);
+        long count = registrationRepository.countByEventIdAndStatus(event.getId(), RegistrationStatus.APPROVED);
+        return mapToEventResponse(event, Map.of(event.getId(), count));
     }
 
-    private EventResponse mapToEventResponse(Event event) {
+    private EventResponse mapToEventResponse(Event event, Map<String, Long> registeredCounts) {
         return EventResponse.builder()
                 .id(event.getId())
                 .shortCode(event.getShortCode())
@@ -113,7 +115,7 @@ public class EventService {
                 .location(event.getLocation())
                 .maxParticipants(event.getMaxParticipants())
                 .teamSize(event.getTeamSize())
-                .registeredCount((int) registrationRepository.countByEventIdAndStatus(event.getId(), RegistrationStatus.APPROVED))
+                .registeredCount(registeredCounts.getOrDefault(event.getId(), 0L).intValue())
                 .status(event.getStatus() != null ? event.getStatus() : event.calculateCurrentStatus())
                 .organizerId(event.getOrganizerId())
                 .problemStatements(event.getProblemStatements().stream()

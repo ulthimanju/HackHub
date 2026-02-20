@@ -1,18 +1,24 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Layout
 import MainLayout from './components/layout/MainLayout/MainLayout';
 
-// Pages
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Profile from './pages/Profile';
-import Home from './pages/Home';
-import MyEvents from './pages/MyEvents';
-import ExploreEvents from './pages/ExploreEvents';
-import EventDetails from './pages/EventDetails';
+// Pages — lazy loaded for code splitting
+const Login        = lazy(() => import('./pages/Login'));
+const Register     = lazy(() => import('./pages/Register'));
+const Profile      = lazy(() => import('./pages/Profile'));
+const Home         = lazy(() => import('./pages/Home'));
+const MyEvents     = lazy(() => import('./pages/MyEvents'));
+const ExploreEvents = lazy(() => import('./pages/ExploreEvents'));
+const EventDetails = lazy(() => import('./pages/EventDetails'));
+
+const PageSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin" />
+  </div>
+);
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -35,7 +41,8 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
+    <Suspense fallback={<PageSpinner />}>
+      <Routes>
       <Route 
         path="/login" 
         element={user ? <Navigate to="/profile" replace /> : <Login />} 
@@ -61,7 +68,8 @@ function AppRoutes() {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 
