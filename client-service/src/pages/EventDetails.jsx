@@ -273,6 +273,8 @@ const EventDetails = () => {
 
   // True only when the logged-in organizer owns this specific event
   const isEventOwner = isOrganizer && eventDetails.organizerId === user?.id;
+  // Problem statements can only be added/deleted during registration phase
+  const registrationEnded = !['upcoming', 'registration_open'].includes(eventDetails.status?.toLowerCase());
 
   // Define tab content
   const tabs = [
@@ -543,7 +545,7 @@ const EventDetails = () => {
                   <div className="w-1 h-6 bg-orange-500 rounded-full" />
                   <h3 className="text-lg font-bold text-gray-900">Problem Statements</h3>
                 </div>
-                {isEventOwner && (
+                {isEventOwner && !registrationEnded && (
                   <Button variant="primary" size="sm" icon={Plus} onClick={() => setAddProblemOpen(true)}>
                     Add Problem
                   </Button>
@@ -577,6 +579,7 @@ const EventDetails = () => {
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
+                        {!registrationEnded && (
                         <button
                           onClick={() => handleDeleteProblem(problem.id)}
                           disabled={deletingId === problem.id}
@@ -587,6 +590,7 @@ const EventDetails = () => {
                             ? <div className="w-4 h-4 border-2 border-red-300 border-t-red-500 rounded-full animate-spin" />
                             : <Trash2 className="w-4 h-4" />}
                         </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -600,7 +604,7 @@ const EventDetails = () => {
               </div>
               <p className="text-lg font-semibold text-gray-500">No problems yet</p>
               <p className="text-sm text-gray-400 max-w-xs">Problem statements haven't been added for this event yet. Check back later.</p>
-              {isEventOwner && (
+              {isEventOwner && !registrationEnded && (
                 <Button variant="primary" size="sm" icon={Plus} onClick={() => setAddProblemOpen(true)}>
                   Add Problem
                 </Button>

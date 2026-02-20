@@ -300,6 +300,9 @@ public class EventService {
         if (!event.getOrganizerId().equals(requesterId)) {
             throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
+        if (!isRegistrationPhase(event)) {
+            throw new RuntimeException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
+        }
 
         int currentCount = event.getProblemStatements().size();
         
@@ -327,6 +330,9 @@ public class EventService {
         
         if (!event.getOrganizerId().equals(requesterId)) {
             throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
+        }
+        if (!isRegistrationPhase(event)) {
+            throw new RuntimeException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
         }
 
         String id = UUID.randomUUID().toString();
@@ -366,6 +372,9 @@ public class EventService {
         
         if (!problem.getEvent().getOrganizerId().equals(requesterId)) {
             throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
+        }
+        if (!isRegistrationPhase(problem.getEvent())) {
+            throw new RuntimeException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
         }
 
         problemRepository.deleteById(id);
@@ -514,5 +523,11 @@ public class EventService {
         } catch (Exception e) {
             System.err.println("Failed to send status update notification: " + e.getMessage());
         }
+    }
+
+    /** Returns true only while event is in UPCOMING or REGISTRATION_OPEN phase. */
+    private boolean isRegistrationPhase(Event event) {
+        EventStatus status = event.getStatus() != null ? event.getStatus() : event.calculateCurrentStatus();
+        return status == EventStatus.UPCOMING || status == EventStatus.REGISTRATION_OPEN;
     }
 }
