@@ -6,7 +6,7 @@ import Button from '../components/common/Button/Button';
 import Modal from '../components/common/Modal/Modal';
 import Alert from '../components/common/Alert/Alert';
 import EventCard from '../components/features/events/EventCard/EventCard';
-import TagAutocomplete from '../components/common/TagAutocomplete/TagAutocomplete';
+import EventFilters from '../components/common/EventFilters/EventFilters';
 import { Search, CheckCircle2 } from 'lucide-react';
 import { ALL_THEMES } from '../constants/themes';
 
@@ -120,42 +120,15 @@ const ExploreEvents = () => {
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 pb-20">
-      {/* Status filter tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {STATUS_TABS.map(tab => {
-          const count = tabCounts[tab.value] ?? 0;
-          const isActive = activeTab === tab.value;
-          return (
-            <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
-                isActive
-                  ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600'
-              }`}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Theme filter */}
-      <div className="w-72">
-        <TagAutocomplete
-          items={ALL_THEMES}
-          selected={activeThemes}
-          onChange={setActiveThemes}
-          placeholder="Filter by theme…"
-          emptyText=""
-        />
-      </div>
+      <EventFilters
+        tabs={STATUS_TABS}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabCounts={tabCounts}
+        themeItems={ALL_THEMES}
+        activeThemes={activeThemes}
+        onThemesChange={setActiveThemes}
+      />
 
       {/* Content */}
       {loading ? (
