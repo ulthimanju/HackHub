@@ -24,7 +24,17 @@ const EventForm = memo(({ onSubmit, onCancel, loading }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    const updated = { ...formData, [name]: type === 'checkbox' ? checked : value };
+
+    // Auto-fill registration dates when startDate is entered (only if fields are empty)
+    if (name === 'startDate' && value) {
+      const now = new Date().toISOString().slice(0, 16);
+      const dayBefore = new Date(new Date(value).getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+      if (!updated.registrationStartDate) updated.registrationStartDate = now;
+      if (!updated.registrationEndDate)   updated.registrationEndDate   = dayBefore;
+    }
+
+    setFormData(updated);
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 

@@ -1,9 +1,11 @@
 import React from 'react';
 import Input from '../../../common/Input/Input';
 import Checkbox from '../../../common/Checkbox/Checkbox';
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, MapPin, Users, Sparkles } from 'lucide-react';
 
 export default function EventFormStep2({ formData, errors, onChange }) {
+  const regAutoFilled = formData.startDate && formData.registrationStartDate && formData.registrationEndDate;
+
   return (
     <>
       <Input
@@ -43,6 +45,12 @@ export default function EventFormStep2({ formData, errors, onChange }) {
         onChange={onChange}
         error={errors.registrationEndDate}
       />
+      {regAutoFilled && (
+        <div className="md:col-span-2 flex items-center gap-2 text-xs text-orange-600 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2">
+          <Sparkles className="w-3.5 h-3.5 shrink-0" />
+          Registration dates auto-filled — registration opens now and closes 1 day before event starts. You can adjust them above.
+        </div>
+      )}
       <div className="flex items-center pt-8">
         <Checkbox
           label="Virtual Event"
