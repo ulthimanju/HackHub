@@ -113,6 +113,7 @@ public class EventService {
                 .location(event.getLocation())
                 .maxParticipants(event.getMaxParticipants())
                 .teamSize(event.getTeamSize())
+                .registeredCount((int) registrationRepository.countByEventIdAndStatus(event.getId(), RegistrationStatus.APPROVED))
                 .status(event.getStatus() != null ? event.getStatus() : event.calculateCurrentStatus())
                 .organizerId(event.getOrganizerId())
                 .problemStatements(event.getProblemStatements().stream()

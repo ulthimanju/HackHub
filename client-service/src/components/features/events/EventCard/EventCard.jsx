@@ -89,7 +89,7 @@ const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage, can
             )}
             {event.maxParticipants && (
               <span>
-                <span className="font-bold text-gray-900">{event.maxParticipants}</span>
+                <span className="font-bold text-gray-900">{event.registeredCount ?? 0}/{event.maxParticipants}</span>
                 {' '}<span className="text-gray-500">participants</span>
               </span>
             )}

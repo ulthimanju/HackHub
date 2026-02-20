@@ -32,6 +32,7 @@ public class EventResponse {
     private String location;
     private Integer maxParticipants;
     private Integer teamSize;
+    private Integer registeredCount;
     private EventStatus status;
     private String organizerId;
     private List<ProblemStatementResponse> problemStatements;
