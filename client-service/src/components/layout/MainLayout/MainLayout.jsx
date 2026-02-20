@@ -1,15 +1,18 @@
 import React, { memo, useState, useEffect } from 'react';
-import { Bell, LogOut, User, Calendar, Compass, Search, X } from 'lucide-react';
+import { LogOut, User, Calendar, Compass, Search, X, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavigate, useLocation, Outlet, useSearchParams } from 'react-router-dom';
 import NavItem from '../NavItem/NavItem';
 import Button from '../../common/Button/Button';
 import { theme } from '../../../utils/theme';
+import NotificationBell from '../NotificationBell/NotificationBell';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 const MainLayout = memo(() => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications(user);
   
   const [currentPage, setCurrentPage] = useState('dashboard');
 
@@ -76,9 +79,13 @@ const MainLayout = memo(() => {
               </div>
             )}
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" className="p-2 rounded-lg">
-                <Bell className="w-5 h-5 text-gray-600" />
-              </Button>
+              <NotificationBell
+                notifications={notifications}
+                unreadCount={unreadCount}
+                markAsRead={markAsRead}
+                markAllAsRead={markAllAsRead}
+                clearAll={clearAll}
+              />
               <div className="h-6 w-px bg-gray-200 mx-1"></div>
               <div 
                 className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer transition-colors ${currentPage === 'profile' ? `${theme.primary.bgLight} ring-1 ${theme.primary.ring}` : 'hover:bg-gray-100'}`}
@@ -110,6 +117,13 @@ const MainLayout = memo(() => {
         {!isEventDetails && (
         <aside className={`hidden lg:block w-64 py-8 px-6 ${theme.surface.sidebar}`}>
           <nav className="space-y-1">
+            <NavItem
+              icon={LayoutDashboard}
+              active={currentPage === 'dashboard'}
+              onClick={() => handlePageChange('dashboard')}
+            >
+              Dashboard
+            </NavItem>
             <NavItem 
               icon={Calendar}
               active={currentPage === 'my-events'}

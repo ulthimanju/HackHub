@@ -38,6 +38,11 @@ public class Team {
     @Column(columnDefinition = "TEXT")
     private String aiSummary;
 
+    private Double manualScore;
+
+    @Column(columnDefinition = "TEXT")
+    private String organizerNotes;
+
     @Column(nullable = false)
     private String leaderId; // User ID of the leader
 

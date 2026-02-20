@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.ehub.auth.enums.ExperienceLevel;
 import java.util.Collection;
 import java.util.List;
 
@@ -25,6 +26,7 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String username;
 
+    private String displayName;
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -40,6 +42,21 @@ public class User implements UserDetails {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private List<String> skills;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    private String githubUrl;
+
+    private String linkedinUrl;
+
+    private String portfolioUrl;
+
+    @Enumerated(EnumType.STRING)
+    private ExperienceLevel experienceLevel;
+
+    @Builder.Default
+    private boolean openToInvites = true;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

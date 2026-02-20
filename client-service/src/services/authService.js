@@ -16,13 +16,13 @@ const authService = {
     return response.data;
   },
 
-  requestRoleUpgradeOtp: async (email) => {
-    const response = await api.post('/auth/upgrade-role/otp', { email });
+  requestRoleUpgradeOtp: async () => {
+    const response = await api.post('/auth/upgrade-role/otp');
     return response.data;
   },
 
-  upgradeRole: async (email, otp) => {
-    const response = await api.post('/auth/upgrade-role', { email, otp });
+  upgradeRole: async (_email, otp) => {
+    const response = await api.post('/auth/upgrade-role', { otp });
     return response.data;
   },
 

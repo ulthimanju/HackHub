@@ -335,6 +335,15 @@ public class TeamService {
         teamRepository.save(team);
     }
 
+    @Transactional
+    public void updateManualReview(String teamId, Double manualScore, String organizerNotes) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
+        team.setManualScore(manualScore);
+        team.setOrganizerNotes(organizerNotes);
+        teamRepository.save(team);
+    }
+
     private String generateShortCode() {
         return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
@@ -379,6 +388,8 @@ public class TeamService {
                 .leaderId(team.getLeaderId())
                 .score(team.getScore())
                 .aiSummary(team.getAiSummary())
+                .manualScore(team.getManualScore())
+                .organizerNotes(team.getOrganizerNotes())
                 .members(memberDtos)
                 .build();
     }

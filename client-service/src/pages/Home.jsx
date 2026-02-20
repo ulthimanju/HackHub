@@ -1,101 +1,247 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import Section from '../components/common/Section/Section';
-import EventCard from '../components/features/dashboard/EventCard/EventCard';
-import UserProfileCard from '../components/features/profile/UserProfileCard/UserProfileCard';
-import Tab from '../components/common/Tab/Tab';
+import { useNavigate } from 'react-router-dom';
+import { Users, Calendar, Trophy, ClipboardList, Plus, Clock, ArrowRight, AlertCircle, BarChart2 } from 'lucide-react';
+import eventService from '../services/eventService';
 import Button from '../components/common/Button/Button';
-import Input from '../components/common/Input/Input';
-import Textarea from '../components/common/Textarea/Textarea';
-import Checkbox from '../components/common/Checkbox/Checkbox';
-import { Check, Settings, Calendar, Search } from 'lucide-react';
+import { theme } from '../utils/theme';
+
+const STATUS_COLORS = {
+  UPCOMING: 'bg-blue-100 text-blue-700',
+  REGISTRATION_OPEN: 'bg-green-100 text-green-700',
+  ONGOING: 'bg-orange-100 text-orange-700',
+  JUDGING: 'bg-purple-100 text-purple-700',
+  RESULTS_ANNOUNCED: 'bg-teal-100 text-teal-700',
+  COMPLETED: 'bg-gray-100 text-gray-600',
+};
+
+function StatCard({ icon: Icon, label, value, accent, sub }) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-start gap-4">
+      <div className={`p-2.5 rounded-xl ${accent || theme.primary.bgLight}`}>
+        <Icon className={`w-5 h-5 ${theme.primary.text}`} />
+      </div>
+      <div>
+        <p className="text-2xl font-bold text-gray-900 leading-none">{value ?? '—'}</p>
+        <p className="text-sm text-gray-500 mt-1">{label}</p>
+        {sub && <p className="text-xs text-orange-500 font-medium mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function OrganizerDashboard({ user, navigate }) {
+  const [events, setEvents] = useState([]);
+  const [statsMap, setStatsMap] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    eventService.getOrganizerEvents()
+      .then(async (evts) => {
+        setEvents(evts);
+        const entries = await Promise.all(
+          evts.map(async (e) => {
+            try {
+              const s = await eventService.getEventStats(e.id);
+              return [e.id, s];
+            } catch { return [e.id, null]; }
+          })
+        );
+        setStatsMap(Object.fromEntries(entries));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totals = Object.values(statsMap).reduce((acc, s) => {
+    if (!s) return acc;
+    acc.registrations += s.approvedRegistrations || 0;
+    acc.pending += s.pendingRegistrations || 0;
+    acc.submissions += s.submittedTeams || 0;
+    acc.evaluated += s.evaluatedTeams || 0;
+    return acc;
+  }, { registrations: 0, pending: 0, submissions: 0, evaluated: 0 });
+
+  return (
+    <div className="w-full space-y-8">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-1">Welcome back, {user?.displayName || user?.username}!</h2>
+          <p className="text-gray-500">Here's what's happening across your events.</p>
+        </div>
+        <Button variant="primary" icon={Plus} onClick={() => navigate('/my-events')}>
+          New Event
+        </Button>
+      </div>
+
+      {/* Summary stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard icon={Calendar} label="Total Events" value={events.length} />
+        <StatCard icon={Users} label="Approved Participants" value={totals.registrations} />
+        <StatCard
+          icon={AlertCircle}
+          label="Pending Approvals"
+          value={totals.pending}
+          sub={totals.pending > 0 ? 'Needs review' : null}
+          accent={totals.pending > 0 ? 'bg-orange-100' : undefined}
+        />
+        <StatCard icon={ClipboardList} label="Submissions" value={totals.submissions} sub={totals.evaluated > 0 ? `${totals.evaluated} evaluated` : null} />
+      </div>
+
+      {/* Events list */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Events</h3>
+        {loading ? (
+          <div className="text-gray-400 text-sm py-8 text-center">Loading events…</div>
+        ) : events.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-200 py-16 flex flex-col items-center gap-3">
+            <Calendar className="w-10 h-10 text-gray-300" />
+            <p className="text-gray-500 font-medium">No events yet</p>
+            <Button variant="primary" icon={Plus} onClick={() => navigate('/my-events')}>Create your first event</Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {events.map((event) => {
+              const s = statsMap[event.id];
+              return (
+                <div
+                  key={event.id}
+                  className="bg-white rounded-2xl border border-gray-100 p-5 hover:border-orange-200 hover:shadow-sm transition-all cursor-pointer group"
+                  onClick={() => navigate(`/events/${event.id}`)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0 pr-3">
+                      <h4 className="font-semibold text-gray-900 truncate group-hover:text-orange-600 transition-colors">{event.name}</h4>
+                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{event.description}</p>
+                    </div>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-xl whitespace-nowrap ${STATUS_COLORS[event.status] || 'bg-gray-100 text-gray-600'}`}>
+                      {event.status?.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  {s ? (
+                    <div className="grid grid-cols-4 gap-2 mt-3">
+                      {[
+                        { label: 'Registered', value: s.approvedRegistrations },
+                        { label: 'Pending', value: s.pendingRegistrations, alert: s.pendingRegistrations > 0 },
+                        { label: 'Teams', value: s.totalTeams },
+                        { label: 'Submitted', value: s.submittedTeams },
+                      ].map(({ label, value, alert }) => (
+                        <div key={label} className={`rounded-xl px-2 py-2 text-center ${alert ? 'bg-orange-50' : 'bg-gray-50'}`}>
+                          <p className={`text-sm font-bold ${alert ? 'text-orange-600' : 'text-gray-800'}`}>{value ?? 0}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="h-12 mt-3 bg-gray-50 rounded-xl animate-pulse" />
+                  )}
+
+                  <div className="flex items-center justify-end mt-3">
+                    <span className={`text-xs font-medium ${theme.primary.text} flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                      Manage <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ParticipantDashboard({ user, navigate }) {
+  const [events, setEvents] = useState([]);
+  const [statusMap, setStatusMap] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      eventService.getParticipantEvents(),
+      eventService.getMyRegistrationStatuses(),
+    ]).then(([evts, statuses]) => {
+      setEvents(evts);
+      const map = {};
+      statuses.forEach((r) => { map[r.eventId] = r.status; });
+      setStatusMap(map);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const REG_STATUS_COLORS = {
+    APPROVED: 'bg-green-100 text-green-700',
+    PENDING: 'bg-yellow-100 text-yellow-700',
+    REJECTED: 'bg-red-100 text-red-700',
+  };
+
+  return (
+    <div className="w-full space-y-8">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-1">Welcome back, {user?.displayName || user?.username}!</h2>
+          <p className="text-gray-500">Track your hackathon journey.</p>
+        </div>
+        <Button variant="outline" icon={BarChart2} onClick={() => navigate('/explore')}>
+          Explore Events
+        </Button>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">My Events</h3>
+        {loading ? (
+          <div className="text-gray-400 text-sm py-8 text-center">Loading…</div>
+        ) : events.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-200 py-16 flex flex-col items-center gap-3">
+            <Trophy className="w-10 h-10 text-gray-300" />
+            <p className="text-gray-500 font-medium">You haven't joined any events yet</p>
+            <Button variant="primary" onClick={() => navigate('/explore')}>Browse Events</Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {events.map((event) => {
+              const regStatus = statusMap[event.id];
+              return (
+                <div
+                  key={event.id}
+                  className="bg-white rounded-2xl border border-gray-100 p-5 hover:border-orange-200 hover:shadow-sm transition-all cursor-pointer group"
+                  onClick={() => navigate(`/events/${event.id}`)}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors truncate pr-2">{event.name}</h4>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-xl whitespace-nowrap ${STATUS_COLORS[event.status] || 'bg-gray-100 text-gray-600'}`}>
+                      {event.status?.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 line-clamp-2 mb-3">{event.description}</p>
+                  <div className="flex items-center justify-between">
+                    {regStatus && (
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-xl ${REG_STATUS_COLORS[regStatus] || 'bg-gray-100 text-gray-500'}`}>
+                        Registration: {regStatus}
+                      </span>
+                    )}
+                    <span className={`text-xs font-medium ${theme.primary.text} flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity`}>
+                      View <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const Home = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [isChecked, setIsChecked] = useState(false);
+  const navigate = useNavigate();
+  const isOrganizer = user?.role === 'organizer';
 
-  return (
-    <div className="w-full">
-      <div className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mb-3 text-shadow-sm">Welcome back, {user?.username}!</h2>
-        <p className="text-lg text-gray-600 leading-relaxed max-w-3xl">
-          Manage your hackathons, track evaluations, and connect with other developers.
-        </p>
-      </div>
-
-      <div className="mb-8 border-b border-gray-200">
-        <div className="flex gap-6">
-          {['overview', 'components'].map((tab) => (
-            <Tab
-              key={tab}
-              active={activeTab === tab}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Tab>
-          ))}
-        </div>
-      </div>
-
-      {activeTab === 'overview' && (
-        <div className="space-y-8">
-          <Section title="Active Events">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <EventCard
-                status="Ongoing"
-                title="Spring Innovation Hack"
-                description="Build the next generation of cloud-native applications using modern Java frameworks."
-                date="Feb 15 - 17, 2026"
-                onEnter={() => console.log('Enter event')}
-              />
-              <EventCard
-                status="Upcoming"
-                title="AI Challenge 2026"
-                description="Harness the power of LLMs to solve real-world problems in productivity and creativity."
-                date="Mar 10, 2026"
-                onEnter={() => console.log('Enter event')}
-              />
-            </div>
-          </Section>
-
-          <Section title="Profile Overview">
-            <UserProfileCard
-              username={user?.username}
-              role={user?.role}
-              email={user?.email || 'N/A'}
-              accountId={user?.id?.substring(0, 8) + "..."}
-            />
-          </Section>
-        </div>
-      )}
-
-      {activeTab === 'components' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Section title="Buttons">
-            <div className="flex flex-wrap gap-3">
-              <Button variant="primary" icon={Check}>Primary Action</Button>
-              <Button variant="secondary" icon={Settings}>Settings</Button>
-              <Button variant="outline" icon={Calendar}>View Date</Button>
-            </div>
-          </Section>
-
-          <Section title="Form Elements">
-            <div className="space-y-4">
-              <Input label="Search" icon={Search} placeholder="Search anything..." />
-              <Textarea label="Bio" placeholder="Tell us about yourself..." />
-              <Checkbox 
-                id="comp-check"
-                label="Enable notifications"
-                checked={isChecked}
-                onChange={(e) => setIsChecked(e.target.checked)}
-              />
-            </div>
-          </Section>
-        </div>
-      )}
-    </div>
-  );
+  return isOrganizer
+    ? <OrganizerDashboard user={user} navigate={navigate} />
+    : <ParticipantDashboard user={user} navigate={navigate} />;
 };
 
 export default Home;

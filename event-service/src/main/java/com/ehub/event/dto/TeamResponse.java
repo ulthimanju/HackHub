@@ -23,6 +23,8 @@ public class TeamResponse {
     private java.time.LocalDateTime submissionTime;
     private Double score;
     private String aiSummary;
+    private Double manualScore;
+    private String organizerNotes;
     private String leaderId;
     private List<TeamMemberResponse> members;
 

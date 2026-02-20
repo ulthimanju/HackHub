@@ -108,6 +108,15 @@ public class TeamController {
         return ResponseEntity.ok(teamService.getEventEvaluationContext(eventId));
     }
 
+    @PatchMapping("/{teamId}/manual-review")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<String> updateManualReview(
+            @PathVariable String teamId,
+            @RequestBody ManualReviewRequest request) {
+        teamService.updateManualReview(teamId, request.getManualScore(), request.getOrganizerNotes());
+        return ResponseEntity.ok("Review saved");
+    }
+
     @PostMapping("/{teamId}/score")
     public ResponseEntity<Void> updateScore(
             @PathVariable String teamId,

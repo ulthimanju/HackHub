@@ -40,16 +40,12 @@ public class AuthService {
         if (repository.existsByEmail(email)) {
             throw new RuntimeException(MessageKeys.USER_ALREADY_EXISTS.getMessage());
         }
-        notificationClient.sendOtp(email);
+        notificationClient.sendRegistrationOtp(email);
     }
 
     public AuthenticationResponse register(RegisterRequest request) {
         // 1. Validate OTP
-        if (!notificationClient.validateOtp(request.getEmail(), request.getOtp())) {
-            throw new RuntimeException(MessageKeys.INVALID_OTP.getMessage());
-        }
-
-        if (repository.existsByUsername(request.getUsername()) || repository.existsByEmail(request.getEmail())) {
+        if (!notificationClient.validateRegistrationOtp(request.getEmail(), request.getOtp())) {
             throw new RuntimeException(MessageKeys.USER_ALREADY_EXISTS.getMessage());
         }
 
@@ -96,15 +92,22 @@ public class AuthService {
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .displayName(user.getDisplayName())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .skills(user.getSkills())
+                .bio(user.getBio())
+                .githubUrl(user.getGithubUrl())
+                .linkedinUrl(user.getLinkedinUrl())
+                .portfolioUrl(user.getPortfolioUrl())
+                .experienceLevel(user.getExperienceLevel())
+                .openToInvites(user.isOpenToInvites())
                 .build();
     }
 
     public void resetPassword(PasswordResetRequest request) {
         // 1. Validate OTP
-        if (!notificationClient.validateOtp(request.getEmail(), request.getOtp())) {
+        if (!notificationClient.validatePasswordResetOtp(request.getEmail(), request.getOtp())) {
             throw new RuntimeException(MessageKeys.INVALID_OTP.getMessage());
         }
 
@@ -115,27 +118,27 @@ public class AuthService {
         repository.save(user);
     }
 
-    public void requestRoleUpgradeOtp(String email) {
-        var user = repository.findByEmail(email)
+    public void requestRoleUpgradeOtp(String username) {
+        var user = repository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
-        
+
         if (UserRole.ORGANIZER.equals(user.getRole())) {
             throw new RuntimeException(MessageKeys.ROLE_ALREADY_ORGANIZER.getMessage());
         }
 
-        notificationClient.sendOtp(email);
+        notificationClient.sendRoleUpgradeOtp(user.getEmail());
     }
 
-    public AuthenticationResponse upgradeToOrganizer(RoleUpgradeRequest request, String currentToken) {
-        // 1. Validate OTP
-        if (!notificationClient.validateOtp(request.getEmail(), request.getOtp())) {
+    public AuthenticationResponse upgradeToOrganizer(String username, String otp, String currentToken) {
+        var user = repository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
+
+        // 1. Validate OTP against the user's own email
+        if (!notificationClient.validateRoleUpgradeOtp(user.getEmail(), otp)) {
             throw new RuntimeException(MessageKeys.INVALID_OTP.getMessage());
         }
 
         // 2. Update Role
-        var user = repository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
-
         user.setRole(UserRole.ORGANIZER);
         repository.save(user);
 
@@ -177,6 +180,27 @@ public class AuthService {
         // so changing it would silently invalidate all existing tokens.
         if (request.getSkills() != null) {
             user.setSkills(request.getSkills());
+        }
+        if (request.getDisplayName() != null) {
+            user.setDisplayName(request.getDisplayName().isBlank() ? null : request.getDisplayName().trim());
+        }
+        if (request.getBio() != null) {
+            user.setBio(request.getBio().isBlank() ? null : request.getBio().trim());
+        }
+        if (request.getGithubUrl() != null) {
+            user.setGithubUrl(request.getGithubUrl().isBlank() ? null : request.getGithubUrl().trim());
+        }
+        if (request.getLinkedinUrl() != null) {
+            user.setLinkedinUrl(request.getLinkedinUrl().isBlank() ? null : request.getLinkedinUrl().trim());
+        }
+        if (request.getPortfolioUrl() != null) {
+            user.setPortfolioUrl(request.getPortfolioUrl().isBlank() ? null : request.getPortfolioUrl().trim());
+        }
+        if (request.getExperienceLevel() != null) {
+            user.setExperienceLevel(request.getExperienceLevel());
+        }
+        if (request.getOpenToInvites() != null) {
+            user.setOpenToInvites(request.getOpenToInvites());
         }
 
         repository.save(user);

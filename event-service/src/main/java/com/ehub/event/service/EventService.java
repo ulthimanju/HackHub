@@ -48,6 +48,22 @@ public class EventService {
                 .collect(Collectors.toList());
     }
 
+    public EventStatsResponse getEventStats(String eventId) {
+        eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+        return EventStatsResponse.builder()
+                .totalRegistrations(registrationRepository.countByEventId(eventId))
+                .pendingRegistrations(registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.PENDING))
+                .approvedRegistrations(registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.APPROVED))
+                .rejectedRegistrations(registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.REJECTED))
+                .totalTeams(teamRepository.countByEventId(eventId))
+                .submittedTeams(teamRepository.countByEventIdAndRepoUrlIsNotNull(eventId))
+                .evaluatedTeams(teamRepository.countByEventIdAndScoreIsNotNull(eventId))
+                .avgScore(teamRepository.avgScoreByEventId(eventId))
+                .maxScore(teamRepository.maxScoreByEventId(eventId))
+                .build();
+    }
+
     public List<EventResponse> getEventsByParticipant(String userId) {
         List<String> eventIds = registrationRepository.findByUserId(userId).stream()
                 .map(Registration::getEventId)

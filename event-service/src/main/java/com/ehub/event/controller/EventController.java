@@ -54,6 +54,12 @@ public class EventController {
         return ResponseEntity.ok(eventService.getAllEvents());
     }
 
+    @GetMapping("/{id}/stats")
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<EventStatsResponse> getEventStats(@PathVariable String id) {
+        return ResponseEntity.ok(eventService.getEventStats(id));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<EventResponse> getEventById(@PathVariable String id) {
         return ResponseEntity.ok(eventService.getEventById(id));

@@ -82,6 +82,21 @@ const eventService = {
     const response = await api.put(`/events/problemstatements/${problemId}`, data);
     return response.data;
   },
+
+  getEventStats: async (eventId) => {
+    const response = await api.get(`/events/${eventId}/stats`);
+    return response.data;
+  },
+
+  updateManualReview: async (teamId, data) => {
+    const response = await api.patch(`/events/teams/${teamId}/manual-review`, data);
+    return response.data;
+  },
+
+  finalizeResults: async (eventId) => {
+    const response = await api.patch(`/events/${eventId}/finalize-results`);
+    return response.data;
+  },
 };
 
 export default eventService;

@@ -32,7 +32,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/ehub_auth_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
-      APPLICATION_NOTIFICATION_SERVICE_URL: http://notification-service:8082/notifications/password-reset/validate
+      APPLICATION_NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8082/notifications
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
     secrets:

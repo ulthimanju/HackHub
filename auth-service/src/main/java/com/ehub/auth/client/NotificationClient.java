@@ -16,7 +16,7 @@ public class NotificationClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${application.notification-service.url}")
+    @Value("${application.notification-service.base-url:http://notification-service:8082/notifications}")
     private String baseUrl;
 
     public NotificationClient() {
@@ -26,19 +26,51 @@ public class NotificationClient {
         this.restTemplate = new RestTemplate(factory);
     }
 
+    public void sendRegistrationOtp(String email) {
+        sendOtp(email, "/registration/otp");
+    }
+
+    public void sendPasswordResetOtp(String email) {
+        sendOtp(email, "/password-reset/otp");
+    }
+
+    public void sendRoleUpgradeOtp(String email) {
+        sendOtp(email, "/role-upgrade/otp");
+    }
+
+    /** @deprecated use the typed methods above */
     public void sendOtp(String email) {
+        sendRegistrationOtp(email);
+    }
+
+    private void sendOtp(String email, String path) {
         try {
-            String url = baseUrl.replace("/validate", "/otp");
-            restTemplate.postForObject(url, Map.of("email", email), String.class);
+            restTemplate.postForObject(baseUrl + path, Map.of("email", email), String.class);
         } catch (RestClientException e) {
             log.warn("Could not send OTP email to {}: {}", email, e.getMessage());
         }
     }
 
     public boolean validateOtp(String email, String otp) {
+        return validateOtp(email, otp, "/registration/validate");
+    }
+
+    public boolean validateRegistrationOtp(String email, String otp) {
+        return validateOtp(email, otp, "/registration/validate");
+    }
+
+    public boolean validatePasswordResetOtp(String email, String otp) {
+        return validateOtp(email, otp, "/password-reset/validate");
+    }
+
+    public boolean validateRoleUpgradeOtp(String email, String otp) {
+        return validateOtp(email, otp, "/role-upgrade/validate");
+    }
+
+    private boolean validateOtp(String email, String otp, String path) {
         try {
             Boolean isValid = restTemplate.postForObject(
-                    baseUrl,
+                    baseUrl + path,
                     Map.of("email", email, "otp", otp),
                     Boolean.class
             );

@@ -73,16 +73,21 @@ public class AuthController {
     }
 
     @PostMapping("/upgrade-role/otp")
-    public ResponseEntity<String> requestRoleUpgradeOtp(@RequestBody Map<String, String> body) {
-        service.requestRoleUpgradeOtp(body.get("email"));
+    public ResponseEntity<String> requestRoleUpgradeOtp(Authentication authentication) {
+        service.requestRoleUpgradeOtp(authentication.getName());
         return ResponseEntity.ok(MessageKeys.REGISTRATION_OTP_SENT.getMessage());
     }
 
     @PostMapping("/upgrade-role")
     public ResponseEntity<AuthenticationResponse> upgradeToOrganizer(
-            @Valid @RequestBody RoleUpgradeRequest request,
+            Authentication authentication,
+            @RequestBody Map<String, String> body,
             HttpServletRequest httpRequest) {
-        return ResponseEntity.ok(service.upgradeToOrganizer(request, extractToken(httpRequest)));
+        String otp = body.get("otp");
+        if (otp == null || otp.isBlank()) {
+            throw new RuntimeException("OTP is required");
+        }
+        return ResponseEntity.ok(service.upgradeToOrganizer(authentication.getName(), otp, extractToken(httpRequest)));
     }
 
     @GetMapping("/validate-token")
