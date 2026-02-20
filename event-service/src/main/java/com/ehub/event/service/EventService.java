@@ -252,12 +252,7 @@ public class EventService {
                 }
                 event.setStatus(event.calculateCurrentStatus());
                 eventRepository.save(event);
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("eventId", id);
-                payload.put("eventName", event.getName());
-                payload.put("status", "RESULTS_ANNOUNCED");
-                payload.put("message", "Judging complete! Results for " + event.getName() + " are now live.");
-                redisTemplate.convertAndSend("ehub:broadcast:global-alerts", payload);
+                notifyParticipantsResultsAnnounced(id, event);
                 return event.getStatus();
             }
             case RESULTS_ANNOUNCED -> {
@@ -290,13 +285,34 @@ public class EventService {
         event.setStatus(EventStatus.RESULTS_ANNOUNCED);
         eventRepository.save(event);
 
-        // Broadcast global update
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("eventId", id);
-        payload.put("eventName", event.getName());
-        payload.put("status", "RESULTS_ANNOUNCED");
-        payload.put("message", "Judging complete! Results for " + event.getName() + " are now live.");
-        redisTemplate.convertAndSend("ehub:broadcast:global-alerts", payload);
+        notifyParticipantsResultsAnnounced(id, event);
+    }
+
+    private void notifyParticipantsResultsAnnounced(String eventId, Event event) {
+        List<Registration> approved = registrationRepository.findByEventId(eventId).stream()
+                .filter(r -> r.getStatus() == RegistrationStatus.APPROVED)
+                .collect(Collectors.toList());
+
+        for (Registration reg : approved) {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("type", "RESULTS_ANNOUNCED");
+            payload.put("eventId", eventId);
+            payload.put("eventName", event.getName());
+            payload.put("status", "RESULTS_ANNOUNCED");
+            payload.put("message", "Results for \"" + event.getName() + "\" are now live! Check the leaderboard.");
+            redisTemplate.convertAndSend("ehub:broadcast:user-" + reg.getUserId(), payload);
+
+            try {
+                notificationClient.sendEmail(
+                    reg.getUserEmail(),
+                    "Results Announced: " + event.getName(),
+                    "Hi " + reg.getUsername() + ",\n\nThe results for \"" + event.getName() +
+                    "\" have been announced! Head to the platform to view the final leaderboard and your ranking.\n\nBest regards,\nEHub Team"
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send results email to " + reg.getUserEmail() + ": " + e.getMessage());
+            }
+        }
     }
 
     @Transactional
