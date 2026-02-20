@@ -63,6 +63,16 @@ const teamService = {
     const response = await api.post(`/events/teams/${teamId}/submit`, data);
     return response.data;
   },
+
+  updateSkillsNeeded: async (teamId, skills) => {
+    const response = await api.patch(`/events/teams/${teamId}/skills-needed`, { skills });
+    return response.data;
+  },
+
+  suggestMembers: async (teamId) => {
+    const response = await api.get(`/events/matchmaking/suggest-members/${teamId}`);
+    return response.data;
+  },
 };
 
 export default teamService;

@@ -63,6 +63,7 @@ public class TeamService {
                 .leaderId(request.getUserId())
                 .shortCode(generateShortCode())
                 .score(0.0)
+                .skillsNeeded(request.getSkillsNeeded())
                 .build();
 
         Team savedTeam = teamRepository.save(team);
@@ -402,6 +403,17 @@ public class TeamService {
         return map;
     }
 
+    @Transactional
+    public void updateSkillsNeeded(String teamId, List<String> skills, String requesterId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
+        if (!team.getLeaderId().equals(requesterId)) {
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_TEAM_INVITE.getMessage());
+        }
+        team.setSkillsNeeded(skills);
+        teamRepository.save(team);
+    }
+
     private TeamResponse mapToTeamResponse(Team team) {
         List<TeamResponse.TeamMemberResponse> memberDtos = teamMemberRepository.findByTeamId(team.getId())
                 .stream()
@@ -422,6 +434,7 @@ public class TeamService {
                 .aiSummary(team.getAiSummary())
                 .manualScore(team.getManualScore())
                 .organizerNotes(team.getOrganizerNotes())
+                .skillsNeeded(team.getSkillsNeeded())
                 .members(memberDtos)
                 .build();
     }

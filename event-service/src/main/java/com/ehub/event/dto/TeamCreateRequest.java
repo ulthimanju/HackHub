@@ -2,6 +2,7 @@ package com.ehub.event.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class TeamCreateRequest {
@@ -13,4 +14,5 @@ public class TeamCreateRequest {
 
     private String username;
     private String userEmail;
+    private List<String> skillsNeeded;
 }

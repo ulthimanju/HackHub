@@ -40,6 +40,14 @@ public class TeamController {
         return ResponseEntity.ok(teamService.getTeamByShortCode(shortCode));
     }
 
+    @PatchMapping("/{teamId}/skills-needed")
+    public ResponseEntity<String> updateSkillsNeeded(
+            @PathVariable String teamId,
+            @RequestBody SkillsNeededRequest request) {
+        teamService.updateSkillsNeeded(teamId, request.getSkills(), getCurrentUserId());
+        return ResponseEntity.ok("Skills updated successfully");
+    }
+
     @PostMapping("/{teamId}/invite")
     public ResponseEntity<String> inviteMember(
             @PathVariable String teamId,

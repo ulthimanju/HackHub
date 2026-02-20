@@ -26,6 +26,7 @@ public class TeamResponse {
     private Double manualScore;
     private String organizerNotes;
     private String leaderId;
+    private List<String> skillsNeeded;
     private List<TeamMemberResponse> members;
 
     @Data

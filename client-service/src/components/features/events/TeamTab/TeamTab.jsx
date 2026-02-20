@@ -2,13 +2,14 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Users, Plus, Copy, Check, Search, Crown, UserPlus, Github,
   LogOut, Trash2, AlertTriangle, RefreshCw, ClipboardCheck,
-  Clock, CheckCircle2, XCircle, Send, Eye, BookOpen,
+  Clock, CheckCircle2, XCircle, Send, Eye, BookOpen, Sparkles,
 } from 'lucide-react';
 import Button from '../../../common/Button/Button';
 import Modal from '../../../common/Modal/Modal';
 import Alert from '../../../common/Alert/Alert';
 import { useAuth } from '../../../../hooks/useAuth';
 import teamService from '../../../../services/teamService';
+import MatchmakingPanel from './MatchmakingPanel';
 
 const SectionTitle = ({ children }) => (
   <div className="flex items-center gap-3">
@@ -539,6 +540,25 @@ const TeamTab = ({ event, myRegistration }) => {
             </div>
           </div>
         </div>
+
+        {/* ── Matchmaking (leader only, event not locked) ── */}
+        {isLeader && !isLocked && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-6 bg-orange-500 rounded-full" />
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-orange-500" /> Find Teammates
+              </h3>
+            </div>
+            <MatchmakingPanel
+              team={myTeam}
+              onSkillsSaved={fetchTeams}
+              onInvite={(userId, username, userEmail) =>
+                setInviteModal({ open: true, userId, username, userEmail })
+              }
+            />
+          </div>
+        )}
 
         {/* ── Modals ── */}
 
