@@ -4,6 +4,7 @@ import com.ehub.event.dto.*;
 import com.ehub.event.service.EventService;
 import com.ehub.event.util.MessageKeys;
 import com.ehub.event.enums.RegistrationStatus;
+import com.ehub.event.enums.EventStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -137,8 +138,9 @@ public class EventController {
     @PatchMapping("/{id}/finalize-results")
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> finalizeResults(@PathVariable String id) {
-        eventService.finalizeResults(id, getCurrentUserId());
-        return ResponseEntity.ok(MessageKeys.RESULTS_FINALIZED.getMessage());
+        // Delegates to advanceEventStatus — event must be in JUDGING state
+        EventStatus newStatus = eventService.advanceEventStatus(id, getCurrentUserId());
+        return ResponseEntity.ok(newStatus.name());
     }
 
     @PostMapping("/{eventId}/register")

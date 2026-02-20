@@ -70,7 +70,8 @@ public enum MessageKeys {
     SUBMISSIONS_NOT_OPEN("Submissions haven't opened yet. The event starts on %s"),
     SUBMISSIONS_CLOSED("Submissions are closed. The event ended on %s"),
     SUBMISSION_BLOCKED_SCORE_ANNOUNCED("Submissions are locked. Your team's score has already been announced."),
-    EVENT_LOCKED("This action is not allowed. The event has entered judging or results phase.");
+    EVENT_LOCKED("This action is not allowed. The event has entered judging or results phase."),
+    INVALID_STATUS_TRANSITION("Results can only be finalized when the event is in the Judging phase.");
 
     private final String message;
 }

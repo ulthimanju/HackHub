@@ -189,8 +189,6 @@ public class EventService {
         event.setLocation(request.getLocation());
         event.setMaxParticipants(request.getMaxParticipants());
         event.setTeamSize(request.getTeamSize());
-        event.setStatus(event.calculateCurrentStatus());
-
         eventRepository.save(event);
     }
 
@@ -245,12 +243,12 @@ public class EventService {
                 }
             }
             case JUDGING -> {
-                // Publish results (same as finalize-results)
+                // Publish results — set status explicitly to avoid calculateCurrentStatus edge cases
                 event.setJudging(false);
                 if (event.getResultsDate() == null || !event.getResultsDate().isAfter(now)) {
-                    event.setResultsDate(now.plusDays(1));
+                    event.setResultsDate(now.plusDays(30));
                 }
-                event.setStatus(event.calculateCurrentStatus());
+                event.setStatus(EventStatus.RESULTS_ANNOUNCED);
                 eventRepository.save(event);
                 notifyParticipantsResultsAnnounced(id, event);
                 return event.getStatus();
@@ -265,27 +263,6 @@ public class EventService {
         event.setStatus(event.calculateCurrentStatus());
         eventRepository.save(event);
         return event.getStatus();
-    }
-
-    @Transactional
-    public void finalizeResults(String id, String requesterId) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
-        }
-
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        event.setJudging(false);
-        // Ensure resultsDate is in the future so calculateCurrentStatus returns RESULTS_ANNOUNCED, not COMPLETED
-        if (event.getResultsDate() == null || !event.getResultsDate().isAfter(now)) {
-            event.setResultsDate(now.plusDays(30));
-        }
-        event.setStatus(EventStatus.RESULTS_ANNOUNCED);
-        eventRepository.save(event);
-
-        notifyParticipantsResultsAnnounced(id, event);
     }
 
     private void notifyParticipantsResultsAnnounced(String eventId, Event event) {

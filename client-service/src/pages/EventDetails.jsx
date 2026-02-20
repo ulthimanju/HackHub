@@ -1015,7 +1015,7 @@ const EventDetails = () => {
                     <span className="text-sm text-gray-400">{notSubmitted.length} pending</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {!['results_announced', 'completed'].includes(eventDetails.status?.toLowerCase()) && (
+                    {eventDetails.status?.toLowerCase() === 'judging' && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -1030,7 +1030,7 @@ const EventDetails = () => {
                         {evaluateMsg}
                       </span>
                     )}
-                    {!['results_announced', 'completed'].includes(eventDetails.status?.toLowerCase()) && (
+                    {['judging'].includes(eventDetails.status?.toLowerCase()) && (
                       <Button
                         size="sm"
                         disabled={evaluating || submitted.length === 0}
