@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
@@ -10,6 +10,8 @@ import Modal from '../components/common/Modal/Modal';
 import EventForm from '../components/features/events/EventForm/EventForm';
 import Alert from '../components/common/Alert/Alert';
 import EventCard from '../components/features/events/EventCard/EventCard';
+import EventFilters from '../components/common/EventFilters/EventFilters';
+import { ALL_THEMES } from '../constants/themes';
 
 const STATUS_TABS = [
   { label: 'All',                value: 'all' },
@@ -32,6 +34,7 @@ const MyEvents = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [activeThemes, setActiveThemes] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const isOrganizer = user?.role === 'organizer';
@@ -63,20 +66,22 @@ const MyEvents = () => {
     }
   };
 
-  const filteredEvents = events.filter(event => {
-    const matchesTab = activeTab === 'all' || event.status?.toLowerCase() === activeTab;
-    const matchesSearch = !searchQuery.trim() ||
-      event.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
-
-  const tabCounts = STATUS_TABS.reduce((acc, t) => {
+  const tabCounts = useMemo(() => STATUS_TABS.reduce((acc, t) => {
     acc[t.value] = t.value === 'all'
       ? events.length
       : events.filter(e => e.status?.toLowerCase() === t.value).length;
     return acc;
-  }, {});
+  }, {}), [events]);
+
+  const filteredEvents = useMemo(() => events.filter(event => {
+    const matchesTab = activeTab === 'all' || event.status?.toLowerCase() === activeTab;
+    const matchesSearch = !searchQuery.trim() ||
+      event.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const eventThemes = event.theme ? event.theme.split(',').map(t => t.trim()) : [];
+    const matchesTheme = activeThemes.length === 0 || activeThemes.every(t => eventThemes.includes(t));
+    return matchesTab && matchesSearch && matchesTheme;
+  }), [events, activeTab, searchQuery, activeThemes]);
 
   const handleCreateEvent = async (eventData) => {
     setCreateLoading(true);
@@ -110,31 +115,15 @@ const MyEvents = () => {
         </div>
       )}
 
-      {/* Status filter tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {STATUS_TABS.map(tab => {
-          const count = tabCounts[tab.value] ?? 0;
-          const isActive = activeTab === tab.value;
-          return (
-            <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
-                isActive
-                  ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600'
-              }`}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <EventFilters
+        tabs={STATUS_TABS}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabCounts={tabCounts}
+        themeItems={ALL_THEMES}
+        activeThemes={activeThemes}
+        onThemesChange={setActiveThemes}
+      />
 
       {/* Content */}
       {loading ? (
@@ -157,9 +146,9 @@ const MyEvents = () => {
       ) : (
         <EmptyState
           icon={Calendar}
-          title={activeTab !== 'all' ? 'No matches found' : 'No events found'}
-          message={activeTab !== 'all'
-            ? 'Try a different status filter.'
+          title={activeTab !== 'all' || activeThemes.length > 0 ? 'No matches found' : 'No events found'}
+          message={activeTab !== 'all' || activeThemes.length > 0
+            ? 'Try a different filter.'
             : (isOrganizer
                 ? "You haven't created any events yet. Start by creating your first hackathon!"
                 : "You haven't joined any events yet. Explore the dashboard to find exciting hackathons!")
