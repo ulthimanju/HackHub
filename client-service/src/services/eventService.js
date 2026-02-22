@@ -20,6 +20,8 @@ const eventService = {
   getEventStats:            (eventId)       => api.get(`/events/${eventId}/stats`),
   advanceEventStatus:       (eventId)       => api.patch(`/events/${eventId}/advance-status`),
   toggleJudging:            (eventId)       => api.patch(`/events/${eventId}/judging`),
+  getReferences:            (eventId)       => api.get(`/events/${eventId}/references`),
+  updateReferences:         (eventId, contentMd) => api.put(`/events/${eventId}/references`, { contentMd }),
 };
 
 export default eventService;

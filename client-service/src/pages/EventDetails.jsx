@@ -18,6 +18,7 @@ import OrgTeamsTab from '../components/features/events/OrgTeamsTab/OrgTeamsTab';
 import SubmissionsTab from '../components/features/events/SubmissionsTab/SubmissionsTab';
 import LeaderboardTab from '../components/features/events/LeaderboardTab/LeaderboardTab';
 import EventForm from '../components/features/events/EventForm/EventForm';
+import ReferencesTab from '../components/features/events/ReferencesTab/ReferencesTab';
 import { ArrowLeft, Hash, Check, X } from 'lucide-react';
 
 const EventDetails = () => {
@@ -265,6 +266,15 @@ const EventDetails = () => {
           onAdd={handleAddProblems}
           onUpdate={handleUpdateProblem}
           onDelete={handleDeleteProblem}
+        />
+      ),
+    },
+    {
+      label: 'References',
+      content: (
+        <ReferencesTab
+          eventId={id}
+          permissions={permissions}
         />
       ),
     },
