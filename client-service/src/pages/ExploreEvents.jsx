@@ -7,8 +7,11 @@ import Modal from '../components/common/Modal/Modal';
 import Alert from '../components/common/Alert/Alert';
 import EventCard from '../components/features/events/EventCard/EventCard';
 import EventFilters from '../components/common/EventFilters/EventFilters';
+import Pagination from '../components/common/Pagination/Pagination';
 import { Search, CheckCircle2 } from 'lucide-react';
 import { ALL_THEMES } from '../constants/themes';
+
+const PAGE_SIZE = 12;
 
 const STATUS_TABS = [
   { label: 'All', value: 'all' },
@@ -35,6 +38,7 @@ const ExploreEvents = () => {
 
   const [activeTab, setActiveTab] = useState('all');
   const [activeThemes, setActiveThemes] = useState([]);
+  const [eventsPage, setEventsPage] = useState(0);
 
   const [registerEvent, setRegisterEvent] = useState(null); // event object to register for
   const [registering, setRegistering] = useState(false);
@@ -78,6 +82,12 @@ const ExploreEvents = () => {
       return matchesTab && matchesSearch && matchesTheme;
     });
   }, [events, activeTab, search, activeThemes]);
+
+  // Reset page when filters change
+  React.useEffect(() => { setEventsPage(0); }, [activeTab, search, activeThemes]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedEvents = filtered.slice(eventsPage * PAGE_SIZE, (eventsPage + 1) * PAGE_SIZE);
 
   const handleRegister = async () => {
     if (!registerEvent) return;
@@ -156,27 +166,36 @@ const ExploreEvents = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map(event => {
-            const status = event.status?.toLowerCase() || 'upcoming';
-            const isRegistered = registeredIds.has(event.id);
-            const myReg = registrationStatuses[event.id];
-            const canRegister = status === 'registration_open' && !isRegistered;
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {paginatedEvents.map(event => {
+              const status = event.status?.toLowerCase() || 'upcoming';
+              const isRegistered = registeredIds.has(event.id);
+              const myReg = registrationStatuses[event.id];
+              const canRegister = status === 'registration_open' && !isRegistered;
 
-            return (
-              <EventCard
-                key={event.id}
-                event={event}
-                user={user}
-                registrationStatus={myReg}
-                onJoin={(eventId) => navigate(`/events/${eventId}`)}
-                onManage={(eventId) => navigate(`/events/${eventId}`)}
-                canRegister={canRegister}
-                onRegister={() => setRegisterEvent(event)}
-              />
-            );
-          })}
-        </div>
+              return (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  user={user}
+                  registrationStatus={myReg}
+                  onJoin={(eventId) => navigate(`/events/${eventId}`)}
+                  onManage={(eventId) => navigate(`/events/${eventId}`)}
+                  canRegister={canRegister}
+                  onRegister={() => setRegisterEvent(event)}
+                />
+              );
+            })}
+          </div>
+          <Pagination
+            page={eventsPage}
+            totalPages={totalPages}
+            onPageChange={setEventsPage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+          />
+        </>
       )}
 
       {/* Registration modal */}

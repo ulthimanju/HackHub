@@ -1,10 +1,13 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
+import Pagination from '../../../common/Pagination/Pagination';
 
 const medals = ['🥇', '🥈', '🥉'];
+const PAGE_SIZE = 10;
 
 const LeaderboardTab = memo(function LeaderboardTab({ eventStatus, teams, loading, problemStatements }) {
   const status = eventStatus?.toLowerCase();
+  const [page, setPage] = useState(0);
 
   const ranked = useMemo(() => {
     if (!teams) return [];
@@ -54,21 +57,22 @@ const LeaderboardTab = memo(function LeaderboardTab({ eventStatus, teams, loadin
 
   return (
     <div className="space-y-3">
-      {ranked.map((team, idx) => {
+      {ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((team, idx) => {
+        const globalIdx = page * PAGE_SIZE + idx;
         const problem  = problemStatements?.find(p => p.id === team.problemStatementId);
         const accepted = team.members?.filter(m => m.status === 'ACCEPTED') ?? [];
-        const borderClass = idx === 0
+        const borderClass = globalIdx === 0
           ? 'border-yellow-300 ring-2 ring-yellow-100'
-          : idx === 1 ? 'border-surface-border'
-          : idx === 2 ? 'border-brand-200'
+          : globalIdx === 1 ? 'border-surface-border'
+          : globalIdx === 2 ? 'border-brand-200'
           : 'border-surface-border';
-        const iconBg = idx === 0 ? 'bg-yellow-50' : idx === 1 ? 'bg-surface-hover' : idx === 2 ? 'bg-brand-50' : 'bg-surface-hover';
+        const iconBg = globalIdx === 0 ? 'bg-yellow-50' : globalIdx === 1 ? 'bg-surface-hover' : globalIdx === 2 ? 'bg-brand-50' : 'bg-surface-hover';
 
         return (
           <div key={team.id} className={`bg-white rounded-xl border shadow-card p-5 ${borderClass}`}>
             <div className="flex items-start gap-4">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ${iconBg}`}>
-                {medals[idx] || `#${idx + 1}`}
+                {medals[globalIdx] || `#${globalIdx + 1}`}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
@@ -101,6 +105,13 @@ const LeaderboardTab = memo(function LeaderboardTab({ eventStatus, teams, loadin
           </div>
         );
       })}
+      <Pagination
+        page={page}
+        totalPages={Math.ceil(ranked.length / PAGE_SIZE)}
+        onPageChange={setPage}
+        totalItems={ranked.length}
+        pageSize={PAGE_SIZE}
+      />
     </div>
   );
 });

@@ -7,6 +7,9 @@ import com.ehub.event.enums.RegistrationStatus;
 import com.ehub.event.enums.EventStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,13 +29,17 @@ public class EventController {
 
     @GetMapping("/organizer")
     @PreAuthorize("hasRole('ORGANIZER')")
-    public ResponseEntity<List<EventResponse>> getMyEventsAsOrganizer() {
-        return ResponseEntity.ok(eventService.getEventsByOrganizer(getCurrentUserId()));
+    public ResponseEntity<Page<EventResponse>> getMyEventsAsOrganizer(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1000") int size) {
+        return ResponseEntity.ok(eventService.getEventsByOrganizer(getCurrentUserId(), PageRequest.of(page, size)));
     }
 
     @GetMapping("/my-registrations")
-    public ResponseEntity<List<EventResponse>> getMyEventsAsParticipant() {
-        return ResponseEntity.ok(eventService.getEventsByParticipant(getCurrentUserId()));
+    public ResponseEntity<Page<EventResponse>> getMyEventsAsParticipant(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1000") int size) {
+        return ResponseEntity.ok(eventService.getEventsByParticipant(getCurrentUserId(), PageRequest.of(page, size)));
     }
 
     @GetMapping("/my-registrations/status")
@@ -51,8 +58,10 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EventResponse>> getAllEvents() {
-        return ResponseEntity.ok(eventService.getAllEvents());
+    public ResponseEntity<Page<EventResponse>> getAllEvents(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1000") int size) {
+        return ResponseEntity.ok(eventService.getAllEvents(PageRequest.of(page, size)));
     }
 
     @GetMapping("/{id}/stats")
@@ -154,8 +163,11 @@ public class EventController {
 
     @GetMapping("/{eventId}/registrations")
     @PreAuthorize("hasRole('ORGANIZER')")
-    public ResponseEntity<List<RegistrationResponse>> getEventRegistrations(@PathVariable String eventId) {
-        return ResponseEntity.ok(eventService.getEventRegistrations(eventId));
+    public ResponseEntity<Page<RegistrationResponse>> getEventRegistrations(
+            @PathVariable String eventId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1000") int size) {
+        return ResponseEntity.ok(eventService.getEventRegistrations(eventId, PageRequest.of(page, size)));
     }
 
     @DeleteMapping("/registrations/{registrationId}")

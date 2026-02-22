@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Users, Search } from 'lucide-react';
 import Alert from '../../../common/Alert/Alert';
+import Pagination from '../../../common/Pagination/Pagination';
 import TeamMemberList from '../common/TeamMemberList';
+
+const PAGE_SIZE = 10;
 
 /**
  * Props:
@@ -12,6 +15,7 @@ import TeamMemberList from '../common/TeamMemberList';
  */
 export default function OrgTeamsTab({ teams, loading, error, problemStatements }) {
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
 
   return (
     <div className="space-y-4">
@@ -21,7 +25,7 @@ export default function OrgTeamsTab({ teams, loading, error, problemStatements }
         <input
           type="text"
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => { setSearch(e.target.value); setPage(0); }}
           placeholder="Search by team name…"
           className="w-full pl-9 pr-4 py-2 border border-surface-border rounded-lg text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400"
         />
@@ -49,40 +53,51 @@ export default function OrgTeamsTab({ teams, loading, error, problemStatements }
             <p className="text-sm text-ink-muted">No teams match "<span className="font-medium text-ink-secondary">{search}</span>"</p>
           </div>
         );
+        const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+        const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filtered.map(team => {
-              const memberCount = (team.members?.filter(m => m.status === 'ACCEPTED') ?? []).length;
-              const problem = problemStatements?.find(p => p.id === team.problemStatementId);
-              return (
-                <div key={team.id} className="bg-white rounded-xl border border-surface-border shadow-card p-5 flex flex-col gap-3">
-                  {/* Team name */}
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-semibold text-ink-primary text-base leading-tight font-display">{team.name}</h4>
-                    <span className="shrink-0 flex items-center gap-1 text-xs font-medium text-ink-muted bg-surface-hover px-2.5 py-1 rounded-md">
-                      <Users className="w-3.5 h-3.5" />
-                      {memberCount} {memberCount === 1 ? 'member' : 'members'}
-                    </span>
-                  </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {paginated.map(team => {
+                const memberCount = (team.members?.filter(m => m.status === 'ACCEPTED') ?? []).length;
+                const problem = problemStatements?.find(p => p.id === team.problemStatementId);
+                return (
+                  <div key={team.id} className="bg-white rounded-xl border border-surface-border shadow-card p-5 flex flex-col gap-3">
+                    {/* Team name */}
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-semibold text-ink-primary text-base leading-tight font-display">{team.name}</h4>
+                      <span className="shrink-0 flex items-center gap-1 text-xs font-medium text-ink-muted bg-surface-hover px-2.5 py-1 rounded-md">
+                        <Users className="w-3.5 h-3.5" />
+                        {memberCount} {memberCount === 1 ? 'member' : 'members'}
+                      </span>
+                    </div>
 
-                  {/* Members list */}
-                  <TeamMemberList members={team.members ?? []} filter="ACCEPTED" />
+                    {/* Members list */}
+                    <TeamMemberList members={team.members ?? []} filter="ACCEPTED" />
 
-                  {/* Problem statement */}
-                  <div className={`rounded-lg px-3 py-2.5 ${problem ? 'bg-brand-50 border border-brand-100' : 'bg-surface-hover border border-dashed border-surface-border'}`}>
-                    {problem ? (
-                      <>
-                        <p className="text-xs font-semibold text-brand-600 mb-0.5">Selected Problem</p>
-                        <p className="text-sm text-ink-secondary leading-snug line-clamp-3">{problem.statement}</p>
-                      </>
-                    ) : (
-                      <p className="text-xs text-ink-muted italic">No problem statement selected yet</p>
-                    )}
+                    {/* Problem statement */}
+                    <div className={`rounded-lg px-3 py-2.5 ${problem ? 'bg-brand-50 border border-brand-100' : 'bg-surface-hover border border-dashed border-surface-border'}`}>
+                      {problem ? (
+                        <>
+                          <p className="text-xs font-semibold text-brand-600 mb-0.5">Selected Problem</p>
+                          <p className="text-sm text-ink-secondary leading-snug line-clamp-3">{problem.statement}</p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-ink-muted italic">No problem statement selected yet</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+            />
+          </>
         );
       })()}
     </div>

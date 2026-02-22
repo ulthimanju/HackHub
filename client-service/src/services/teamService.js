@@ -1,7 +1,7 @@
 import api from './api';
 
 const teamService = {
-  getTeamsByEvent:      (eventId, name)           => api.get(`/events/teams/${eventId}`, { params: name ? { name } : undefined }),
+  getTeamsByEvent:      (eventId, name, params)    => api.get(`/events/teams/${eventId}`, { params: { ...(name ? { name } : {}), ...params } }).then(r => r?.content ?? r),
   getTeamByShortCode:   (shortCode)               => api.get(`/events/teams/code/${shortCode}`),
   createTeam:           (eventId, data)            => api.post(`/events/teams/${eventId}`, data),
   inviteMember:         (teamId, _leaderId, data)  => api.post(`/events/teams/${teamId}/invite`, data),
@@ -13,7 +13,7 @@ const teamService = {
   selectProblemStatement:(teamId, _lId, problemId) => api.patch(`/events/teams/${teamId}/problem-statement`, null, { params: problemId ? { problemId } : {} }),
   submitProject:        (teamId, _userId, data)    => api.post(`/events/teams/${teamId}/submit`, data),
   updateSkillsNeeded:   (teamId, skills)           => api.patch(`/events/teams/${teamId}/skills-needed`, { skills }),
-  suggestMembers:       (teamId)                   => api.get(`/events/matchmaking/suggest-members/${teamId}`),
+  suggestMembers:       (teamId, params)           => api.get(`/events/matchmaking/suggest-members/${teamId}`, { params }),
   // Judging / results (domain: team scoring)
   updateManualReview:   (teamId, data)             => api.patch(`/events/teams/${teamId}/manual-review`, data),
   finalizeResults:      (eventId)                  => api.patch(`/events/${eventId}/finalize-results`),

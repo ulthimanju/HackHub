@@ -19,7 +19,10 @@ public class MatchmakingController {
     private final AuthClient authClient;
 
     @GetMapping("/suggest-members/{teamId}")
-    public ResponseEntity<List<Map<String, Object>>> suggestMembers(@PathVariable String teamId) {
+    public ResponseEntity<List<Map<String, Object>>> suggestMembers(
+            @PathVariable String teamId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
 
@@ -36,10 +39,15 @@ public class MatchmakingController {
                 .map(m -> m.getUserId())
                 .collect(Collectors.toList());
 
-        List<Map<String, Object>> filteredSuggestions = suggestions.stream()
+        List<Map<String, Object>> filtered = suggestions.stream()
                 .filter(u -> !memberIds.contains(u.get("id").toString()))
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(filteredSuggestions);
+        // Apply pagination slicing
+        int start = page * size;
+        int end = Math.min(start + size, filtered.size());
+        List<Map<String, Object>> paged = (start >= filtered.size()) ? List.of() : filtered.subList(start, end);
+
+        return ResponseEntity.ok(paged);
     }
 }

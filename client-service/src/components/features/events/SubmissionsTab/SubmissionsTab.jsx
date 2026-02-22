@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Trophy, ExternalLink, Pencil, ChevronUp, Flag, Save } from 'lucide-react';
 import Button from '../../../common/Button/Button';
+import Pagination from '../../../common/Pagination/Pagination';
 import { useSubmissions } from '../../../../hooks/useSubmissions';
+
+const PAGE_SIZE = 10;
 
 /**
  * Props:
@@ -22,6 +25,7 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
   } = useSubmissions(eventId, onTeamsRefresh);
 
   const [localReviewData, setLocalReviewData] = useState({});
+  const [page, setPage] = useState(0);
 
   const submitted    = [...teams.filter(t => t.repoUrl)].sort((a, b) => {
     const scoreA = a.manualScore ?? a.score ?? -1;
@@ -29,6 +33,9 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
     return scoreB - scoreA;
   });
   const notSubmitted = teams.filter(t => !t.repoUrl);
+
+  const totalPages = Math.ceil(submitted.length / PAGE_SIZE);
+  const paginatedSubmitted = submitted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <div className="space-y-4">
@@ -81,7 +88,8 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
             </div>
           ) : (
             <div className="space-y-3">
-              {submitted.map((team, idx) => {
+              {paginatedSubmitted.map((team, idx) => {
+                const globalIdx = page * PAGE_SIZE + idx;
                 const problem    = problemStatements?.find(p => p.id === team.problemStatementId);
                 const aiScore    = team.score;
                 const manualScore = team.manualScore;
@@ -96,7 +104,7 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
                       {/* Header row */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-ink-muted w-6 text-center">#{idx + 1}</span>
+                          <span className="text-xs font-medium text-ink-muted w-6 text-center">#{globalIdx + 1}</span>
                           <h4 className="font-semibold text-ink-primary font-display">{team.name}</h4>
                           {team.shortCode && (
                             <span className="text-xs font-mono text-ink-muted bg-surface-hover px-2 py-0.5 rounded-md">{team.shortCode}</span>
@@ -237,6 +245,13 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
               })}
             </div>
           )}
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={submitted.length}
+            pageSize={PAGE_SIZE}
+          />
         </>
       )}
     </div>

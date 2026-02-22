@@ -5,6 +5,8 @@ import com.ehub.event.service.TeamService;
 import com.ehub.event.util.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -29,10 +31,12 @@ public class TeamController {
     }
 
     @GetMapping("/{eventId}")
-    public ResponseEntity<List<TeamResponse>> getTeamsByEvent(
+    public ResponseEntity<Page<TeamResponse>> getTeamsByEvent(
             @PathVariable String eventId,
-            @RequestParam(required = false) String name) {
-        return ResponseEntity.ok(teamService.getTeamsByEvent(eventId, name));
+            @RequestParam(required = false) String name,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1000") int size) {
+        return ResponseEntity.ok(teamService.getTeamsByEvent(eventId, name, PageRequest.of(page, size)));
     }
 
     @GetMapping("/code/{shortCode}")

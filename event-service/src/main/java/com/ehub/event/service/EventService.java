@@ -23,12 +23,17 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -78,6 +83,49 @@ public class EventService {
         Map<String, Long> counts = registrationRepository.countApprovedByEventIds(
                 events.stream().map(Event::getId).collect(Collectors.toList()));
         return events.stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
+    }
+
+    public Page<EventResponse> getAllEvents(Pageable pageable) {
+        Page<Event> page = eventRepository.findAll(pageable);
+        List<String> ids = page.getContent().stream().map(Event::getId).collect(Collectors.toList());
+        Map<String, Long> counts = ids.isEmpty() ? Collections.emptyMap() : registrationRepository.countApprovedByEventIds(ids);
+        List<EventResponse> content = page.getContent().stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
+        return new PageImpl<>(content, pageable, page.getTotalElements());
+    }
+
+    public Page<EventResponse> getEventsByOrganizer(String organizerId, Pageable pageable) {
+        Page<Event> page = eventRepository.findByOrganizerId(organizerId, pageable);
+        List<String> ids = page.getContent().stream().map(Event::getId).collect(Collectors.toList());
+        Map<String, Long> counts = ids.isEmpty() ? Collections.emptyMap() : registrationRepository.countApprovedByEventIds(ids);
+        List<EventResponse> content = page.getContent().stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
+        return new PageImpl<>(content, pageable, page.getTotalElements());
+    }
+
+    public Page<EventResponse> getEventsByParticipant(String userId, Pageable pageable) {
+        List<String> eventIds = registrationRepository.findByUserId(userId).stream()
+                .map(Registration::getEventId).collect(Collectors.toList());
+        if (eventIds.isEmpty()) return Page.empty(pageable);
+        List<Event> all = eventRepository.findAllById(eventIds);
+        Map<String, Long> counts = registrationRepository.countApprovedByEventIds(eventIds);
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), all.size());
+        if (start > all.size()) return Page.empty(pageable);
+        List<EventResponse> content = all.subList(start, end).stream()
+                .map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
+        return new PageImpl<>(content, pageable, all.size());
+    }
+
+    public Page<RegistrationResponse> getEventRegistrations(String eventId, Pageable pageable) {
+        return registrationRepository.findByEventId(eventId, pageable)
+                .map(reg -> RegistrationResponse.builder()
+                        .id(reg.getId())
+                        .eventId(reg.getEventId())
+                        .userId(reg.getUserId())
+                        .username(reg.getUsername())
+                        .userEmail(reg.getUserEmail())
+                        .status(reg.getStatus())
+                        .registrationTime(reg.getRegistrationTime())
+                        .build());
     }
 
     public EventResponse getEventById(String id) {

@@ -22,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -90,6 +93,17 @@ public class TeamService {
                     .toList();
         }
         return teams.stream().map(this::mapToTeamResponse).toList();
+    }
+
+    public Page<TeamResponse> getTeamsByEvent(String eventId, String name, Pageable pageable) {
+        Page<Team> page = teamRepository.findByEventId(eventId, pageable);
+        List<Team> teams = page.getContent();
+        if (name != null && !name.isBlank()) {
+            String lower = name.toLowerCase();
+            teams = teams.stream().filter(t -> t.getName().toLowerCase().contains(lower)).toList();
+        }
+        List<TeamResponse> content = teams.stream().map(this::mapToTeamResponse).toList();
+        return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
     public TeamResponse getTeamByShortCode(String shortCode) {

@@ -1,6 +1,8 @@
 package com.ehub.event.repository;
 
 import com.ehub.event.entity.Team;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,6 +11,7 @@ import java.util.Optional;
 
 public interface TeamRepository extends JpaRepository<Team, String> {
     List<Team> findByEventId(String eventId);
+    Page<Team> findByEventId(String eventId, Pageable pageable);
     Optional<Team> findByEventIdAndLeaderId(String eventId, String leaderId);
     Optional<Team> findByShortCode(String shortCode);
     long countByEventId(String eventId);

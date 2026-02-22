@@ -1,6 +1,7 @@
 import React, { memo, useState, useMemo } from 'react';
 import { Users, UserCheck, UserX } from 'lucide-react';
 import Alert from '../../../common/Alert/Alert';
+import Pagination from '../../../common/Pagination/Pagination';
 import { formatDateShort } from '../../../../utils/dateUtils';
 import StatusBadge from '../../../common/StatusBadge/StatusBadge';
 
@@ -10,6 +11,8 @@ const FILTERS = [
   { label: 'Approved', value: 'APPROVED' },
   { label: 'Rejected', value: 'REJECTED' },
 ];
+
+const PAGE_SIZE = 10;
 
 /**
  * Props:
@@ -22,11 +25,18 @@ const FILTERS = [
  */
 const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading, error, updatingId, statusUpdateError, onStatusUpdate }) {
   const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(0);
 
   const filtered = useMemo(
     () => filter === 'all' ? registrations : registrations.filter(r => r.status === filter),
     [registrations, filter]
   );
+
+  // Reset page when filter changes
+  React.useEffect(() => { setPage(0); }, [filter]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <div className="space-y-4">
@@ -87,7 +97,7 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
 
           {/* Participant grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {filtered.map((reg) => {
+            {paginated.map((reg) => {
               const isUpdating = updatingId === reg.id;
               return (
                 <div key={reg.id} className="bg-white rounded-xl p-4 border border-surface-border shadow-card flex items-center gap-4">
@@ -140,6 +150,13 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
               );
             })}
           </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       )}
     </div>

@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sparkles, UserPlus, RefreshCw } from 'lucide-react';
 import { ALL_SKILLS } from '../../../../constants/skills';
 import TagAutocomplete from '../../../common/TagAutocomplete/TagAutocomplete';
+import Pagination from '../../../common/Pagination/Pagination';
 import { useMatchmaking } from '../../../../hooks/useMatchmaking';
+
+const PAGE_SIZE = 8;
 
 /**
  * Props:
@@ -16,6 +19,10 @@ export default function MatchmakingPanel({ team, onInvite, onSkillsSaved }) {
     loadingSuggest, loadingSave, skillsChanged,
     error, saveSkills, findMatches,
   } = useMatchmaking(team, onSkillsSaved);
+  const [suggestPage, setSuggestPage] = useState(0);
+
+  // Reset page when suggestions change
+  React.useEffect(() => { setSuggestPage(0); }, [suggestions]);
 
   return (
     <div className="space-y-5">
@@ -66,7 +73,7 @@ export default function MatchmakingPanel({ team, onInvite, onSkillsSaved }) {
           <p className="text-xs font-medium text-ink-muted uppercase tracking-widest">
             {suggestions.length === 0 ? 'No matches found' : `${suggestions.length} matching participant${suggestions.length !== 1 ? 's' : ''}`}
           </p>
-          {suggestions.map((u) => {
+          {suggestions.slice(suggestPage * PAGE_SIZE, (suggestPage + 1) * PAGE_SIZE).map((u) => {
             const userSkills = (u.skills ?? []).filter(s => skills.includes(s));
             return (
               <div key={u.id} className="bg-white rounded-xl border border-surface-border shadow-card p-4 flex items-center justify-between gap-4">
@@ -99,6 +106,13 @@ export default function MatchmakingPanel({ team, onInvite, onSkillsSaved }) {
               </div>
             );
           })}
+          <Pagination
+            page={suggestPage}
+            totalPages={Math.ceil(suggestions.length / PAGE_SIZE)}
+            onPageChange={setSuggestPage}
+            totalItems={suggestions.length}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       )}
     </div>
