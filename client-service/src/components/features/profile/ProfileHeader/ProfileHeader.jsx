@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Mail, Check, X, Github, Linkedin, Globe, Zap, Loader2 } from 'lucide-react';
 import Badge from '../../../common/Badge/Badge';
+import { useAbility } from '../../../../hooks/useAbility';
 
 const LEVEL_COLOR = {
   BEGINNER:     'bg-blue-50 text-blue-600',
@@ -28,6 +29,7 @@ const SaveIndicator = ({ status }) => {
 };
 
 const ProfileHeader = memo(({ user, saveStatus = 'idle' }) => {
+  const { isOrganizer } = useAbility();
   return (
     <div className="bg-white p-6 rounded-xl border border-surface-border shadow-card space-y-5">
       {/* Top row: avatar + identity + save indicator */}
@@ -51,7 +53,7 @@ const ProfileHeader = memo(({ user, saveStatus = 'idle' }) => {
             {user?.displayName && (
               <span className="text-sm text-ink-muted">@{user.username}</span>
             )}
-            <Badge variant={user?.role === 'organizer' ? 'success' : 'info'} className="capitalize">
+            <Badge variant={isOrganizer ? 'success' : 'info'} className="capitalize">
               {user?.role}
             </Badge>
             {user?.experienceLevel && (

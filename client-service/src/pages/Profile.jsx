@@ -10,6 +10,7 @@ import { User, Github, Linkedin, Globe, ChevronDown } from 'lucide-react';
 import ProfileHeader from '../components/features/profile/ProfileHeader/ProfileHeader';
 import SkillTags from '../components/features/profile/SkillTags/SkillTags';
 import UpgradeSection from '../components/features/profile/UpgradeSection/UpgradeSection';
+import Guard from '../components/common/Guard/Guard';
 
 const EXPERIENCE_LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 
@@ -231,7 +232,7 @@ const Profile = () => {
         </div>
       </Section>
 
-      {user?.role === 'participant' && (
+      <Guard allowed={['participant']}>
         <UpgradeSection
           showOtpInput={showOtpInput}
           otp={otp}
@@ -241,7 +242,7 @@ const Profile = () => {
           otpLoading={otpLoading}
           loading={loading}
         />
-      )}
+      </Guard>
     </div>
   );
 };

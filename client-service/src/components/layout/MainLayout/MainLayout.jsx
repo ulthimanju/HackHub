@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect } from 'react';
 import { LogOut, Calendar, Compass, Search, X, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { useAbility } from '../../../hooks/useAbility';
 import { useNavigate, useLocation, Outlet, useSearchParams } from 'react-router-dom';
 import NavItem from '../NavItem/NavItem';
 import Button from '../../common/Button/Button';
@@ -10,6 +11,7 @@ import { useNotifications } from '../../../hooks/useNotifications';
 
 const MainLayout = memo(() => {
   const { user, logout } = useAuth();
+  const { isOrganizer } = useAbility();
   const navigate = useNavigate();
   const location = useLocation();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications(user);
@@ -24,7 +26,6 @@ const MainLayout = memo(() => {
     else if (p === '/')          setCurrentPage('dashboard');
   }, [location.pathname]);
 
-  const isOrganizer    = user?.role === 'organizer';
   const isEventDetails = location.pathname.startsWith('/events/');
   const isExplorePage  = currentPage === 'explore';
   const [searchParams, setSearchParams] = useSearchParams();

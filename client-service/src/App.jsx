@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PageSpinner } from './components/common/Spinner/Spinner';
+import { useAbility } from './hooks/useAbility';
 
 // Layout
 import MainLayout from './components/layout/MainLayout/MainLayout';
@@ -16,12 +17,18 @@ const CreateEvent  = lazy(() => import('./pages/CreateEvent'));
 const ExploreEvents = lazy(() => import('./pages/ExploreEvents'));
 const EventDetails = lazy(() => import('./pages/EventDetails'));
 
-function ProtectedRoute({ children }) {
+/**
+ * Protects a route: redirects unauthenticated users to /login.
+ * If allowedRoles is provided, redirects users whose role is not in the list.
+ */
+function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
-  
+  const { isRole } = useAbility();
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  
+  if (allowedRoles && !isRole(allowedRoles)) return <Navigate to="/" replace />;
+
   return children;
 }
 
@@ -53,7 +60,11 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/my-events" element={<MyEvents />} />
-        <Route path="/my-events/create" element={<CreateEvent />} />
+        <Route path="/my-events/create" element={
+          <ProtectedRoute allowedRoles={['organizer']}>
+            <CreateEvent />
+          </ProtectedRoute>
+        } />
         <Route path="/explore" element={<ExploreEvents />} />
         <Route path="/events/:id" element={<EventDetails />} />
       </Route>

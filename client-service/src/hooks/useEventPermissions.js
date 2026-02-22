@@ -1,14 +1,19 @@
 import { useMemo } from 'react';
+import { useAuth } from './useAuth';
+import { useAbility } from './useAbility';
 
 /**
  * Centralises all permission checks for EventDetails.
+ * Gets user context internally — no need to pass user as a prop.
  * Returns a stable object — components destructure what they need.
  */
-export function useEventPermissions(eventDetails, user) {
+export function useEventPermissions(eventDetails) {
+  const { user } = useAuth();
+  const { isOrganizer } = useAbility();
+
   return useMemo(() => {
     if (!eventDetails || !user) return {};
 
-    const isOrganizer = user.role === 'organizer';
     const isEventOwner = isOrganizer && eventDetails.organizerId === user.id;
     const status = eventDetails.status?.toLowerCase() ?? '';
 
@@ -28,5 +33,5 @@ export function useEventPermissions(eventDetails, user) {
       isLocked,
       registrationEnded,
     };
-  }, [eventDetails, user]);
+  }, [eventDetails, user, isOrganizer]);
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAbility } from '../hooks/useAbility';
 import { useEventPermissions } from '../hooks/useEventPermissions';
 import eventService from '../services/eventService';
 import teamService from '../services/teamService';
@@ -23,8 +23,7 @@ import { ArrowLeft, Hash, Check, X } from 'lucide-react';
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isOrganizer = user?.role === 'organizer';
+  const { isOrganizer } = useAbility();
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [eventDetails, setEventDetails]           = useState(null);
@@ -52,7 +51,7 @@ const EventDetails = () => {
   const [editLoading, setEditLoading]             = useState(false);
   const [editError, setEditError]                 = useState('');
 
-  const permissions = useEventPermissions(eventDetails, user);
+  const permissions = useEventPermissions(eventDetails);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const copyCode = () => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useAbility } from '../hooks/useAbility';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import eventService from '../services/eventService';
@@ -23,6 +24,7 @@ const STATUS_TABS = [
 
 const MyEvents = () => {
   const { user } = useAuth();
+  const { isOrganizer } = useAbility();
   const navigate = useNavigate();
   const location = useLocation();
   const [events, setEvents] = useState([]);
@@ -33,8 +35,6 @@ const MyEvents = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [activeThemes, setActiveThemes] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const isOrganizer = user?.role === 'organizer';
 
   useEffect(() => {
     fetchEvents();
