@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
+import { theme } from '../../../utils/theme';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -360,9 +361,9 @@ export default function DateTimePicker({ label, name, value, onChange, error, re
   return (
     <div ref={wrapRef}>
       {label && (
-        <label className="block text-sm font-medium text-ink-secondary mb-1.5">
+        <label className={`${theme.text.label} inline-block mb-2`}>
           {label}
-          {required && <span className="text-red-500 ml-0.5">*</span>}
+          {required && <span className="text-red-500 ml-1 font-bold">*</span>}
         </label>
       )}
 
