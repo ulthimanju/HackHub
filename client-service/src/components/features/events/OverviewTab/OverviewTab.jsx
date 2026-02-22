@@ -3,7 +3,6 @@ import {
   MapPin, Users, Mail, BookOpen,
   Clock, Globe, Check, ArrowRight, Copy, Pencil,
 } from 'lucide-react';
-import EventPulse from './EventPulse';
 import EventJourney from './EventJourney';
 
 const fmt = (d) => {
@@ -59,19 +58,7 @@ export default function OverviewTab({
   return (
     <div className="space-y-5">
 
-      {/* ── LAYER 1: The Pulse ──────────────────────────────────────────────── */}
-      <EventPulse
-        event={event}
-        permissions={permissions}
-        myRegistration={myRegistration}
-        advancingStatus={advancingStatus}
-        advanceError={advanceError}
-        setConfirmAdvance={setConfirmAdvance}
-        onEditClick={onEditClick}
-        onSwitchToTeamTab={onSwitchToTeamTab}
-      />
-
-      {/* ── LAYER 2: The Narrative ──────────────────────────────────────────── */}
+      {/* ── LAYER 1: The Narrative ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Description — large block (2/3) */}
         <div className="lg:col-span-2">
@@ -107,7 +94,13 @@ export default function OverviewTab({
 
         {/* Event Journey — medium block (1/3) */}
         <div className="lg:col-span-1">
-          <EventJourney event={event} />
+          <EventJourney
+            event={event}
+            permissions={permissions}
+            advancingStatus={advancingStatus}
+            advanceError={advanceError}
+            setConfirmAdvance={setConfirmAdvance}
+          />
         </div>
       </div>
 
