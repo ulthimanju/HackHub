@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Clock, CheckCircle2, ChevronRight, ToggleLeft, ToggleRight, Pencil,
+  Clock, CheckCircle2, ChevronRight, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import Button from '../../../common/Button/Button';
 import eventService from '../../../../services/eventService';
@@ -80,7 +80,6 @@ export default function EventPulse({
   onSwitchToTeamTab,
 }) {
   const currentIdx = FLOW.findIndex(s => s.status === event.status);
-  const progressPct = currentIdx >= 0 ? (currentIdx / (FLOW.length - 1)) * 100 : 0;
   const colors = STATUS_COLORS[event.status] || STATUS_COLORS.COMPLETED;
   const canAdvance = currentIdx >= 0 && currentIdx < FLOW.length - 1;
   const advanceInfo = ADVANCE_INFO[event.status];
@@ -132,64 +131,21 @@ export default function EventPulse({
       <div className={`h-1 w-full ${colors.accent}`} />
 
       <div className="p-5 space-y-4">
-        {/* Row 1: Status badge + right-side actions */}
+        {/* Row 1: Status badge + participant CTA */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold ${colors.badge}`}>
             <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
             {event.status?.replace(/_/g, ' ')}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {permissions.isEventOwner ? (
-              <button
-                onClick={onEditClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-brand-600 border border-brand-200 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors"
-              >
-                <Pencil className="w-3.5 h-3.5" /> Edit Event
-              </button>
-            ) : participantCTA()}
-          </div>
+          {!permissions.isEventOwner && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {participantCTA()}
+            </div>
+          )}
         </div>
 
-        {/* Row 2: Progress bar + step labels */}
-        <div className="space-y-2">
-          <div className="relative h-2 bg-surface-hover rounded-full overflow-visible">
-            {/* Filled track */}
-            <div
-              className="absolute inset-y-0 left-0 bg-brand-500 rounded-full transition-all duration-700"
-              style={{ width: `${progressPct}%` }}
-            />
-            {/* Step dots */}
-            {FLOW.map((step, idx) => {
-              const pct = (idx / (FLOW.length - 1)) * 100;
-              return (
-                <div
-                  key={step.status}
-                  title={step.shortLabel}
-                  className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 z-10 transition-all ${
-                    idx < currentIdx  ? 'bg-brand-500 border-brand-500' :
-                    idx === currentIdx ? 'bg-white border-brand-500 shadow' :
-                                        'bg-white border-surface-border'
-                  }`}
-                  style={{ left: `${pct}%` }}
-                />
-              );
-            })}
-          </div>
-          {/* Step labels — hidden on mobile */}
-          <div className="hidden sm:flex justify-between">
-            {FLOW.map((step, idx) => (
-              <span key={step.status} className={`text-xxs font-medium w-[14%] text-center ${
-                idx === currentIdx ? 'text-brand-600 font-semibold' :
-                idx < currentIdx   ? 'text-ink-secondary' : 'text-ink-disabled'
-              }`}>
-                {step.shortLabel}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Row 3: Countdown */}
+        {/* Row 2: Countdown */}
         {countdownInfo && remaining ? (
           <div className="flex items-center gap-5 flex-wrap pt-1">
             <div className="flex items-center gap-1.5 text-xs text-ink-muted min-w-fit">

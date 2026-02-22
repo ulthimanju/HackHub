@@ -74,19 +74,19 @@ export default function EventJourney({ event }) {
               {/* Vertical line */}
               {idx < milestones.length - 1 && (
                 <div className={`absolute left-[15px] top-7 w-0.5 h-[calc(100%-4px)] ${
-                  isPast ? 'bg-brand-300' : 'bg-surface-border'
+                  isPast ? 'bg-orange-200' : 'bg-surface-border'
                 }`} />
               )}
 
               {/* Icon dot */}
               <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 mt-0.5 transition-all ${
-                isPast    ? 'bg-brand-500 border-brand-500' :
-                isCurrent ? 'bg-white border-brand-500 shadow-sm' :
+                isPast    ? 'bg-orange-100 border-orange-300' :
+                isCurrent ? 'bg-green-50 border-green-400 shadow-sm' :
                             'bg-white border-surface-border'
               }`}>
                 <Icon className={`w-3.5 h-3.5 ${
-                  isPast    ? 'text-white' :
-                  isCurrent ? 'text-brand-500' :
+                  isPast    ? 'text-orange-500' :
+                  isCurrent ? 'text-green-500' :
                               'text-ink-disabled'
                 }`} />
               </div>
@@ -94,19 +94,19 @@ export default function EventJourney({ event }) {
               {/* Content */}
               <div className="pb-5 min-w-0">
                 <p className={`text-sm font-medium leading-tight ${
-                  isCurrent ? 'text-ink-primary font-semibold' :
-                  isPast    ? 'text-ink-muted line-through decoration-ink-disabled' :
-                              'text-ink-secondary'
+                  isCurrent ? 'text-green-700 font-semibold' :
+                  isPast    ? 'text-orange-600' :
+                              'text-ink-disabled'
                 }`}>
                   {m.label}
                   {isCurrent && (
-                    <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-xxs bg-brand-50 text-brand-600 font-semibold align-middle">
+                    <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-xxs bg-green-50 text-green-600 font-semibold align-middle border border-green-200">
                       Now
                     </span>
                   )}
                 </p>
                 {m.date ? (
-                  <p className={`text-xs mt-0.5 ${isPast ? 'text-ink-disabled' : 'text-ink-muted'}`}>
+                  <p className={`text-xs mt-0.5 ${isPast ? 'text-orange-400' : isCurrent ? 'text-green-600' : 'text-ink-disabled'}`}>
                     {formatDate(m.date)}
                     {formatTime(m.date) && <span className="ml-1.5">{formatTime(m.date)}</span>}
                   </p>

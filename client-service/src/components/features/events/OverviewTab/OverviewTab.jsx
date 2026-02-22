@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   MapPin, Users, Mail, BookOpen,
-  Clock, Globe, Check, ArrowRight, Copy,
+  Clock, Globe, Check, ArrowRight, Copy, Pencil,
 } from 'lucide-react';
 import EventPulse from './EventPulse';
 import EventJourney from './EventJourney';
@@ -81,6 +81,14 @@ export default function OverviewTab({
                 <BookOpen className="w-3.5 h-3.5 text-brand-500" />
               </div>
               <p className="text-xxs font-semibold tracking-widest text-ink-muted uppercase">Mission Objective</p>
+              {permissions.isEventOwner && (
+                <button
+                  onClick={onEditClick}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-600 border border-brand-200 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors"
+                >
+                  <Pencil className="w-3 h-3" /> Edit Event
+                </button>
+              )}
             </div>
             {event.description ? (
               <p className="text-ink-secondary leading-relaxed text-sm">{event.description}</p>
