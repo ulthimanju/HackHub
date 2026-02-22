@@ -117,7 +117,7 @@ export default function OrganizerDashboard({ user }) {
                       ].map(({ label, value, alert }) => (
                         <div key={label} className={`rounded-lg px-2 py-2 text-center ${alert ? 'bg-brand-50' : 'bg-surface-hover'}`}>
                           <p className={`text-sm font-semibold ${alert ? 'text-brand-600' : 'text-ink-primary'}`}>{value ?? 0}</p>
-                          <p className="text-[10px] text-ink-muted mt-0.5">{label}</p>
+                          <p className="text-xxs text-ink-muted mt-0.5">{label}</p>
                         </div>
                       ))}
                     </div>

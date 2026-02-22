@@ -52,7 +52,7 @@ export default function NotificationBell({ notifications, unreadCount, markAsRea
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-76 bg-white rounded-xl shadow-dropdown border border-surface-border z-50 overflow-hidden min-w-[300px]">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-dropdown border border-surface-border z-50 overflow-hidden min-w-[300px]">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-surface-border">
             <span className="font-display font-semibold text-sm text-ink-primary">Notifications</span>
@@ -111,7 +111,7 @@ export default function NotificationBell({ notifications, unreadCount, markAsRea
                         <p className="text-xs text-ink-muted mt-0.5 line-clamp-2">{n.message}</p>
                       )}
                     </div>
-                    <span className="text-[10px] text-ink-muted whitespace-nowrap mt-0.5 shrink-0">
+                    <span className="text-xxs text-ink-muted whitespace-nowrap mt-0.5 shrink-0">
                       {timeAgo(n.timestamp)}
                     </span>
                   </div>

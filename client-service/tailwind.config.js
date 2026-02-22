@@ -10,6 +10,9 @@ export default {
         sans:    ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['"Space Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
+      fontSize: {
+        xxs: '10px',
+      },
       colors: {
         brand: {
           50:  '#FFF7ED',

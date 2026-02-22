@@ -63,7 +63,7 @@ export default function OverviewTab({ event, permissions, advancingStatus, advan
                     }`}>
                       {isPast ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                     </div>
-                    <p className={`text-[10px] font-medium text-center mt-1.5 leading-tight max-w-[72px] ${
+                    <p className={`text-xxs font-medium text-center mt-1.5 leading-tight max-w-[72px] ${
                       isCurrent ? 'text-brand-600' : isPast ? 'text-ink-muted' : 'text-ink-disabled'
                     }`}>{step.label}</p>
                   </div>

@@ -59,7 +59,7 @@ const UpgradeSection = memo(({
                   variant="outline" 
                   onClick={onRequestOtp}
                   loading={otpLoading}
-                  className="w-full sm:w-auto h-[46px] mb-1 px-6"
+                  className="w-full sm:w-auto h-11 mb-1 px-6"
                 >
                   Resend
                 </Button>

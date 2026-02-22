@@ -90,7 +90,7 @@ export default function MatchmakingPanel({ team, onInvite, onSkillsSaved }) {
                   {userSkills.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {userSkills.map(s => (
-                        <span key={s} className="text-[10px] bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 rounded-md font-medium">
+                        <span key={s} className="text-xxs bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 rounded-md font-medium">
                           {s}
                         </span>
                       ))}

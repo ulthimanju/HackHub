@@ -3,7 +3,7 @@ import React from 'react';
 /** Status → display config */
 const STATUS_CONFIG = {
   // Registration statuses
-  PENDING:  { label: 'Pending',  cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  PENDING:  { label: 'Pending',  cls: 'bg-amber-50 text-amber-700 border-amber-200' },
   APPROVED: { label: 'Approved', cls: 'bg-green-50 text-green-700 border-green-200' },
   REJECTED: { label: 'Rejected', cls: 'bg-red-50 text-red-600 border-red-200' },
   // Team member statuses

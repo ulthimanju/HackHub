@@ -164,7 +164,7 @@ function CalendarPanel({ dateStr, onSelect }) {
             ].join(' ')}
           />
           {yearError && (
-            <span className="text-[10px] text-red-500 mt-0.5 whitespace-nowrap leading-none">
+            <span className="text-xxs text-red-500 mt-0.5 whitespace-nowrap leading-none">
               {yearError}
             </span>
           )}
@@ -209,7 +209,7 @@ function CalendarPanel({ dateStr, onSelect }) {
         <>
           <div className="grid grid-cols-7 mb-1">
             {WEEKDAYS.map(d => (
-              <div key={d} className="text-center text-[10px] font-semibold text-ink-disabled py-1">
+              <div key={d} className="text-center text-xxs font-semibold text-ink-disabled py-1">
                 {d}
               </div>
             ))}
@@ -268,7 +268,7 @@ function TimePanel({ timeStr, onSelect }) {
     <div className="flex w-44 overflow-hidden">
       {/* Hours column */}
       <div className="flex flex-col flex-1 border-r border-surface-border">
-        <div className="text-[10px] font-semibold text-ink-disabled text-center py-1.5 border-b border-surface-border bg-surface-page sticky top-0">
+        <div className="text-xxs font-semibold text-ink-disabled text-center py-1.5 border-b border-surface-border bg-surface-page sticky top-0">
           Hour
         </div>
         <div ref={hourRef} className="overflow-y-auto" style={{ height: 192 }}>
@@ -293,7 +293,7 @@ function TimePanel({ timeStr, onSelect }) {
 
       {/* Minutes column */}
       <div className="flex flex-col flex-1">
-        <div className="text-[10px] font-semibold text-ink-disabled text-center py-1.5 border-b border-surface-border bg-surface-page sticky top-0">
+        <div className="text-xxs font-semibold text-ink-disabled text-center py-1.5 border-b border-surface-border bg-surface-page sticky top-0">
           Min
         </div>
         <div ref={minRef} className="overflow-y-auto" style={{ height: 192 }}>

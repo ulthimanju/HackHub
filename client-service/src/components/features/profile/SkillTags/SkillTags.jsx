@@ -78,7 +78,7 @@ const SkillTags = memo(({ skills, onAddSkill, onRemoveSkill }) => {
       </div>
 
       {/* Selected skill tags */}
-      <div className="flex flex-wrap gap-2 p-5 bg-surface-hover/50 rounded-xl border border-dashed border-surface-border min-h-[80px] transition-all hover:border-brand-200 hover:bg-brand-50/10">
+      <div className="flex flex-wrap gap-2 p-5 bg-surface-hover/50 rounded-xl border border-dashed border-surface-border min-h-20 transition-all hover:border-brand-200 hover:bg-brand-50/10">
         {skills.map(skill => (
           <span
             key={skill}
