@@ -18,6 +18,7 @@ const CreateEvent  = lazy(() => import('./pages/CreateEvent'));
 const ExploreEvents = lazy(() => import('./pages/ExploreEvents'));
 const EventDetails = lazy(() => import('./pages/EventDetails'));
 const AddProblems  = lazy(() => import('./pages/AddProblems'));
+const EditEvent    = lazy(() => import('./pages/EditEvent'));
 
 /**
  * Protects a route: redirects unauthenticated users to /login.
@@ -76,6 +77,11 @@ function AppRoutes() {
         <Route path="/events/:id/problems/add" element={
           <ProtectedRoute allowedRoles={['organizer']}>
             <AddProblems />
+          </ProtectedRoute>
+        } />
+        <Route path="/events/:id/edit" element={
+          <ProtectedRoute allowedRoles={['organizer']}>
+            <EditEvent />
           </ProtectedRoute>
         } />
       </Route>
