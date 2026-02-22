@@ -8,6 +8,7 @@ import com.ehub.auth.enums.UserRole;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -85,7 +86,7 @@ public class AuthController {
             HttpServletRequest httpRequest) {
         String otp = body.get("otp");
         if (otp == null || otp.isBlank()) {
-            throw new RuntimeException("OTP is required");
+            return ResponseEntity.badRequest().body(null);
         }
         return ResponseEntity.ok(service.upgradeToOrganizer(authentication.getName(), otp, extractToken(httpRequest)));
     }
