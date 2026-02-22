@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Users, Search, Crown } from 'lucide-react';
+import { Users, Search } from 'lucide-react';
 import Alert from '../../../common/Alert/Alert';
+import TeamMemberList from '../common/TeamMemberList';
 
 /**
  * Props:
@@ -51,8 +52,7 @@ export default function OrgTeamsTab({ teams, loading, error, problemStatements }
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filtered.map(team => {
-              const acceptedMembers = team.members?.filter(m => m.status === 'ACCEPTED') ?? [];
-              const memberCount = acceptedMembers.length;
+              const memberCount = (team.members?.filter(m => m.status === 'ACCEPTED') ?? []).length;
               const problem = problemStatements?.find(p => p.id === team.problemStatementId);
               return (
                 <div key={team.id} className="bg-white rounded-xl border border-surface-border shadow-card p-5 flex flex-col gap-3">
@@ -66,22 +66,7 @@ export default function OrgTeamsTab({ teams, loading, error, problemStatements }
                   </div>
 
                   {/* Members list */}
-                  <div className="flex flex-col gap-1.5">
-                    {acceptedMembers.map(m => (
-                      <div key={m.id} className="flex items-center gap-2">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${m.role === 'LEADER' ? 'bg-brand-100 text-brand-600' : 'bg-surface-hover text-ink-muted'}`}>
-                          {m.username?.charAt(0)?.toUpperCase() || '?'}
-                        </div>
-                        <span className="text-sm text-ink-primary font-medium truncate flex-1">{m.username}</span>
-                        {m.role === 'LEADER' && (
-                          <span className="flex items-center gap-0.5 text-xs font-medium text-brand-500 shrink-0">
-                            <Crown className="w-3 h-3" />
-                            Leader
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <TeamMemberList members={team.members ?? []} filter="ACCEPTED" />
 
                   {/* Problem statement */}
                   <div className={`rounded-lg px-3 py-2.5 ${problem ? 'bg-brand-50 border border-brand-100' : 'bg-surface-hover border border-dashed border-surface-border'}`}>

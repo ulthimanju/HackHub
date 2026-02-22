@@ -1,78 +1,22 @@
 import api from './api';
 
 const teamService = {
-  getTeamsByEvent: async (eventId, name) => {
-    const response = await api.get(`/events/teams/${eventId}`, {
-      params: name ? { name } : undefined,
-    });
-    return response.data;
-  },
-
-  getTeamByShortCode: async (shortCode) => {
-    const response = await api.get(`/events/teams/code/${shortCode}`);
-    return response.data;
-  },
-
-  createTeam: async (eventId, data) => {
-    const response = await api.post(`/events/teams/${eventId}`, data);
-    return response.data;
-  },
-
-  inviteMember: async (teamId, _leaderId, data) => {
-    const response = await api.post(`/events/teams/${teamId}/invite`, data);
-    return response.data;
-  },
-
-  requestToJoin: async (teamId, data) => {
-    const response = await api.post(`/events/teams/${teamId}/request`, data);
-    return response.data;
-  },
-
-  respondToInvite: async (teamId, _userId, accept) => {
-    const response = await api.patch(`/events/teams/${teamId}/respond`, null, {
-      params: { accept },
-    });
-    return response.data;
-  },
-
-  dismantleTeam: async (teamId, _leaderId) => {
-    const response = await api.delete(`/events/teams/${teamId}`);
-    return response.data;
-  },
-
-  transferLeadership: async (teamId, _currentLeaderId, newLeaderId) => {
-    const response = await api.patch(`/events/teams/${teamId}/transfer`, null, {
-      params: { newLeaderId },
-    });
-    return response.data;
-  },
-
-  leaveTeam: async (teamId, _userId) => {
-    const response = await api.delete(`/events/teams/${teamId}/leave`);
-    return response.data;
-  },
-
-  selectProblemStatement: async (teamId, _leaderId, problemId) => {
-    const response = await api.patch(`/events/teams/${teamId}/problem-statement`, null, {
-      params: problemId ? { problemId } : {},
-    });
-    return response.data;
-  },
-
-  submitProject: async (teamId, _userId, data) => {
-    const response = await api.post(`/events/teams/${teamId}/submit`, data);
-    return response.data;
-  },
-
-  updateSkillsNeeded: async (teamId, skills) => {
-    const response = await api.patch(`/events/teams/${teamId}/skills-needed`, { skills });
-    return response.data;
-  },
-
-  suggestMembers: async (teamId) => {
-    const response = await api.get(`/events/matchmaking/suggest-members/${teamId}`);
-    return response.data;
-  },
+  getTeamsByEvent:      (eventId, name)           => api.get(`/events/teams/${eventId}`, { params: name ? { name } : undefined }),
+  getTeamByShortCode:   (shortCode)               => api.get(`/events/teams/code/${shortCode}`),
+  createTeam:           (eventId, data)            => api.post(`/events/teams/${eventId}`, data),
+  inviteMember:         (teamId, _leaderId, data)  => api.post(`/events/teams/${teamId}/invite`, data),
+  requestToJoin:        (teamId, data)             => api.post(`/events/teams/${teamId}/request`, data),
+  respondToInvite:      (teamId, _userId, accept)  => api.patch(`/events/teams/${teamId}/respond`, null, { params: { accept } }),
+  dismantleTeam:        (teamId, _leaderId)        => api.delete(`/events/teams/${teamId}`),
+  transferLeadership:   (teamId, _cLId, newLeaderId) => api.patch(`/events/teams/${teamId}/transfer`, null, { params: { newLeaderId } }),
+  leaveTeam:            (teamId, _userId)          => api.delete(`/events/teams/${teamId}/leave`),
+  selectProblemStatement:(teamId, _lId, problemId) => api.patch(`/events/teams/${teamId}/problem-statement`, null, { params: problemId ? { problemId } : {} }),
+  submitProject:        (teamId, _userId, data)    => api.post(`/events/teams/${teamId}/submit`, data),
+  updateSkillsNeeded:   (teamId, skills)           => api.patch(`/events/teams/${teamId}/skills-needed`, { skills }),
+  suggestMembers:       (teamId)                   => api.get(`/events/matchmaking/suggest-members/${teamId}`),
+  // Judging / results (domain: team scoring)
+  updateManualReview:   (teamId, data)             => api.patch(`/events/teams/${teamId}/manual-review`, data),
+  finalizeResults:      (eventId)                  => api.patch(`/events/${eventId}/finalize-results`),
 };
 
 export default teamService;

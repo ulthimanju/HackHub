@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PageSpinner } from './components/common/Spinner/Spinner';
 
 // Layout
 import MainLayout from './components/layout/MainLayout/MainLayout';
@@ -15,12 +16,6 @@ const CreateEvent  = lazy(() => import('./pages/CreateEvent'));
 const ExploreEvents = lazy(() => import('./pages/ExploreEvents'));
 const EventDetails = lazy(() => import('./pages/EventDetails'));
 
-const PageSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-surface-page">
-    <div className="w-8 h-8 border-2 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
-  </div>
-);
-
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   
@@ -33,13 +28,7 @@ function ProtectedRoute({ children }) {
 function AppRoutes() {
   const { user, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  if (loading) return <PageSpinner />;
 
   return (
     <Suspense fallback={<PageSpinner />}>

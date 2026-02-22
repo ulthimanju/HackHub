@@ -1,25 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useApi } from './useApi';
 import eventService from '../services/eventService';
 
 export function useParticipantDashboard() {
-  const [events, setEvents]     = useState([]);
-  const [statusMap, setStatusMap] = useState({});
-  const [loading, setLoading]   = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([
+  const { data, loading } = useApi(async () => {
+    const [evts, statuses] = await Promise.all([
       eventService.getParticipantEvents(),
       eventService.getMyRegistrationStatuses(),
-    ]).then(([evts, statuses]) => {
-      if (cancelled) return;
-      setEvents(evts);
-      const map = {};
-      statuses.forEach((r) => { map[r.eventId] = r.status; });
-      setStatusMap(map);
-    }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
+    ]);
+    const statusMap = {};
+    statuses.forEach((r) => { statusMap[r.eventId] = r.status; });
+    return { evts, statusMap };
+  });
 
-  return { events, statusMap, loading };
+  return {
+    events:    data?.evts      ?? [],
+    statusMap: data?.statusMap ?? {},
+    loading,
+  };
 }

@@ -1,40 +1,13 @@
 import api from './api';
 
 const authService = {
-  login: async (username, password) => {
-    const response = await api.post('/auth/login', { username, password });
-    return response.data;
-  },
-
-  register: async (username, email, password, otp) => {
-    const response = await api.post('/auth/register', { username, email, password, otp });
-    return response.data;
-  },
-
-  requestOtp: async (email) => {
-    const response = await api.post('/auth/register/otp', { email });
-    return response.data;
-  },
-
-  requestRoleUpgradeOtp: async () => {
-    const response = await api.post('/auth/upgrade-role/otp');
-    return response.data;
-  },
-
-  upgradeRole: async (_email, otp) => {
-    const response = await api.post('/auth/upgrade-role', { otp });
-    return response.data;
-  },
-
-  getProfile: async () => {
-    const response = await api.get('/auth/profile');
-    return response.data;
-  },
-
-  updateProfile: async (profileData) => {
-    const response = await api.put('/auth/profile', profileData);
-    return response.data;
-  },
+  login:               (username, password)    => api.post('/auth/login', { username, password }),
+  register:            (username, email, password, otp) => api.post('/auth/register', { username, email, password, otp }),
+  requestOtp:          (email)                => api.post('/auth/register/otp', { email }),
+  requestRoleUpgradeOtp: ()                   => api.post('/auth/upgrade-role/otp'),
+  upgradeRole:         (_email, otp)           => api.post('/auth/upgrade-role', { otp }),
+  getProfile:          ()                      => api.get('/auth/profile'),
+  updateProfile:       (profileData)           => api.put('/auth/profile', profileData),
 
   logout: async () => {
     try {

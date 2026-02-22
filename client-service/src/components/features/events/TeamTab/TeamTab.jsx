@@ -7,34 +7,11 @@ import {
 import Button from '../../../common/Button/Button';
 import Modal from '../../../common/Modal/Modal';
 import Alert from '../../../common/Alert/Alert';
+import Input from '../../../common/Input/Input';
+import SectionTitle from '../../../common/Section/SectionTitle';
 import { useAuth } from '../../../../hooks/useAuth';
 import { useTeamTab } from '../../../../hooks/useTeamTab';
 import MatchmakingPanel from './MatchmakingPanel';
-
-const SectionTitle = ({ children }) => (
-  <div className="flex items-center gap-2.5">
-    <div className="w-0.5 h-5 bg-brand-500 rounded-full" />
-    <h3 className="text-base font-semibold text-ink-primary font-display">{children}</h3>
-  </div>
-);
-
-const InputField = ({ label, placeholder, value, onChange, mono, maxLength, required }) => (
-  <div>
-    {label && (
-      <label className="block text-xs font-medium text-ink-muted uppercase tracking-wide mb-1.5">
-        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-    )}
-    <input
-      className={`w-full border border-surface-border rounded-lg px-3 py-2 text-sm text-ink-primary placeholder-ink-disabled
-        focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 bg-white transition ${mono ? 'font-mono uppercase tracking-wider' : ''}`}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      maxLength={maxLength}
-    />
-  </div>
-);
 
 const TeamTab = ({ event, myRegistration }) => {
   const { user } = useAuth();
@@ -564,15 +541,15 @@ const TeamTab = ({ event, myRegistration }) => {
             <p className="text-sm text-ink-muted">
               Enter the details of the participant you want to invite. They must have an approved registration for this event.
             </p>
-            <InputField label="User ID" placeholder="e.g. 94c6a498-9af9-433e-a069-..." required
+            <Input label="User ID" placeholder="e.g. 94c6a498-9af9-433e-a069-..." required
               value={inviteModal.userId}
               onChange={e => setInviteModal(p => ({ ...p, userId: e.target.value }))}
             />
-            <InputField label="Username" placeholder="e.g. johndoe"
+            <Input label="Username" placeholder="e.g. johndoe"
               value={inviteModal.username}
               onChange={e => setInviteModal(p => ({ ...p, username: e.target.value }))}
             />
-            <InputField label="Email" placeholder="e.g. john@example.com"
+            <Input label="Email" placeholder="e.g. john@example.com"
               value={inviteModal.userEmail}
               onChange={e => setInviteModal(p => ({ ...p, userEmail: e.target.value }))}
             />
@@ -599,13 +576,13 @@ const TeamTab = ({ event, myRegistration }) => {
         >
           <div className="space-y-4">
             {actionError && <Alert type="error">{actionError}</Alert>}
-            <InputField
+            <Input
               label="Repository URL" required
               placeholder="https://github.com/your/repo"
               value={submitModal.repoUrl}
               onChange={e => setSubmitModal(p => ({ ...p, repoUrl: e.target.value }))}
             />
-            <InputField
+            <Input
               label="Demo URL"
               placeholder="https://demo.example.com (optional)"
               value={submitModal.demoUrl}
@@ -849,7 +826,7 @@ const TeamTab = ({ event, myRegistration }) => {
       >
         <div className="space-y-4">
           {actionError && <Alert type="error">{actionError}</Alert>}
-          <InputField
+          <Input
             label="Team Name"
             required
             placeholder="e.g. Team Rocket"

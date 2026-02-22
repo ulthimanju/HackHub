@@ -1,17 +1,8 @@
 import React, { memo, useState, useMemo } from 'react';
 import { Users, UserCheck, UserX } from 'lucide-react';
 import Alert from '../../../common/Alert/Alert';
-
-const formatDateShort = (d) => {
-  if (!d) return 'N/A';
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-};
-
-const STATUS_CONFIG = {
-  PENDING:  { label: 'Pending',  cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  APPROVED: { label: 'Approved', cls: 'bg-green-50 text-green-700 border-green-200' },
-  REJECTED: { label: 'Rejected', cls: 'bg-red-50 text-red-600 border-red-200' },
-};
+import { formatDateShort } from '../../../../utils/dateUtils';
+import StatusBadge from '../../../common/StatusBadge/StatusBadge';
 
 const FILTERS = [
   { label: 'All',      value: 'all' },
@@ -97,7 +88,6 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
           {/* Participant grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {filtered.map((reg) => {
-              const sc = STATUS_CONFIG[reg.status] || STATUS_CONFIG.PENDING;
               const isUpdating = updatingId === reg.id;
               return (
                 <div key={reg.id} className="bg-white rounded-xl p-4 border border-surface-border shadow-card flex items-center gap-4">
@@ -118,9 +108,7 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
                     <p className="text-xs font-medium text-ink-secondary">{formatDateShort(reg.registrationTime)}</p>
                   </div>
                   {/* Status badge */}
-                  <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-bold border ${sc.cls}`}>
-                    {sc.label}
-                  </span>
+                  <div className="shrink-0"><StatusBadge status={reg.status} /></div>
                   {/* Actions */}
                   <div className="flex items-center gap-2 shrink-0">
                     {reg.status !== 'APPROVED' && (

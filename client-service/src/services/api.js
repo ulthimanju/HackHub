@@ -20,8 +20,9 @@ api.interceptors.request.use(
 );
 
 // Auto-logout and redirect on 401 Unauthorized (expired/invalid token)
+// Returns response.data directly so service methods don't need to unwrap it.
 api.interceptors.response.use(
-  (response) => response,
+  (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');

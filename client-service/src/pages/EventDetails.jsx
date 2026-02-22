@@ -124,7 +124,7 @@ const EventDetails = () => {
     setAdvancingStatus(true);
     setFinalizeError('');
     try {
-      await eventService.finalizeResults(id);
+      await teamService.finalizeResults(id);
       const updated = await eventService.getEventById(id);
       setEventDetails(updated);
       setConfirmFinalize(false);

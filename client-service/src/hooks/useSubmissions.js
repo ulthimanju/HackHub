@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import eventService from '../services/eventService';
+import teamService from '../services/teamService';
 import aiService from '../services/aiService';
 
 export function useSubmissions(eventId, onTeamsRefresh) {
@@ -15,7 +15,7 @@ export function useSubmissions(eventId, onTeamsRefresh) {
     setReviewSaving(prev => ({ ...prev, [teamId]: true }));
     setReviewMsg(prev => ({ ...prev, [teamId]: '' }));
     try {
-      await eventService.updateManualReview(teamId, {
+      await teamService.updateManualReview(teamId, {
         manualScore:    data.manualScore != null ? Number(data.manualScore) : null,
         organizerNotes: data.organizerNotes || null,
       });
