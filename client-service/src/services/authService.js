@@ -9,6 +9,9 @@ const authService = {
   getProfile:          ()                      => api.get('/auth/profile'),
   updateProfile:       (profileData)           => api.put('/auth/profile', profileData),
 
+  requestResetOtp:     (email)                 => api.post('/auth/reset-password/otp', { email }),
+  resetPassword:       (email, otp, newPassword) => api.post('/auth/reset-password', { email, otp, newPassword }),
+
   logout: async () => {
     try {
       await api.post('/auth/logout'); // best-effort server-side token blacklist

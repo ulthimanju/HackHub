@@ -67,6 +67,12 @@ public class AuthController {
         return ResponseEntity.ok(service.login(request));
     }
 
+    @PostMapping("/reset-password/otp")
+    public ResponseEntity<String> requestPasswordResetOtp(@RequestBody Map<String, String> body) {
+        service.requestPasswordResetOtp(body.get("email"));
+        return ResponseEntity.ok(MessageKeys.REGISTRATION_OTP_SENT.getMessage());
+    }
+
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
         service.resetPassword(request);

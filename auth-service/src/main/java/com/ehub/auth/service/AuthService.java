@@ -105,6 +105,12 @@ public class AuthService {
                 .build();
     }
 
+    public void requestPasswordResetOtp(String email) {
+        repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
+        notificationClient.sendPasswordResetOtp(email);
+    }
+
     public void resetPassword(PasswordResetRequest request) {
         // 1. Validate OTP
         if (!notificationClient.validatePasswordResetOtp(request.getEmail(), request.getOtp())) {

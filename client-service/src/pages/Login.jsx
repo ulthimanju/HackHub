@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Button from '../components/common/Button/Button';
 import Input from '../components/common/Input/Input';
 import Alert from '../components/common/Alert/Alert';
@@ -100,9 +100,9 @@ const Login = () => {
             </div>
 
             <div className="flex items-center justify-end">
-              <a href="#" className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">
+              <Link to="/reset-password" className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <Button

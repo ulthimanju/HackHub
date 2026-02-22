@@ -10,6 +10,7 @@ import MainLayout from './components/layout/MainLayout/MainLayout';
 // Pages — lazy loaded for code splitting
 const Login        = lazy(() => import('./pages/Login'));
 const Register     = lazy(() => import('./pages/Register'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Profile      = lazy(() => import('./pages/Profile'));
 const Home         = lazy(() => import('./pages/Home'));
 const MyEvents     = lazy(() => import('./pages/MyEvents'));
@@ -47,6 +48,10 @@ function AppRoutes() {
       <Route 
         path="/register" 
         element={user ? <Navigate to="/profile" replace /> : <Register />} 
+      />
+      <Route 
+        path="/reset-password" 
+        element={user ? <Navigate to="/profile" replace /> : <ResetPassword />} 
       />
       
       {/* Protected Routes with Common Layout */}
