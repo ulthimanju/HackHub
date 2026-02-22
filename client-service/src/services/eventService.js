@@ -22,6 +22,8 @@ const eventService = {
   toggleJudging:            (eventId)       => api.patch(`/events/${eventId}/judging`),
   getReferences:            (eventId)       => api.get(`/events/${eventId}/references`),
   updateReferences:         (eventId, contentMd) => api.put(`/events/${eventId}/references`, { contentMd }),
+  getRules:                 (eventId)       => api.get(`/events/${eventId}/rules`),
+  updateRules:              (eventId, contentMd) => api.put(`/events/${eventId}/rules`, { contentMd }),
 };
 
 export default eventService;

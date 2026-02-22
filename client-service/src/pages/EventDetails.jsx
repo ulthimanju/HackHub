@@ -19,6 +19,7 @@ import SubmissionsTab from '../components/features/events/SubmissionsTab/Submiss
 import LeaderboardTab from '../components/features/events/LeaderboardTab/LeaderboardTab';
 import EventForm from '../components/features/events/EventForm/EventForm';
 import ReferencesTab from '../components/features/events/ReferencesTab/ReferencesTab';
+import RulesTab from '../components/features/events/RulesTab/RulesTab';
 import { ArrowLeft, Hash, Check, X } from 'lucide-react';
 
 const EventDetails = () => {
@@ -273,6 +274,15 @@ const EventDetails = () => {
       label: 'References',
       content: (
         <ReferencesTab
+          eventId={id}
+          permissions={permissions}
+        />
+      ),
+    },
+    {
+      label: 'Rules',
+      content: (
+        <RulesTab
           eventId={id}
           permissions={permissions}
         />
