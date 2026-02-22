@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import Editor from '@monaco-editor/react';
 import { BookOpen, Pencil, X, Save, Code2 } from 'lucide-react';
 import Button from '../../../common/Button/Button';
@@ -17,6 +18,37 @@ const EDITOR_OPTIONS = {
   padding: { top: 16, bottom: 16 },
   fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
 };
+
+const SafeLink = ({ href, children, ...props }) => {
+  if (!href || href.toLowerCase().startsWith('javascript:')) return <span>{children}</span>;
+  return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+};
+
+function MarkdownBody({ children }) {
+  return (
+    <div className={[
+      'text-ink-secondary leading-relaxed text-sm',
+      '[&_h1]:text-2xl [&_h1]:font-bold [&_h1]:font-display [&_h1]:text-ink-primary [&_h1]:mt-6 [&_h1]:mb-3',
+      '[&_h2]:text-xl [&_h2]:font-semibold [&_h2]:font-display [&_h2]:text-ink-primary [&_h2]:mt-5 [&_h2]:mb-2',
+      '[&_h3]:text-base [&_h3]:font-semibold [&_h3]:font-display [&_h3]:text-ink-primary [&_h3]:mt-4 [&_h3]:mb-1',
+      '[&_p]:mb-3',
+      '[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3',
+      '[&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3',
+      '[&_li]:mb-1',
+      '[&_a]:text-brand-600 [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-brand-700',
+      '[&_code]:bg-surface-hover [&_code]:text-ink-secondary [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono',
+      '[&_pre]:bg-surface-hover [&_pre]:p-4 [&_pre]:rounded-xl [&_pre]:overflow-x-auto [&_pre]:mb-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0',
+      '[&_blockquote]:border-l-4 [&_blockquote]:border-brand-300 [&_blockquote]:pl-4 [&_blockquote]:text-ink-muted [&_blockquote]:italic [&_blockquote]:mb-3',
+      '[&_hr]:border-surface-border [&_hr]:my-5',
+      '[&_strong]:font-semibold [&_strong]:text-ink-primary',
+      '[&_table]:w-full [&_table]:border-collapse [&_table]:mb-3',
+      '[&_th]:text-left [&_th]:p-2 [&_th]:border-b [&_th]:border-surface-border [&_th]:font-semibold [&_th]:text-ink-primary [&_th]:text-xs [&_th]:uppercase [&_th]:tracking-wide',
+      '[&_td]:p-2 [&_td]:border-b [&_td]:border-surface-border',
+    ].join(' ')}>
+      <ReactMarkdown components={{ a: SafeLink }}>{children}</ReactMarkdown>
+    </div>
+  );
+}
 
 /**
  * Props:
@@ -143,14 +175,8 @@ export default function ReferencesTab({ eventId, permissions }) {
       </div>
 
       {content.trim() ? (
-        <div className="rounded-xl border border-surface-border overflow-hidden" style={{ height: 480 }}>
-          <Editor
-            height="480px"
-            defaultLanguage="markdown"
-            value={content}
-            theme="light"
-            options={{ ...EDITOR_OPTIONS, readOnly: true, cursorStyle: 'line', domReadOnly: true }}
-          />
+        <div className="bg-white rounded-xl border border-surface-border shadow-card p-6">
+          <MarkdownBody>{content}</MarkdownBody>
         </div>
       ) : (
         <div className="flex flex-col items-center py-16 gap-3 text-center">
