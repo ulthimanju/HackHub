@@ -5,7 +5,7 @@ import Textarea from '../../../common/Textarea/Textarea';
 import Checkbox from '../../../common/Checkbox/Checkbox';
 import TagAutocomplete from '../../../common/TagAutocomplete/TagAutocomplete';
 import DateTimePicker from '../../../common/DateTimePicker/DateTimePicker';
-import { Mail, MapPin, Users, Trophy, BookOpen, Plus, X, Sparkles } from 'lucide-react';
+import { Mail, MapPin, Users, BookOpen, Plus, X, Sparkles } from 'lucide-react';
 import { ALL_THEMES } from '../../../../constants/themes';
 import { validateEventStep } from './validateEventStep';
 
@@ -13,7 +13,7 @@ const INITIAL_FORM = {
   name: '', description: '', theme: '', contactEmail: '',
   startDate: '', endDate: '', registrationStartDate: '', registrationEndDate: '',
   resultsDate: '', venue: '', isVirtual: false, location: '',
-  maxParticipants: '', teamSize: '1', prizes: [], rules: [],
+  maxParticipants: '', teamSize: '1', rules: [],
 };
 
 const toInputDate = (iso) => iso ? iso.slice(0, 16) : '';
@@ -33,7 +33,6 @@ const buildInitial = (data) => data ? {
   location:              data.location              ?? '',
   maxParticipants:       data.maxParticipants != null ? String(data.maxParticipants) : '',
   teamSize:              data.teamSize        != null ? String(data.teamSize)        : '1',
-  prizes:                data.prizes                ?? [],
   rules:                 data.rules                 ?? [],
 } : INITIAL_FORM;
 
@@ -49,7 +48,6 @@ function SectionTitle({ children }) {
 const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
   const isEditing = !!initialData;
   const [formData, setFormData] = useState(() => buildInitial(initialData));
-  const [newPrize, setNewPrize] = useState('');
   const [newRule, setNewRule] = useState('');
   const [errors, setErrors] = useState({});
 
@@ -247,35 +245,6 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
       <section>
         <SectionTitle>Content</SectionTitle>
         <div className="space-y-6">
-          {/* Prizes */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-ink-secondary">Prizes</label>
-            <div className="flex gap-2">
-              <Input
-                value={newPrize}
-                onChange={(e) => setNewPrize(e.target.value)}
-                placeholder="e.g. $1000 for Winner"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem('prizes', newPrize, setNewPrize))}
-              />
-              <Button type="button" variant="secondary" onClick={() => addListItem('prizes', newPrize, setNewPrize)}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            {formData.prizes.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {formData.prizes.map((prize, index) => (
-                  <span key={index} className="inline-flex items-center gap-2 bg-brand-50 text-brand-700 px-3 py-1.5 rounded-lg text-sm font-medium border border-brand-100">
-                    <Trophy className="w-3.5 h-3.5" />
-                    {prize}
-                    <button type="button" onClick={() => removeListItem('prizes', index)} className="hover:text-red-500 transition-colors">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Rules */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-ink-secondary">Rules</label>

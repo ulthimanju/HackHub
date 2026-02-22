@@ -1,7 +1,7 @@
 import React from 'react';
 import {
-  MapPin, Users, Mail, Trophy, BookOpen,
-  Clock, Globe, Check, AlertCircle, ArrowRight, Copy,
+  MapPin, Users, Mail, BookOpen,
+  Clock, Globe, Check, ArrowRight, Copy,
 } from 'lucide-react';
 import EventPulse from './EventPulse';
 import EventJourney from './EventJourney';
@@ -55,12 +55,7 @@ export default function OverviewTab({
   copyEmail,
   onEditClick,
   onSwitchToTeamTab,
-  registrations = [],
-  orgTeams = [],
 }) {
-  const pendingCount = registrations.filter(r => r.status === 'PENDING').length;
-  const teamsNoSubmission = orgTeams.filter(t => !t.submission?.repoUrl).length;
-
   return (
     <div className="space-y-5">
 
@@ -174,27 +169,6 @@ export default function OverviewTab({
       </div>
 
       {/* ── ACTION LAYER ────────────────────────────────────────────────────── */}
-      {permissions.isEventOwner && (pendingCount > 0 || teamsNoSubmission > 0) && (
-        <div className="bg-white rounded-xl border border-amber-200 shadow-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="w-4 h-4 text-amber-500" />
-            <p className="text-sm font-semibold text-ink-primary">Needs Attention</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {pendingCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-700 font-medium">
-                {pendingCount} Pending Registration{pendingCount > 1 ? 's' : ''}
-              </span>
-            )}
-            {teamsNoSubmission > 0 && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-700 font-medium">
-                {teamsNoSubmission} Team{teamsNoSubmission > 1 ? 's' : ''} Without Submission
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Participant next steps */}
       {!permissions.isOrganizer && (
         <div className="bg-white rounded-xl border border-surface-border shadow-card p-4">
@@ -234,26 +208,6 @@ export default function OverviewTab({
                 </div>
                 {idx < 2 && <ArrowRight className="w-3.5 h-3.5 text-ink-disabled shrink-0" />}
               </React.Fragment>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Prizes ──────────────────────────────────────────────────────────── */}
-      {event.prizes && event.prizes.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-0.5 h-5 bg-brand-500 rounded-full" />
-            <h3 className="text-base font-semibold text-ink-primary font-display">Prizes</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {event.prizes.map((prize, index) => (
-              <div key={index} className="bg-white rounded-xl p-4 border border-surface-border shadow-card flex items-center gap-3">
-                <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
-                  <Trophy className="w-4 h-4 text-green-500" />
-                </div>
-                <span className="text-sm text-ink-secondary">{prize}</span>
-              </div>
             ))}
           </div>
         </div>

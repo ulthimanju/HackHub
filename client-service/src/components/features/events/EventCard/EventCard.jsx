@@ -22,8 +22,6 @@ const getDaysLeft = (endDate) => {
   return Math.ceil((new Date(endDate) - new Date()) / (1000 * 60 * 60 * 24));
 };
 
-const getFirstPrize = (prizes) => prizes?.length ? prizes[0] : null;
-
 /**
  * Props:
  *   event             – EventResponse object
@@ -40,7 +38,6 @@ const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage, can
   const statusCfg   = STATUS_VARIANTS[eventStatus] || STATUS_VARIANTS.upcoming;
 
   const daysLeft   = getDaysLeft(event.endDate);
-  const prizeLabel = getFirstPrize(event.prizes);
   const location   = event.isVirtual ? 'Online' : (event.location || event.venue || 'Offline');
   const themes     = event.theme ? event.theme.split(',').map(t => t.trim()).filter(Boolean) : [];
 
@@ -84,21 +81,13 @@ const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage, can
           <span>{formatDateRange(event.startDate, event.endDate)}</span>
         </div>
 
-        {/* Prize + participants */}
-        {(prizeLabel || event.maxParticipants) && (
+        {/* Participants */}
+        {event.maxParticipants && (
           <div className="flex items-center gap-4 flex-wrap text-sm">
-            {prizeLabel && (
-              <span className="flex items-center gap-1 text-ink-secondary">
-                <span>🏆</span>
-                <span className="truncate">{prizeLabel}</span>
-              </span>
-            )}
-            {event.maxParticipants && (
-              <span className="text-ink-muted">
-                <span className="font-medium text-ink-primary">{event.registeredCount ?? 0}/{event.maxParticipants}</span>
-                {' '}participants
-              </span>
-            )}
+            <span className="text-ink-muted">
+              <span className="font-medium text-ink-primary">{event.registeredCount ?? 0}/{event.maxParticipants}</span>
+              {' '}participants
+            </span>
           </div>
         )}
 

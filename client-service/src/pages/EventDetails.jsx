@@ -259,8 +259,6 @@ const EventDetails = () => {
           copiedEmail={copiedEmail}
           copyEmail={copyEmail}
           onEditClick={() => { setEditError(''); setShowEditModal(true); }}
-          registrations={registrations}
-          orgTeams={orgTeams}
           onSwitchToTeamTab={() => {
             const idx = tabs.findIndex(t => t.label === 'Team');
             if (idx >= 0) setActiveTab(idx);
