@@ -13,7 +13,7 @@ const INITIAL_FORM = {
   name: '', description: '', theme: '', contactEmail: '',
   startDate: '', endDate: '', registrationStartDate: '', registrationEndDate: '',
   resultsDate: '', venue: '', isVirtual: false, location: '',
-  maxParticipants: '', teamSize: '1', rules: [],
+  maxParticipants: '', teamSize: '1',
 };
 
 const toInputDate = (iso) => iso ? iso.slice(0, 16) : '';
@@ -33,7 +33,6 @@ const buildInitial = (data) => data ? {
   location:              data.location              ?? '',
   maxParticipants:       data.maxParticipants != null ? String(data.maxParticipants) : '',
   teamSize:              data.teamSize        != null ? String(data.teamSize)        : '1',
-  rules:                 data.rules                 ?? [],
 } : INITIAL_FORM;
 
 function SectionTitle({ children }) {
@@ -48,7 +47,6 @@ function SectionTitle({ children }) {
 const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
   const isEditing = !!initialData;
   const [formData, setFormData] = useState(() => buildInitial(initialData));
-  const [newRule, setNewRule] = useState('');
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
@@ -110,7 +108,7 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="md:col-span-2">
             <Input
-              label="Event Name*"
+              label="Event Name"
               name="name"
               value={formData.name}
               onChange={handleChange}
@@ -140,7 +138,7 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
             />
           </div>
           <Input
-            label="Contact Email*"
+            label="Contact Email"
             name="contactEmail"
             type="email"
             icon={Mail}
@@ -159,9 +157,9 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
       <section>
         <SectionTitle>Logistics</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="md:col-span-2">
+          <div>
             <DateTimePicker
-              label="Start Date*"
+              label="Start Date"
               name="startDate"
               value={formData.startDate}
               onChange={handleChange}
@@ -169,9 +167,9 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
               required
             />
           </div>
-          <div className="md:col-span-2">
+          <div>
             <DateTimePicker
-              label="End Date*"
+              label="End Date"
               name="endDate"
               value={formData.endDate}
               onChange={handleChange}
@@ -179,7 +177,7 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
               required
             />
           </div>
-          <div className="md:col-span-2">
+          <div>
             <DateTimePicker
               label="Registration Starts"
               name="registrationStartDate"
@@ -187,7 +185,7 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
               onChange={handleChange}
             />
           </div>
-          <div className="md:col-span-2">
+          <div>
             <DateTimePicker
               label="Registration Ends"
               name="registrationEndDate"
@@ -236,45 +234,6 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
             value={formData.teamSize}
             onChange={handleChange}
           />
-        </div>
-      </section>
-
-      <div className="border-t border-surface-border" />
-
-      {/* Content */}
-      <section>
-        <SectionTitle>Content</SectionTitle>
-        <div className="space-y-6">
-          {/* Rules */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-ink-secondary">Rules</label>
-            <div className="flex gap-2">
-              <Input
-                value={newRule}
-                onChange={(e) => setNewRule(e.target.value)}
-                placeholder="e.g. Original work only"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem('rules', newRule, setNewRule))}
-              />
-              <Button type="button" variant="secondary" onClick={() => addListItem('rules', newRule, setNewRule)}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            {formData.rules.length > 0 && (
-              <div className="space-y-2">
-                {formData.rules.map((rule, index) => (
-                  <div key={index} className="flex items-center justify-between bg-surface-hover px-4 py-2.5 rounded-lg border border-surface-border group">
-                    <div className="flex items-center gap-3">
-                      <BookOpen className="w-4 h-4 text-ink-muted" />
-                      <span className="text-sm text-ink-primary">{rule}</span>
-                    </div>
-                    <button type="button" onClick={() => removeListItem('rules', index)} className="text-ink-disabled opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </section>
 
