@@ -2,8 +2,13 @@ import React, { memo } from 'react';
 import { theme } from '../../../utils/theme';
 
 const Textarea = memo(({ label, rows = 4, error, hint, className = '', ...props }) => (
-  <div className="space-y-1.5">
-    {label && <label className={theme.text.label}>{label}</label>}
+  <div className="space-y-2">
+    {label && (
+      <label className={`${theme.text.label} inline-block mb-0.5`}>
+        {label}
+        {props.required && <span className="text-red-500 ml-1 font-bold">*</span>}
+      </label>
+    )}
     <textarea
       rows={rows}
       {...props}

@@ -20,7 +20,6 @@ public class EventResponse {
     private String theme;
     private String contactEmail;
     private List<String> prizes;
-    private List<String> rules;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private LocalDateTime registrationStartDate;

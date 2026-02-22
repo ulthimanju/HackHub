@@ -16,7 +16,6 @@ public class EventRequest {
     private String contactEmail;
     
     private List<String> prizes;
-    private List<String> rules;
     
     @NotNull(message = "Start date is required")
     private LocalDateTime startDate;

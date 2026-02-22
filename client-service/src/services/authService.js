@@ -5,7 +5,7 @@ const authService = {
   register:            (username, email, password, otp) => api.post('/auth/register', { username, email, password, otp }),
   requestOtp:          (email)                => api.post('/auth/register/otp', { email }),
   requestRoleUpgradeOtp: ()                   => api.post('/auth/upgrade-role/otp'),
-  upgradeRole:         (_email, otp)           => api.post('/auth/upgrade-role', { otp }),
+  upgradeRole:         (otp)                  => api.post('/auth/upgrade-role', { otp }),
   getProfile:          ()                      => api.get('/auth/profile'),
   updateProfile:       (profileData)           => api.put('/auth/profile', profileData),
 

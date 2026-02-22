@@ -2,11 +2,11 @@ import React, { memo } from 'react';
 import { theme } from '../../../utils/theme';
 
 const Input = memo(({ label, icon: Icon, error, hint, className = '', ...props }) => (
-  <div className="space-y-1.5">
+  <div className="space-y-2">
     {label && (
-      <label className={theme.text.label}>
+      <label className={`${theme.text.label} inline-block mb-0.5`}>
         {label}
-        {props.required && <span className="text-red-500 ml-0.5">*</span>}
+        {props.required && <span className="text-red-500 ml-1 font-bold">*</span>}
       </label>
     )}
     <div className="relative">

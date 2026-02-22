@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpen, FileQuestion, Plus, Trash2, Pencil } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../../common/Button/Button';
 import Modal from '../../../common/Modal/Modal';
 import Alert from '../../../common/Alert/Alert';
@@ -8,48 +9,20 @@ const emptyRow = () => ({ name: '', statement: '', requirements: '' });
 
 /**
  * Props:
+ *   eventId      – event id (for navigation to add page)
  *   problems     – eventDetails.problemStatements array
  *   permissions  – from useEventPermissions
- *   onAdd        – async (filledRows[]) => void   (parent does API + refresh)
  *   onUpdate     – async (id, {name,statement,requirements}) => void
  *   onDelete     – async (id) => void
  */
-export default function ProblemStatementsTab({ problems, permissions, onAdd, onUpdate, onDelete }) {
-  const [addOpen, setAddOpen]           = useState(false);
-  const [rows, setRows]                 = useState([emptyRow()]);
-  const [submitting, setSubmitting]     = useState(false);
-  const [submitError, setSubmitError]   = useState('');
-  const [deletingId, setDeletingId]     = useState(null);
-  const [editProblem, setEditProblem]   = useState(null);
+export default function ProblemStatementsTab({ eventId, problems, permissions, onUpdate, onDelete }) {
+  const navigate = useNavigate();
+  const [deletingId, setDeletingId]         = useState(null);
+  const [editProblem, setEditProblem]       = useState(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
-  const [editError, setEditError]       = useState('');
+  const [editError, setEditError]           = useState('');
 
-  const closeAddModal = () => {
-    setAddOpen(false);
-    setRows([emptyRow()]);
-    setSubmitError('');
-  };
-
-  const updateRow = (index, field, value) =>
-    setRows(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
-
-  const handleAdd = async () => {
-    const filled = rows.filter(r => r.name.trim() && r.statement.trim() && r.requirements.trim());
-    if (!filled.length) {
-      setSubmitError('Each problem requires a name, statement, and requirements.');
-      return;
-    }
-    setSubmitting(true);
-    setSubmitError('');
-    try {
-      await onAdd(filled.map(r => ({ name: r.name.trim(), statement: r.statement.trim(), requirements: r.requirements.trim() })));
-      closeAddModal();
-    } catch (err) {
-      setSubmitError(err.response?.data?.message || 'Failed to add problem statements.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const closeAddModal = () => {};  // kept for compat; Add is now a page
 
   const handleDelete = async (id) => {
     setDeletingId(id);
@@ -76,7 +49,7 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
     }
   };
 
-  const filledCount = rows.filter(r => r.name.trim() && r.statement.trim() && r.requirements.trim()).length;
+  const filledCount = 0; // unused; kept to avoid refactor of button label
 
   return (
     <div>
@@ -88,7 +61,7 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
               <h3 className="text-base font-semibold text-ink-primary font-display">Problem Statements</h3>
             </div>
             {permissions.canAddProblem && (
-              <Button variant="primary" size="sm" icon={Plus} onClick={() => setAddOpen(true)}>
+              <Button variant="primary" size="sm" icon={Plus} onClick={() => navigate(`/events/${eventId}/problems/add`)}>
                 Add Problem
               </Button>
             )}
@@ -145,80 +118,12 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
           <p className="text-base font-semibold text-ink-muted">No problems yet</p>
           <p className="text-sm text-ink-muted max-w-xs">Problem statements haven't been added for this event yet. Check back later.</p>
           {permissions.canAddProblem && (
-            <Button variant="primary" size="sm" icon={Plus} onClick={() => setAddOpen(true)}>
+            <Button variant="primary" size="sm" icon={Plus} onClick={() => navigate(`/events/${eventId}/problems/add`)}>
               Add Problem
             </Button>
           )}
         </div>
       )}
-
-      {/* Add Problem Modal */}
-      <Modal
-        isOpen={addOpen}
-        onClose={closeAddModal}
-        title="Add Problem Statements"
-        footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={closeAddModal}>Cancel</Button>
-            <Button
-              variant="primary"
-              onClick={handleAdd}
-              disabled={!filledCount || submitting}
-            >
-              {submitting ? 'Adding…' : `Add ${filledCount || ''} Problem${filledCount !== 1 ? 's' : ''}`}
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          {submitError && <Alert type="error">{submitError}</Alert>}
-          {rows.map((r, index) => (
-            <div key={index} className="flex gap-2 items-start">
-              <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center shrink-0 mt-3">
-                <span className="text-xs font-bold text-blue-500">{index + 1}</span>
-              </div>
-              <div className="flex-1 flex flex-col gap-2">
-                <input
-                  className="w-full border border-surface-border rounded-lg px-4 py-2.5 text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400"
-                  placeholder={`Problem name * — e.g. "Smart City Solution"`}
-                  value={r.name}
-                  onChange={e => updateRow(index, 'name', e.target.value)}
-                />
-                <textarea
-                  className="w-full border border-surface-border rounded-lg px-4 py-3 text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 resize-none"
-                  rows={3}
-                  placeholder={`Problem statement ${index + 1} *`}
-                  value={r.statement}
-                  onChange={e => updateRow(index, 'statement', e.target.value)}
-                />
-                <textarea
-                  className="w-full border border-surface-border rounded-lg px-4 py-2.5 text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 resize-none"
-                  rows={2}
-                  placeholder="Requirements * — e.g. must use React, open source only…"
-                  value={r.requirements}
-                  onChange={e => updateRow(index, 'requirements', e.target.value)}
-                />
-              </div>
-              {rows.length > 1 && (
-                <button
-                  onClick={() => setRows(prev => prev.filter((_, i) => i !== index))}
-                  className="p-1.5 text-ink-disabled hover:text-red-500 transition-colors shrink-0"
-                  title="Remove"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          ))}
-          <button
-            onClick={() => setRows(prev => [...prev, emptyRow()])}
-            className="flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium mt-1 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add another problem
-          </button>
-        </div>
-      </Modal>
 
       {/* Edit Problem Modal */}
       <Modal

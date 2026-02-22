@@ -22,7 +22,7 @@ public class NotificationClient {
     public NotificationClient() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(3000);
-        factory.setReadTimeout(4000);
+        factory.setReadTimeout(10000);
         this.restTemplate = new RestTemplate(factory);
     }
 

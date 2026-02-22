@@ -33,11 +33,6 @@ public class Event {
     @Column(name = "prize")
     private List<String> prizes;
 
-    @ElementCollection
-    @CollectionTable(name = "event_rules", joinColumns = @JoinColumn(name = "event_id"))
-    @Column(name = "rule")
-    private List<String> rules;
-
     private java.time.LocalDateTime startDate;
     private java.time.LocalDateTime endDate;
     private java.time.LocalDateTime registrationStartDate;

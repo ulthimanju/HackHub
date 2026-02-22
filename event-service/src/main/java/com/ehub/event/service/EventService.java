@@ -151,7 +151,6 @@ public class EventService {
                 .theme(event.getTheme())
                 .contactEmail(event.getContactEmail())
                 .prizes(event.getPrizes())
-                .rules(event.getRules())
                 .startDate(event.getStartDate())
                 .endDate(event.getEndDate())
                 .registrationStartDate(event.getRegistrationStartDate())
@@ -194,7 +193,6 @@ public class EventService {
                 .theme(request.getTheme())
                 .contactEmail(request.getContactEmail())
                 .prizes(request.getPrizes())
-                .rules(request.getRules())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .registrationStartDate(request.getRegistrationStartDate())
@@ -243,7 +241,6 @@ public class EventService {
         event.setTheme(request.getTheme());
         event.setContactEmail(request.getContactEmail());
         event.setPrizes(request.getPrizes());
-        event.setRules(request.getRules());
         event.setStartDate(request.getStartDate());
         event.setEndDate(request.getEndDate());
         event.setRegistrationStartDate(request.getRegistrationStartDate());

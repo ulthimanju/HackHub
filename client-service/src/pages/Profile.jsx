@@ -123,13 +123,13 @@ const Profile = () => {
     setError('');
     setLoading(true);
     try {
-      const data = await authService.upgradeRole(otp);
+      const { data } = await authService.upgradeRole(otp);
       // Apply new token + organizer user directly — no re-login needed
       updateAuth(data.token, data.user);
       setShowOtpInput(false);
       setOtp('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Role upgrade failed.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Role upgrade failed.');
     } finally {
       setLoading(false);
     }

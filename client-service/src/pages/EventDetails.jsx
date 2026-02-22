@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAbility } from '../hooks/useAbility';
 import { useRef } from 'react';
 import { useEventPermissions } from '../hooks/useEventPermissions';
@@ -26,6 +26,7 @@ import { ArrowLeft, Hash, Check, X } from 'lucide-react';
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isOrganizer } = useAbility();
   const tabsRef = useRef([]);
 
@@ -59,6 +60,15 @@ const EventDetails = () => {
   const permissions = useEventPermissions(eventDetails);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
+
+  // Jump to a tab by label when navigating back from a sub-page (e.g. AddProblems)
+  useEffect(() => {
+    if (location.state?.tab) {
+      const idx = tabsRef.current.findIndex(t => t?.label === location.state.tab);
+      if (idx >= 0) setActiveTab(idx);
+    }
+  }, [location.state]);
+
   const copyCode = () => {
     if (!eventDetails?.shortCode) return;
     navigator.clipboard.writeText(eventDetails.shortCode);
@@ -270,9 +280,9 @@ const EventDetails = () => {
       label: 'Problems',
       content: (
         <ProblemStatementsTab
+          eventId={id}
           problems={eventDetails.problemStatements}
           permissions={permissions}
-          onAdd={handleAddProblems}
           onUpdate={handleUpdateProblem}
           onDelete={handleDeleteProblem}
         />
@@ -351,6 +361,9 @@ const EventDetails = () => {
       ),
     },
   ];
+
+  // Sync tabs into ref so the location.state handler can find by label
+  tabsRef.current = tabs;
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500 pb-20">

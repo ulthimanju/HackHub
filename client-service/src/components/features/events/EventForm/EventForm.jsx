@@ -105,7 +105,7 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
       {/* Basics */}
       <section>
         <SectionTitle>Basics</SectionTitle>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
           <div className="md:col-span-2">
             <Input
               label="Event Name"
@@ -137,17 +137,19 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
               emptyText="No themes selected"
             />
           </div>
-          <Input
-            label="Contact Email"
-            name="contactEmail"
-            type="email"
-            icon={Mail}
-            value={formData.contactEmail}
-            onChange={handleChange}
-            placeholder="organizer@example.com"
-            error={errors.contactEmail}
-            required
-          />
+          <div className="md:col-span-1">
+            <Input
+              label="Contact Email"
+              name="contactEmail"
+              type="email"
+              icon={Mail}
+              value={formData.contactEmail}
+              onChange={handleChange}
+              placeholder="organizer@example.com"
+              error={errors.contactEmail}
+              required
+            />
+          </div>
         </div>
       </section>
 
@@ -156,7 +158,7 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
       {/* Logistics */}
       <section>
         <SectionTitle>Logistics</SectionTitle>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
           <div>
             <DateTimePicker
               label="Start Date"
@@ -195,12 +197,12 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
             />
           </div>
           {regAutoFilled && (
-            <div className="md:col-span-2 flex items-center gap-2 text-xs text-brand-600 bg-brand-50 border border-brand-100 rounded-xl px-3 py-2">
+            <div className="md:col-span-2 flex items-center gap-2 text-xs text-brand-600 bg-brand-50 border border-brand-100 rounded-xl px-3 py-2 -mt-1">
               <Sparkles className="w-3.5 h-3.5 shrink-0" />
               Registration dates auto-filled — opens now and closes 1 day before event starts. Adjust above if needed.
             </div>
           )}
-          <div className="flex items-center pt-2">
+          <div className="flex items-end pb-3">
             <Checkbox
               label="Virtual Event"
               name="isVirtual"

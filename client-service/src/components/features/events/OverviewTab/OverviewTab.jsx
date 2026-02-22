@@ -213,26 +213,6 @@ export default function OverviewTab({
           </div>
         </div>
       )}
-
-      {/* ── Legacy Rules list (from event.rules string array) ───────────────── */}
-      {event.rules && event.rules.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-0.5 h-5 bg-brand-500 rounded-full" />
-            <h3 className="text-base font-semibold text-ink-primary font-display">Rules & Guidelines</h3>
-          </div>
-          <div className="grid grid-cols-1 gap-2">
-            {event.rules.map((rule, index) => (
-              <div key={index} className="bg-white rounded-xl p-4 border border-surface-border shadow-card flex items-start gap-3">
-                <div className="w-7 h-7 bg-purple-50 rounded-lg flex items-center justify-center shrink-0">
-                  <BookOpen className="w-3.5 h-3.5 text-purple-500" />
-                </div>
-                <span className="text-sm text-ink-secondary leading-relaxed">{rule}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
