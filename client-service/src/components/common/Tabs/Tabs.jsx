@@ -1,8 +1,10 @@
 import React, { memo, useState } from 'react';
 import { theme } from '../../../utils/theme';
 
-const Tabs = memo(({ tabs, defaultActiveTab = 0 }) => {
-  const [activeTab, setActiveTab] = useState(defaultActiveTab);
+const Tabs = memo(({ tabs, defaultActiveTab = 0, activeTab: controlledTab, onTabChange }) => {
+  const [internalTab, setInternalTab] = useState(defaultActiveTab);
+  const activeTab  = controlledTab !== undefined ? controlledTab : internalTab;
+  const setActiveTab = onTabChange || setInternalTab;
   return (
     <div className="w-full">
       <div className="flex gap-6 border-b border-surface-border mb-5 overflow-x-auto">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAbility } from '../hooks/useAbility';
+import { useRef } from 'react';
 import { useEventPermissions } from '../hooks/useEventPermissions';
 import eventService from '../services/eventService';
 import teamService from '../services/teamService';
@@ -26,6 +27,7 @@ const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isOrganizer } = useAbility();
+  const tabsRef = useRef([]);
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [eventDetails, setEventDetails]           = useState(null);
@@ -53,6 +55,7 @@ const EventDetails = () => {
   const [editLoading, setEditLoading]             = useState(false);
   const [editError, setEditError]                 = useState('');
 
+  const [activeTab, setActiveTab]                 = useState(0);
   const permissions = useEventPermissions(eventDetails);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -249,12 +252,19 @@ const EventDetails = () => {
         <OverviewTab
           event={eventDetails}
           permissions={permissions}
+          myRegistration={myRegistration}
           advancingStatus={advancingStatus}
           advanceError={advanceError}
           setConfirmAdvance={setConfirmAdvance}
           copiedEmail={copiedEmail}
           copyEmail={copyEmail}
           onEditClick={() => { setEditError(''); setShowEditModal(true); }}
+          registrations={registrations}
+          orgTeams={orgTeams}
+          onSwitchToTeamTab={() => {
+            const idx = tabs.findIndex(t => t.label === 'Team');
+            if (idx >= 0) setActiveTab(idx);
+          }}
         />
       ),
     },
@@ -411,7 +421,7 @@ const EventDetails = () => {
         </Badge>
       </div>
 
-      <Tabs tabs={tabs} />
+      <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 };
