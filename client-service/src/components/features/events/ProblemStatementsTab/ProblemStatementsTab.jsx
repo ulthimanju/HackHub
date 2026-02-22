@@ -84,8 +84,8 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-1 h-6 bg-orange-500 rounded-full" />
-              <h3 className="text-lg font-bold text-gray-900">Problem Statements</h3>
+              <div className="w-0.5 h-5 bg-brand-500 rounded-full" />
+              <h3 className="text-base font-semibold text-ink-primary font-display">Problem Statements</h3>
             </div>
             {permissions.canAddProblem && (
               <Button variant="primary" size="sm" icon={Plus} onClick={() => setAddOpen(true)}>
@@ -95,18 +95,18 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {problems.map((problem, index) => (
-              <div key={problem.id || index} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-start gap-4">
+              <div key={problem.id || index} className="bg-white rounded-xl p-4 border border-surface-border shadow-card flex items-start gap-4">
                 <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
                   <BookOpen className="w-4 h-4 text-blue-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-1">Problem {index + 1}</p>
-                  {problem.name && <p className="text-base font-bold text-gray-900 mb-1">{problem.name}</p>}
-                  <p className="text-gray-700 leading-relaxed">{problem.statement}</p>
+                  <p className="text-xs font-semibold tracking-widest text-ink-muted uppercase mb-1">Problem {index + 1}</p>
+                  {problem.name && <p className="text-base font-semibold text-ink-primary font-display mb-1">{problem.name}</p>}
+                  <p className="text-ink-secondary leading-relaxed">{problem.statement}</p>
                   {problem.requirements && (
-                    <div className="mt-2 pt-2 border-t border-gray-100">
-                      <p className="text-xs font-bold tracking-widest text-orange-400 uppercase mb-1">Requirements</p>
-                      <p className="text-sm text-gray-600 leading-relaxed">{problem.requirements}</p>
+                    <div className="mt-2 pt-2 border-t border-surface-border">
+                      <p className="text-xs font-semibold tracking-widest text-brand-500 uppercase mb-1">Requirements</p>
+                      <p className="text-sm text-ink-secondary leading-relaxed">{problem.requirements}</p>
                     </div>
                   )}
                 </div>
@@ -115,7 +115,7 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
                     <button
                       onClick={() => setEditProblem({ id: problem.id, name: problem.name || '', statement: problem.statement, requirements: problem.requirements || '' })}
                       title="Edit problem"
-                      className="p-1.5 text-gray-300 hover:text-orange-400 transition-colors"
+                      className="p-1.5 text-ink-disabled hover:text-brand-500 transition-colors"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -124,7 +124,7 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
                         onClick={() => handleDelete(problem.id)}
                         disabled={deletingId === problem.id}
                         title="Delete problem"
-                        className="p-1.5 text-gray-300 hover:text-red-400 disabled:opacity-40 transition-colors"
+                        className="p-1.5 text-ink-disabled hover:text-red-500 disabled:opacity-40 transition-colors"
                       >
                         {deletingId === problem.id
                           ? <div className="w-4 h-4 border-2 border-red-300 border-t-red-500 rounded-full animate-spin" />
@@ -139,11 +139,11 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-          <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center">
-            <FileQuestion className="w-8 h-8 text-gray-300" />
+          <div className="w-16 h-16 bg-surface-hover rounded-xl flex items-center justify-center">
+            <FileQuestion className="w-8 h-8 text-ink-disabled" />
           </div>
-          <p className="text-lg font-semibold text-gray-500">No problems yet</p>
-          <p className="text-sm text-gray-400 max-w-xs">Problem statements haven't been added for this event yet. Check back later.</p>
+          <p className="text-base font-semibold text-ink-muted">No problems yet</p>
+          <p className="text-sm text-ink-muted max-w-xs">Problem statements haven't been added for this event yet. Check back later.</p>
           {permissions.canAddProblem && (
             <Button variant="primary" size="sm" icon={Plus} onClick={() => setAddOpen(true)}>
               Add Problem
@@ -179,20 +179,20 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
               </div>
               <div className="flex-1 flex flex-col gap-2">
                 <input
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
+                  className="w-full border border-surface-border rounded-lg px-4 py-2.5 text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400"
                   placeholder={`Problem name * — e.g. "Smart City Solution"`}
                   value={r.name}
                   onChange={e => updateRow(index, 'name', e.target.value)}
                 />
                 <textarea
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none"
+                  className="w-full border border-surface-border rounded-lg px-4 py-3 text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 resize-none"
                   rows={3}
                   placeholder={`Problem statement ${index + 1} *`}
                   value={r.statement}
                   onChange={e => updateRow(index, 'statement', e.target.value)}
                 />
                 <textarea
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none"
+                  className="w-full border border-surface-border rounded-lg px-4 py-2.5 text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 resize-none"
                   rows={2}
                   placeholder="Requirements * — e.g. must use React, open source only…"
                   value={r.requirements}
@@ -202,7 +202,7 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
               {rows.length > 1 && (
                 <button
                   onClick={() => setRows(prev => prev.filter((_, i) => i !== index))}
-                  className="mt-3 p-1.5 text-gray-300 hover:text-red-400 transition-colors shrink-0"
+                  className="p-1.5 text-ink-disabled hover:text-red-500 transition-colors shrink-0"
                   title="Remove"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -212,7 +212,7 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
           ))}
           <button
             onClick={() => setRows(prev => [...prev, emptyRow()])}
-            className="flex items-center gap-2 text-sm text-orange-500 hover:text-orange-600 font-medium mt-1 transition-colors"
+            className="flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium mt-1 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add another problem
@@ -242,27 +242,27 @@ export default function ProblemStatementsTab({ problems, permissions, onAdd, onU
           <div className="space-y-3">
             {editError && <Alert type="error">{editError}</Alert>}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Name <span className="text-red-400">*</span></label>
+              <label className="block text-sm font-medium text-ink-secondary mb-1">Name <span className="text-red-400">*</span></label>
               <input
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
+                className="w-full border border-surface-border rounded-lg px-4 py-2.5 text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400"
                 placeholder={`e.g. "Smart City Solution"`}
                 value={editProblem.name}
                 onChange={e => setEditProblem(prev => ({ ...prev, name: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Problem Statement <span className="text-red-400">*</span></label>
+              <label className="block text-sm font-medium text-ink-secondary mb-1">Problem Statement <span className="text-red-400">*</span></label>
               <textarea
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none"
+                className="w-full border border-surface-border rounded-lg px-4 py-3 text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 resize-none"
                 rows={4}
                 value={editProblem.statement}
                 onChange={e => setEditProblem(prev => ({ ...prev, statement: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Requirements <span className="text-red-400">*</span></label>
+              <label className="block text-sm font-medium text-ink-secondary mb-1">Requirements <span className="text-red-400">*</span></label>
               <textarea
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none"
+                className="w-full border border-surface-border rounded-lg px-4 py-2.5 text-sm text-ink-primary placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 resize-none"
                 rows={3}
                 placeholder="e.g. must use React, open source only…"
                 value={editProblem.requirements}

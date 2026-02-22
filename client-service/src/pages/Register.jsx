@@ -59,43 +59,43 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Column - Image (60%) */}
-      <div className="hidden lg:flex lg:w-[60%] bg-orange-50 items-center justify-center p-12">
-        <div className="max-w-2xl w-full">
-          <img 
-            src={registerSvg} 
-            alt="Registration Illustration" 
+    <div className="min-h-screen flex bg-surface-page">
+      {/* Left Column — Illustration */}
+      <div className="hidden lg:flex lg:w-[55%] bg-brand-50 items-center justify-center p-12">
+        <div className="max-w-xl w-full">
+          <img
+            src={registerSvg}
+            alt="Registration Illustration"
             className="w-full h-auto object-contain"
           />
         </div>
       </div>
 
-      {/* Right Column - Form (40% or 100% on mobile) */}
-      <div className="w-full lg:w-[40%] flex items-center justify-center px-6 sm:px-12 lg:px-16 overflow-y-auto py-12">
-        <div className="max-w-md w-full space-y-8">
+      {/* Right Column — Form */}
+      <div className="w-full lg:w-[45%] flex items-center justify-center px-6 sm:px-12 lg:px-16 overflow-y-auto py-12 bg-white">
+        <div className="max-w-sm w-full space-y-6">
           <div>
-            <div className="flex lg:hidden justify-center mb-8">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <UserPlus className="w-6 h-6 text-orange-600" />
+            <div className="flex lg:hidden justify-center mb-6">
+              <div className="w-10 h-10 bg-brand-50 rounded-lg flex items-center justify-center">
+                <UserPlus className="w-5 h-5 text-brand-600" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Join EHub Today</h2>
-            <p className="mt-3 text-sm text-gray-600">
+            <h2 className="font-display font-semibold text-2xl text-ink-primary">Join EHub Today</h2>
+            <p className="mt-2 text-sm text-ink-muted">
               Start your hackathon journey or{' '}
-              <button 
+              <button
                 onClick={() => navigate('/login')}
-                className="font-semibold text-orange-600 hover:text-orange-500 transition-colors"
+                className="font-medium text-brand-600 hover:text-brand-700 transition-colors"
               >
-                sign in to your account
+                sign in
               </button>
             </p>
           </div>
-          
+
           {error && <Alert type="error" title="Registration Error">{error}</Alert>}
           {success && <Alert type="success" title="OTP Sent">{success}</Alert>}
 
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <Input
               label="Username"
               name="username"
@@ -105,7 +105,7 @@ const Register = () => {
               onChange={handleChange}
               placeholder="Choose a unique username"
             />
-            
+
             <div className="flex items-end gap-2">
               <div className="flex-1">
                 <Input
@@ -118,13 +118,12 @@ const Register = () => {
                   placeholder="name@example.com"
                 />
               </div>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleRequestOtp} 
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleRequestOtp}
                 loading={otpLoading}
                 icon={Send}
-                className="mb-1 h-[42px]"
               >
                 Get OTP
               </Button>
@@ -150,14 +149,14 @@ const Register = () => {
               placeholder="Min. 8 characters"
             />
 
-            <div className="pt-2">
-              <p className="text-xs text-gray-500 mb-4">
-                By clicking "Create account", you agree to our Terms of Service and Privacy Policy.
+            <div className="pt-1">
+              <p className="text-xs text-ink-muted mb-3">
+                By creating an account you agree to our Terms of Service and Privacy Policy.
               </p>
               <Button
                 type="submit"
                 variant="primary"
-                className="w-full py-3"
+                fullWidth
                 loading={loading}
               >
                 Create account

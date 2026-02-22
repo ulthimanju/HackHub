@@ -1,18 +1,6 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { Search, X } from 'lucide-react';
 
-/**
- * Reusable autocomplete tag picker.
- *
- * Props:
- *   items        – string[] — full list of available options
- *   selected     – string[] — currently selected tags
- *   onChange     – fn(string[]) — called with updated selection
- *   label        – string (optional) — label above the chips
- *   placeholder  – string (optional) — input placeholder text
- *   emptyText    – string (optional) — shown when nothing selected
- *   maxDropdown  – number (default 8) — max dropdown items shown
- */
 const TagAutocomplete = memo(({
   items = [],
   selected = [],
@@ -46,46 +34,65 @@ const TagAutocomplete = memo(({
 
   return (
     <div className="space-y-2">
-      {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+      {label && <label className="block text-xs font-medium text-ink-muted uppercase tracking-wide">{label}</label>}
 
       {/* Selected chips */}
-      <div className="flex flex-wrap gap-2 min-h-[32px]">
-        {selected.map(item => (
-          <span key={item} className="inline-flex items-center gap-1.5 bg-orange-50 text-orange-700 border border-orange-100 px-3 py-1 rounded-full text-xs font-semibold">
-            {item}
-            <button type="button" onClick={() => remove(item)} className="hover:text-red-500">
-              <X className="w-3 h-3" />
-            </button>
-          </span>
-        ))}
-        {selected.length === 0 && (
-          <span className="text-xs text-gray-400 italic">{emptyText}</span>
-        )}
-      </div>
+      {selected.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map(item => (
+            <span
+              key={item}
+              className="inline-flex items-center gap-1 bg-brand-50 text-brand-700 border border-brand-200 px-2.5 py-0.5 rounded-full text-xs font-medium"
+            >
+              {item}
+              <button
+                type="button"
+                onClick={() => remove(item)}
+                className="hover:text-red-500 transition-colors focus:outline-none"
+                aria-label={`Remove ${item}`}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-ink-muted italic">{emptyText}</p>
+      )}
 
       {/* Search input + dropdown */}
       <div className="relative" ref={containerRef}>
-        <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-orange-300 focus-within:border-orange-400 bg-white">
-          <Search className="w-4 h-4 text-gray-400 shrink-0" />
+        <div className={`flex items-center gap-2 border rounded-lg px-3 py-2 bg-white transition-all duration-150 ${
+          open ? 'border-brand-500 ring-2 ring-brand-500/25' : 'border-surface-border hover:border-ink-muted/40'
+        }`}>
+          <Search className="w-3.5 h-3.5 text-ink-muted shrink-0" />
           <input
-            className="flex-1 text-sm outline-none placeholder-gray-400 bg-transparent"
+            className="flex-1 text-sm text-ink-secondary outline-none placeholder-ink-muted/60 bg-transparent min-w-0"
             placeholder={placeholder}
             value={query}
             onChange={e => { setQuery(e.target.value); setOpen(true); }}
             onFocus={() => setOpen(true)}
           />
           {query && (
-            <button type="button" onClick={() => { setQuery(''); setOpen(false); }} className="text-gray-400 hover:text-gray-600">
+            <button
+              type="button"
+              onClick={() => { setQuery(''); setOpen(false); }}
+              className="text-ink-muted hover:text-ink-secondary transition-colors"
+            >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
         {open && filteredOptions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden">
+          <div className="absolute z-20 w-full mt-1 bg-white border border-surface-border rounded-lg shadow-dropdown overflow-hidden">
             {filteredOptions.map(item => (
-              <button key={item} type="button" onMouseDown={() => add(item)}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors">
+              <button
+                key={item}
+                type="button"
+                onMouseDown={() => add(item)}
+                className="w-full text-left px-3 py-2 text-sm text-ink-secondary hover:bg-brand-50 hover:text-brand-700 transition-colors"
+              >
                 {item}
               </button>
             ))}
@@ -93,7 +100,7 @@ const TagAutocomplete = memo(({
         )}
 
         {open && query.trim() && filteredOptions.length === 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400">
+          <div className="absolute z-20 w-full mt-1 bg-white border border-surface-border rounded-lg shadow-dropdown px-3 py-2.5 text-sm text-ink-muted">
             No matches found.
           </div>
         )}

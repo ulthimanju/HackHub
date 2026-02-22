@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Users, Plus, Copy, Check, Search, Crown, UserPlus, Github,
   LogOut, Trash2, AlertTriangle, RefreshCw, ClipboardCheck,
@@ -8,26 +8,26 @@ import Button from '../../../common/Button/Button';
 import Modal from '../../../common/Modal/Modal';
 import Alert from '../../../common/Alert/Alert';
 import { useAuth } from '../../../../hooks/useAuth';
-import teamService from '../../../../services/teamService';
+import { useTeamTab } from '../../../../hooks/useTeamTab';
 import MatchmakingPanel from './MatchmakingPanel';
 
 const SectionTitle = ({ children }) => (
-  <div className="flex items-center gap-3">
-    <div className="w-1 h-6 bg-orange-500 rounded-full" />
-    <h3 className="text-lg font-bold text-gray-900">{children}</h3>
+  <div className="flex items-center gap-2.5">
+    <div className="w-0.5 h-5 bg-brand-500 rounded-full" />
+    <h3 className="text-base font-semibold text-ink-primary font-display">{children}</h3>
   </div>
 );
 
 const InputField = ({ label, placeholder, value, onChange, mono, maxLength, required }) => (
   <div>
     {label && (
-      <label className="block text-sm font-semibold text-gray-700 mb-1">
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      <label className="block text-xs font-medium text-ink-muted uppercase tracking-wide mb-1.5">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
     )}
     <input
-      className={`w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400
-        focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 ${mono ? 'font-mono uppercase tracking-wider' : ''}`}
+      className={`w-full border border-surface-border rounded-lg px-3 py-2 text-sm text-ink-primary placeholder-ink-disabled
+        focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 bg-white transition ${mono ? 'font-mono uppercase tracking-wider' : ''}`}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
@@ -38,18 +38,18 @@ const InputField = ({ label, placeholder, value, onChange, mono, maxLength, requ
 
 const TeamTab = ({ event, myRegistration }) => {
   const { user } = useAuth();
-  const [teams, setTeams] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [actionLoading, setActionLoading] = useState('');
-  const [actionError, setActionError] = useState('');
+  const {
+    teams, loading, error,
+    actionLoading, actionError,
+    fetchTeams,
+    handlers,
+  } = useTeamTab(event.id, user);
+
   const [copiedCode, setCopiedCode] = useState(false);
 
-  // No-team form state
+  // UI-only state (modals, form fields)
   const [createName, setCreateName] = useState('');
   const [searchName, setSearchName] = useState('');
-
-  // Modals
   const [inviteModal, setInviteModal] = useState({ open: false, userId: '', username: '', userEmail: '' });
   const [submitModal, setSubmitModal] = useState({ open: false, repoUrl: '', demoUrl: '' });
   const [selectProblemModal, setSelectProblemModal] = useState({ open: false, problemId: '' });
@@ -61,19 +61,6 @@ const TeamTab = ({ event, myRegistration }) => {
 
   const isApproved = myRegistration?.status === 'APPROVED';
   const isLocked = ['judging', 'results_announced', 'completed'].includes(event.status?.toLowerCase());
-
-  const fetchTeams = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await teamService.getTeamsByEvent(event.id);
-      setTeams(data);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load teams.');
-    } finally {
-      setLoading(false);
-    }
-  }, [event.id]);
 
   useEffect(() => { fetchTeams(); }, [fetchTeams]);
 
@@ -89,92 +76,48 @@ const TeamTab = ({ event, myRegistration }) => {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const withAction = async (key, fn) => {
-    setActionLoading(key);
-    setActionError('');
-    try {
-      await fn();
-      await fetchTeams();
-    } catch (err) {
-      setActionError(err.response?.data?.message || err.response?.data || 'Action failed.');
-    } finally {
-      setActionLoading('');
-    }
-  };
-
   const handleCreateTeam = () => {
     if (!createName.trim()) return;
-    withAction('create', async () => {
-      await teamService.createTeam(event.id, {
-        name: createName.trim(),
-        userId: user.id,
-        username: user.username,
-        userEmail: user.email,
-      });
+    handlers.createTeam(createName.trim()).then(() => {
       setCreateName('');
       setCreateTeamOpen(false);
     });
   };
 
-  const handleRequestToJoin = (teamId) =>
-    withAction(`req-${teamId}`, () =>
-      teamService.requestToJoin(teamId, {
-        userId: user.id,
-        username: user.username,
-        userEmail: user.email,
-      })
-    );
+  const handleRequestToJoin = (teamId) => handlers.requestToJoin(teamId);
 
   const handleRespond = (teamId, targetUserId, accept) =>
-    withAction(`rsp-${targetUserId}`, () =>
-      teamService.respondToInvite(teamId, targetUserId, accept)
-    );
+    handlers.respondToInvite(teamId, targetUserId, accept);
 
   const handleLeave = () =>
-    withAction('leave', async () => {
-      await teamService.leaveTeam(myTeam.id, user.id);
-      setConfirmLeave(false);
-    });
+    handlers.leaveTeam(myTeam.id).then(() => setConfirmLeave(false));
 
   const handleDismantle = () =>
-    withAction('dismantle', async () => {
-      await teamService.dismantleTeam(myTeam.id, user.id);
-      setConfirmDismantle(false);
-    });
+    handlers.dismantleTeam(myTeam.id).then(() => setConfirmDismantle(false));
 
   const handleInvite = () =>
-    withAction('invite', async () => {
-      await teamService.inviteMember(myTeam.id, user.id, {
-        userId: inviteModal.userId,
-        username: inviteModal.username,
-        userEmail: inviteModal.userEmail,
-      });
-      setInviteModal({ open: false, userId: '', username: '', userEmail: '' });
-    });
+    handlers.inviteMember(myTeam.id, {
+      userId: inviteModal.userId,
+      username: inviteModal.username,
+      userEmail: inviteModal.userEmail,
+    }).then(() => setInviteModal({ open: false, userId: '', username: '', userEmail: '' }));
 
   const handleSubmit = () => {
     if (!submitModal.repoUrl.trim()) return;
-    withAction('submit', async () => {
-      await teamService.submitProject(myTeam.id, user.id, {
-        repoUrl: submitModal.repoUrl.trim(),
-        ...(submitModal.demoUrl.trim() ? { demoUrl: submitModal.demoUrl.trim() } : {}),
-      });
-      setSubmitModal({ open: false, repoUrl: '', demoUrl: '' });
-    });
+    handlers.submitProject(myTeam.id, {
+      repoUrl: submitModal.repoUrl.trim(),
+      ...(submitModal.demoUrl.trim() ? { demoUrl: submitModal.demoUrl.trim() } : {}),
+    }).then(() => setSubmitModal({ open: false, repoUrl: '', demoUrl: '' }));
   };
 
   const handleSelectProblem = () =>
-    withAction('problem', async () => {
-      await teamService.selectProblemStatement(myTeam.id, user.id, selectProblemModal.problemId || null);
-      setSelectProblemModal({ open: false, problemId: '' });
-    });
+    handlers.selectProblemStatement(myTeam.id, selectProblemModal.problemId)
+      .then(() => setSelectProblemModal({ open: false, problemId: '' }));
 
   const handleTransfer = () => {
     if (!transferModal.newLeaderId) return;
-    withAction('transfer', async () => {
-      await teamService.transferLeadership(myTeam.id, user.id, transferModal.newLeaderId);
-      setTransferModal({ open: false, newLeaderId: '' });
-    });
+    handlers.transferLeadership(myTeam.id, transferModal.newLeaderId)
+      .then(() => setTransferModal({ open: false, newLeaderId: '' }));
   };
 
   // ── Loading / Error ──────────────────────────────────────────────────────────
@@ -192,11 +135,11 @@ const TeamTab = ({ event, myRegistration }) => {
   if (!isApproved) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-        <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center">
-          <Users className="w-8 h-8 text-orange-300" />
+        <div className="w-14 h-14 bg-brand-50 rounded-xl flex items-center justify-center">
+          <Users className="w-7 h-7 text-brand-300" />
         </div>
-        <p className="text-lg font-semibold text-gray-600">Registration Required</p>
-        <p className="text-sm text-gray-400 max-w-xs">
+        <p className="text-base font-semibold text-ink-secondary">Registration Required</p>
+        <p className="text-sm text-ink-muted max-w-xs">
           {myRegistration
             ? 'Your registration is pending approval. Team features unlock once approved.'
             : 'You need an approved registration to access team features.'}
@@ -212,27 +155,27 @@ const TeamTab = ({ event, myRegistration }) => {
       <div className="space-y-4">
         <SectionTitle>Team Invitation</SectionTitle>
         {actionError && <Alert type="error">{actionError}</Alert>}
-        <div className="bg-white rounded-2xl p-6 border border-purple-100 shadow-sm space-y-5">
+        <div className="bg-white rounded-xl p-5 border border-surface-border shadow-card space-y-5">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center shrink-0">
               <UserPlus className="w-5 h-5 text-purple-500" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900">You've been invited to join</p>
-              <p className="text-xl font-bold text-purple-700 mt-0.5">{myTeam.name}</p>
+              <p className="font-medium text-ink-primary">You've been invited to join</p>
+              <p className="text-lg font-semibold text-purple-700 font-display mt-0.5">{myTeam.name}</p>
             </div>
           </div>
           {acceptedMembers.length > 0 && (
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Current Members</p>
+            <div className="pt-3 border-t border-surface-border">
+              <p className="text-xs font-medium text-ink-muted uppercase tracking-widest mb-2">Current Members</p>
               <div className="flex flex-wrap gap-2">
                 {acceptedMembers.map(m => (
-                  <div key={m.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 rounded-full text-sm border border-gray-100">
-                    <div className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-xs font-bold text-orange-600">
+                  <div key={m.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-hover rounded-md text-sm border border-surface-border">
+                    <div className="w-5 h-5 rounded-md bg-brand-50 flex items-center justify-center text-xs font-bold text-brand-600">
                       {m.username?.charAt(0)?.toUpperCase()}
                     </div>
-                    <span className="text-gray-700">{m.username}</span>
-                    {m.role === 'LEADER' && <Crown className="w-3 h-3 text-yellow-500" />}
+                    <span className="text-ink-secondary">{m.username}</span>
+                    {m.role === 'LEADER' && <Crown className="w-3 h-3 text-amber-500" />}
                   </div>
                 ))}
               </div>
@@ -265,16 +208,16 @@ const TeamTab = ({ event, myRegistration }) => {
       <div className="space-y-4">
         <SectionTitle>Pending Request</SectionTitle>
         {actionError && <Alert type="error">{actionError}</Alert>}
-        <div className="bg-white rounded-2xl p-6 border border-yellow-100 shadow-sm space-y-4">
+        <div className="bg-white rounded-xl p-5 border border-surface-border shadow-card space-y-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-yellow-50 rounded-xl flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5 text-yellow-500" />
+            <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900">Request Pending</p>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <p className="font-medium text-ink-primary">Request Pending</p>
+              <p className="text-sm text-ink-muted mt-0.5">
                 Your request to join{' '}
-                <span className="font-semibold text-gray-700">{myTeam.name}</span>{' '}
+                <span className="font-medium text-ink-primary">{myTeam.name}</span>{' '}
                 is awaiting review by the team leader.
               </p>
             </div>
@@ -317,21 +260,21 @@ const TeamTab = ({ event, myRegistration }) => {
 
         {actionError && <Alert type="error">{actionError}</Alert>}
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-surface-border shadow-card overflow-hidden">
           {/* Team header */}
-          <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+          <div className="px-5 pt-4 pb-4 border-b border-surface-border flex items-center justify-between gap-4 flex-wrap">
             {/* Left: team name + copy code */}
             <div>
-              <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-0.5">Team Name</p>
+              <p className="text-xs font-medium text-ink-muted uppercase tracking-widest mb-0.5">Team Name</p>
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-xl font-bold text-gray-900">{myTeam.name}</p>
+                <p className="text-lg font-semibold text-ink-primary font-display">{myTeam.name}</p>
                 <button
                   onClick={copyTeamCode}
                   title={copiedCode ? 'Copied!' : 'Copy team code to share'}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-semibold border transition-all shrink-0 ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium border transition-all shrink-0 ${
                     copiedCode
                       ? 'bg-green-50 text-green-600 border-green-200'
-                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200'
+                      : 'bg-surface-hover text-ink-secondary border-surface-border hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200'
                   }`}
                 >
                   {copiedCode ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
@@ -343,11 +286,11 @@ const TeamTab = ({ event, myRegistration }) => {
             {/* Center: score badge */}
             {myTeam.score != null && myTeam.score > 0 && (
               <div className="flex flex-col items-center gap-0.5 flex-1">
-                <span className="text-xs font-bold tracking-widest text-gray-400 uppercase">Score</span>
-                <span className={`text-2xl font-extrabold px-5 py-1.5 rounded-full ${
-                  myTeam.score >= 80 ? 'bg-green-100 text-green-700' :
-                  myTeam.score >= 60 ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-red-100 text-red-600'
+                <span className="text-xs font-medium text-ink-muted uppercase tracking-widest">Score</span>
+                <span className={`text-2xl font-bold px-5 py-1.5 rounded-lg font-display ${
+                  myTeam.score >= 80 ? 'bg-green-50 text-green-700' :
+                  myTeam.score >= 60 ? 'bg-amber-50 text-amber-700' :
+                  'bg-red-50 text-red-600'
                 }`}>
                   {myTeam.score}/100
                 </span>
@@ -359,48 +302,48 @@ const TeamTab = ({ event, myRegistration }) => {
               isLeader ? (
                 <button
                   onClick={() => setConfirmDismantle(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl border border-transparent hover:border-red-100 transition-colors shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100 transition-colors shrink-0"
                 >
                   <Trash2 className="w-4 h-4" /> Dismantle Team
                 </button>
               ) : (
                 <button
                   onClick={() => setConfirmLeave(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl border border-transparent hover:border-red-100 transition-colors shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100 transition-colors shrink-0"
                 >
                   <LogOut className="w-4 h-4" /> Leave Team
                 </button>
               )
             ) : (
-              <span className="text-xs text-gray-400 shrink-0">Team locked after registration</span>
+              <span className="text-xs text-ink-muted shrink-0">Team locked after registration</span>
             )}
           </div>
 
           {/* Members */}
-          <div className="px-6 py-4 border-b border-gray-100">
-            <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-3">
+          <div className="px-5 py-4 border-b border-surface-border">
+            <p className="text-xs font-medium text-ink-muted uppercase tracking-widest mb-3">
               Members ({acceptedMembers.length}{event.teamSize ? `/${event.teamSize}` : ''})
             </p>
             <div className="space-y-2.5">
               {acceptedMembers.map(m => (
                 <div key={m.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-orange-600">{m.username?.charAt(0)?.toUpperCase()}</span>
+                  <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-brand-600">{m.username?.charAt(0)?.toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-gray-900 text-sm truncate">{m.username}</span>
-                      {m.userId === user?.id && <span className="text-xs text-gray-400">(you)</span>}
+                      <span className="font-medium text-ink-primary text-sm truncate">{m.username}</span>
+                      {m.userId === user?.id && <span className="text-xs text-ink-muted">(you)</span>}
                     </div>
-                    <span className="text-xs text-gray-400 truncate block">{m.userEmail}</span>
+                    <span className="text-xs text-ink-muted truncate block">{m.userEmail}</span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {m.role === 'LEADER' ? (
-                      <span className="flex items-center gap-1 px-2 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-100 rounded-full text-xs font-semibold">
+                      <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-md text-xs font-medium">
                         <Crown className="w-3 h-3" /> Leader
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-xs font-semibold">
+                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-xs font-medium">
                         Member
                       </span>
                     )}
@@ -408,7 +351,7 @@ const TeamTab = ({ event, myRegistration }) => {
                       <button
                         onClick={() => setTransferModal({ open: true, newLeaderId: m.userId })}
                         title="Transfer leadership to this member"
-                        className="w-6 h-6 rounded-lg bg-gray-50 hover:bg-orange-50 flex items-center justify-center text-gray-300 hover:text-orange-500 transition-colors"
+                        className="w-6 h-6 rounded-md bg-surface-hover hover:bg-brand-50 flex items-center justify-center text-ink-disabled hover:text-brand-500 transition-colors"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                       </button>
@@ -421,19 +364,19 @@ const TeamTab = ({ event, myRegistration }) => {
 
           {/* Pending join requests (leader only) */}
           {isLeader && !isLocked && pendingRequests.length > 0 && (
-            <div className="px-6 py-4 border-b border-gray-100 bg-amber-50/40">
-              <p className="text-xs font-bold tracking-widest text-amber-600 uppercase mb-3">
+            <div className="px-5 py-4 border-b border-surface-border bg-amber-50/40">
+              <p className="text-xs font-medium text-amber-700 uppercase tracking-widest mb-3">
                 Join Requests ({pendingRequests.length})
               </p>
               <div className="space-y-2">
                 {pendingRequests.map(m => (
                   <div key={m.id} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
                       <span className="text-xs font-bold text-amber-700">{m.username?.charAt(0)?.toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="font-semibold text-gray-900 text-sm block truncate">{m.username}</span>
-                      <span className="text-xs text-gray-400 truncate">{m.userEmail}</span>
+                      <span className="font-medium text-ink-primary text-sm block truncate">{m.username}</span>
+                      <span className="text-xs text-ink-muted truncate">{m.userEmail}</span>
                     </div>
                     <div className="flex gap-1.5 shrink-0">
                       <button
@@ -462,74 +405,74 @@ const TeamTab = ({ event, myRegistration }) => {
           )}
 
           {/* Problem & Submission */}
-          <div className="px-6 py-4 border-b border-gray-100">
+          <div className="px-5 py-4 border-b border-surface-border">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Problem Statement</p>
+                <p className="text-xs font-medium text-ink-muted uppercase tracking-widest mb-2">Problem Statement</p>
                 {selectedProblem ? (
                   <div className="space-y-1.5">
                     <div className="flex items-start gap-2">
                       <ClipboardCheck className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                      <p className="text-sm font-semibold text-gray-800">{selectedProblem.name}</p>
+                      <p className="text-sm font-medium text-ink-primary">{selectedProblem.name}</p>
                     </div>
-                    <p className="text-sm text-gray-500 line-clamp-2 pl-6">{selectedProblem.statement}</p>
+                    <p className="text-sm text-ink-secondary line-clamp-2 pl-6">{selectedProblem.statement}</p>
                     <button
                       onClick={() => setViewProblemOpen(true)}
-                      className="flex items-center gap-1 mt-1 text-xs text-blue-500 hover:text-blue-600 font-semibold transition-colors pl-6"
+                      className="flex items-center gap-1 mt-1 text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors pl-6"
                     >
                       <Eye className="w-3.5 h-3.5" /> View full details
                     </button>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400">No problem selected yet</p>
+                  <p className="text-sm text-ink-muted">No problem selected yet</p>
                 )}
                 {isLeader && event.problemStatements?.length > 0 && (
                   ['upcoming', 'registration_open'].includes(event.status?.toLowerCase()) ? (
                     <button
                       onClick={() => setSelectProblemModal({ open: true, problemId: myTeam.problemStatementId || '' })}
-                      className="mt-2 text-xs text-orange-500 hover:text-orange-600 font-semibold transition-colors"
+                      className="mt-2 text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors"
                     >
                       {selectedProblem ? 'Change problem →' : 'Select problem →'}
                     </button>
                   ) : (
-                    <p className="mt-2 text-xs text-gray-500">Problem selection locked after registration</p>
+                    <p className="mt-2 text-xs text-ink-muted">Problem selection locked after registration</p>
                   )
                 )}
               </div>
               <div>
-                <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Submission</p>
+                <p className="text-xs font-medium text-ink-muted uppercase tracking-widest mb-2">Submission</p>
                 {myTeam.repoUrl ? (
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <Github className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                      <Github className="w-3.5 h-3.5 text-ink-muted shrink-0" />
                       <a
                         href={myTeam.repoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-blue-600 hover:underline truncate"
+                        className="text-xs text-brand-600 hover:underline truncate"
                       >
                         {myTeam.repoUrl}
                       </a>
                     </div>
                     {myTeam.aiSummary && (
-                      <p className="text-xs text-gray-500 line-clamp-2">{myTeam.aiSummary}</p>
+                      <p className="text-xs text-ink-secondary line-clamp-2">{myTeam.aiSummary}</p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400">Not submitted yet</p>
+                  <p className="text-sm text-ink-muted">Not submitted yet</p>
                 )}
                 {isLeader && (
                   myTeam.score != null && myTeam.score > 0 ? (
-                    <p className="mt-2 text-xs text-green-600 font-semibold">Score announced — submissions locked</p>
+                    <p className="mt-2 text-xs text-green-600 font-medium">Score announced — submissions locked</p>
                   ) : event.status?.toUpperCase() === 'ONGOING' ? (
                     <button
                       onClick={() => setSubmitModal({ open: true, repoUrl: myTeam.repoUrl || '', demoUrl: myTeam.demoUrl || '' })}
-                      className="mt-2 text-xs text-orange-500 hover:text-orange-600 font-semibold transition-colors"
+                      className="mt-2 text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors"
                     >
                       {myTeam.repoUrl ? 'Update submission →' : 'Submit project →'}
                     </button>
                   ) : (
-                    <p className="mt-2 text-xs text-gray-400">
+                    <p className="mt-2 text-xs text-ink-muted">
                       {['COMPLETED', 'JUDGING', 'RESULTS_ANNOUNCED'].includes(event.status?.toUpperCase())
                         ? 'Submissions closed'
                         : 'Submissions open when event starts'}
@@ -544,10 +487,10 @@ const TeamTab = ({ event, myRegistration }) => {
         {/* ── Matchmaking (leader only, event not locked) ── */}
         {isLeader && !isLocked && (
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-6 bg-orange-500 rounded-full" />
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-orange-500" /> Find Teammates
+            <div className="flex items-center gap-2.5">
+              <div className="w-0.5 h-5 bg-brand-500 rounded-full" />
+              <h3 className="text-base font-semibold text-ink-primary font-display flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-brand-500" /> Find Teammates
               </h3>
             </div>
             <MatchmakingPanel
@@ -576,21 +519,21 @@ const TeamTab = ({ event, myRegistration }) => {
           {selectedProblem && (
             <div className="space-y-5">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
                   <BookOpen className="w-5 h-5 text-blue-500" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">{selectedProblem.name}</h3>
+                <h3 className="text-base font-semibold text-ink-primary font-display">{selectedProblem.name}</h3>
               </div>
 
               <div>
-                <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Statement</p>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedProblem.statement}</p>
+                <p className="text-xs font-medium text-ink-muted uppercase tracking-widest mb-2">Statement</p>
+                <p className="text-sm text-ink-secondary leading-relaxed whitespace-pre-wrap">{selectedProblem.statement}</p>
               </div>
 
               {selectedProblem.requirements && (
-                <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
-                  <p className="text-xs font-bold tracking-widest text-orange-500 uppercase mb-2">Requirements</p>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedProblem.requirements}</p>
+                <div className="bg-brand-50 border border-brand-100 rounded-lg p-4">
+                  <p className="text-xs font-medium text-brand-600 uppercase tracking-widest mb-2">Requirements</p>
+                  <p className="text-sm text-ink-secondary leading-relaxed whitespace-pre-wrap">{selectedProblem.requirements}</p>
                 </div>
               )}
             </div>
@@ -618,7 +561,7 @@ const TeamTab = ({ event, myRegistration }) => {
         >
           <div className="space-y-4">
             {actionError && <Alert type="error">{actionError}</Alert>}
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-ink-muted">
               Enter the details of the participant you want to invite. They must have an approved registration for this event.
             </p>
             <InputField label="User ID" placeholder="e.g. 94c6a498-9af9-433e-a069-..." required
@@ -694,21 +637,21 @@ const TeamTab = ({ event, myRegistration }) => {
             {event.problemStatements?.map((p, i) => (
               <label
                 key={p.id}
-                className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                   selectProblemModal.problemId === p.id
-                    ? 'border-orange-400 bg-orange-50'
-                    : 'border-gray-200 hover:border-orange-200 bg-white'
+                    ? 'border-brand-400 bg-brand-50'
+                    : 'border-surface-border hover:border-brand-200 bg-white'
                 }`}
               >
                 <input
                   type="radio"
-                  className="mt-0.5 accent-orange-500"
+                  className="mt-0.5 accent-brand-500"
                   checked={selectProblemModal.problemId === p.id}
                   onChange={() => setSelectProblemModal(prev => ({ ...prev, problemId: p.id }))}
                 />
                 <div>
-                  <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-1">Problem {i + 1}</p>
-                  <p className="text-sm font-semibold text-gray-800">{p.name}</p>
+                  <p className="text-xs font-medium text-ink-muted uppercase tracking-widest mb-1">Problem {i + 1}</p>
+                  <p className="text-sm font-medium text-ink-primary">{p.name}</p>
                 </div>
               </label>
             ))}
@@ -735,28 +678,28 @@ const TeamTab = ({ event, myRegistration }) => {
         >
           <div className="space-y-3">
             {actionError && <Alert type="error">{actionError}</Alert>}
-            <p className="text-sm text-gray-500">You will become a regular member after transfer.</p>
+            <p className="text-sm text-ink-muted">You will become a regular member after transfer.</p>
             {acceptedMembers.filter(m => m.role === 'MEMBER').map(m => (
               <label
                 key={m.id}
-                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                   transferModal.newLeaderId === m.userId
-                    ? 'border-orange-400 bg-orange-50'
-                    : 'border-gray-200 hover:border-orange-200 bg-white'
+                    ? 'border-brand-400 bg-brand-50'
+                    : 'border-surface-border hover:border-brand-200 bg-white'
                 }`}
               >
                 <input
                   type="radio"
-                  className="accent-orange-500"
+                  className="accent-brand-500"
                   checked={transferModal.newLeaderId === m.userId}
                   onChange={() => setTransferModal(prev => ({ ...prev, newLeaderId: m.userId }))}
                 />
-                <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-xs font-bold text-orange-600 shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-brand-50 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">
                   {m.username?.charAt(0)?.toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{m.username}</p>
-                  <p className="text-xs text-gray-400">{m.userEmail}</p>
+                  <p className="text-sm font-medium text-ink-primary">{m.username}</p>
+                  <p className="text-xs text-ink-muted">{m.userEmail}</p>
                 </div>
               </label>
             ))}
@@ -777,7 +720,7 @@ const TeamTab = ({ event, myRegistration }) => {
             </div>
           }
         >
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-secondary">
             Are you sure you want to leave <span className="font-semibold">{myTeam?.name}</span>?
           </p>
         </Modal>
@@ -798,7 +741,7 @@ const TeamTab = ({ event, myRegistration }) => {
         >
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ink-secondary">
               This will permanently delete <span className="font-semibold">{myTeam?.name}</span> and remove all members.
               This action cannot be undone.
             </p>
@@ -820,18 +763,18 @@ const TeamTab = ({ event, myRegistration }) => {
       {/* Browse Teams */}
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-1 h-6 bg-orange-500 rounded-full" />
-            <h3 className="text-lg font-bold text-gray-900">Browse Teams</h3>
+          <div className="flex items-center gap-2.5">
+            <div className="w-0.5 h-5 bg-brand-500 rounded-full" />
+            <h3 className="text-base font-semibold text-ink-primary font-display">Browse Teams</h3>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="primary" size="sm" icon={Plus} onClick={() => setCreateTeamOpen(true)}>
               Create Team
             </Button>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
               <input
-                className="pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 w-48"
+                className="pl-9 pr-4 py-2 border border-surface-border rounded-lg text-sm text-ink-primary placeholder-ink-disabled focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 w-48 bg-white"
                 placeholder="Search by name…"
                 value={searchName}
                 onChange={e => setSearchName(e.target.value)}
@@ -846,15 +789,15 @@ const TeamTab = ({ event, myRegistration }) => {
               const acceptedCount = team.members?.filter(m => m.status === 'ACCEPTED').length ?? 0;
               const isFull = event.teamSize && acceptedCount >= event.teamSize;
               return (
-                <div key={team.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3">
+                <div key={team.id} className="bg-white rounded-xl p-4 border border-surface-border shadow-card space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-semibold text-gray-900 truncate">{team.name}</p>
-                    <span className="text-xs font-mono text-gray-400 shrink-0">#{team.shortCode}</span>
+                    <p className="font-medium text-ink-primary truncate text-sm">{team.name}</p>
+                    <span className="text-xs font-mono text-ink-muted shrink-0">#{team.shortCode}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                  <div className="flex items-center gap-1.5 text-sm text-ink-secondary">
                     <Users className="w-3.5 h-3.5" />
                     <span>{acceptedCount}{event.teamSize ? `/${event.teamSize}` : ''} members</span>
-                    {isFull && <span className="ml-1 text-xs text-red-400 font-semibold">· Full</span>}
+                    {isFull && <span className="ml-1 text-xs text-red-500 font-medium">· Full</span>}
                   </div>
                   <Button
                     variant="secondary"
@@ -871,13 +814,13 @@ const TeamTab = ({ event, myRegistration }) => {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-14 gap-3 text-center">
-            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center">
-              <Users className="w-7 h-7 text-gray-300" />
+            <div className="w-12 h-12 bg-surface-hover rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-ink-disabled" />
             </div>
-            <p className="text-base font-semibold text-gray-500">
+            <p className="text-sm font-medium text-ink-muted">
               {searchName.trim() ? 'No teams match your search' : 'No other teams yet'}
             </p>
-            <p className="text-sm text-gray-400 max-w-xs">
+            <p className="text-sm text-ink-muted max-w-xs">
               {searchName.trim() ? 'Try a different name.' : 'Be the first to create a team for this event!'}
             </p>
           </div>

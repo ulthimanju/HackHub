@@ -3,47 +3,106 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── CSS Variables ───────────────────────────────────── */
   :root {
-    --primary-color: 249 115 22; /* orange-500 */
+    --brand:        249 115 22;   /* orange-500 */
+    --brand-hover:  234 88 12;    /* orange-600 */
+    --surface-page: #FAFAF8;
+    --surface-card: #FFFFFF;
+    --border:       #E5E4E1;
+    --ink-primary:  #0F0F0F;
+    --ink-muted:    #787774;
+    --radius-md:    8px;
+    --radius-lg:    10px;
+    --radius-xl:    12px;
   }
 
-  /* Remove blue tap highlight on mobile */
-  * {
+  /* ── Hide number input spinners ─────────────────────── */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  /* ── Reset & Base ────────────────────────────────────── */
+  *, *::before, *::after {
+    box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Custom Selection Color */
-  ::selection {
-    background-color: rgba(var(--primary-color), 0.2);
-    color: rgb(var(--primary-color));
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
   }
 
-  /* Global Link Styles */
+  body {
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #37352F;
+    background-color: #FAFAF8;
+    margin: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    color: #0F0F0F;
+    line-height: 1.25;
+    margin: 0;
+  }
+
+  p, li, span, label, input, textarea, select, button {
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* ── Custom scrollbar ────────────────────────────────── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { background: #D6D4CF; border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: #B5B3AE; }
+
+  /* ── Selection ───────────────────────────────────────── */
+  ::selection {
+    background-color: rgba(var(--brand), 0.15);
+    color: rgb(var(--brand-hover));
+  }
+
+  /* ── Focus ring ──────────────────────────────────────── */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+
+  /* ── Links ───────────────────────────────────────────── */
   a {
     color: inherit;
     text-decoration: none;
-    transition: color 0.2s;
+    transition: color 150ms ease;
   }
+  a:hover { color: rgb(var(--brand-hover)); }
 
-  a:hover {
-    color: rgb(var(--primary-color));
-  }
-
-  /* Global Focus Styles - Remove default blue browser rings */
-  :focus-visible {
-    outline: 2px solid rgb(var(--primary-color));
-    outline-offset: 2px;
-  }
-
-  /* Force Inputs/Checkboxes to use primary color */
-  input[type="checkbox"], 
+  /* ── Inputs / Checkboxes ─────────────────────────────── */
+  input[type="checkbox"],
   input[type="radio"] {
-    accent-color: rgb(var(--primary-color));
+    accent-color: rgb(var(--brand));
   }
 
-  /* Remove default blue from all browsers */
   input:focus, textarea:focus, select:focus {
-    --tw-ring-color: rgb(var(--primary-color) / 0.5) !important;
-    border-color: rgb(var(--primary-color)) !important;
+    --tw-ring-color: rgb(var(--brand) / 0.25) !important;
+    border-color: rgb(var(--brand)) !important;
+  }
+
+  /* ── Smooth transitions for interactive elements ─────── */
+  button, a, input, textarea, select {
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   }
 }

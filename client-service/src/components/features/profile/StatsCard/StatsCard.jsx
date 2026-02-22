@@ -2,9 +2,9 @@ import React, { memo } from 'react';
 import { theme } from '../../../../utils/theme';
 
 const StatsCard = memo(({ label, value, variant = 'orange' }) => (
-  <div className={`p-6 bg-gradient-to-br ${theme.statsCard[variant] || theme.statsCard.orange} rounded-2xl border shadow-sm transition-all hover:scale-[1.02]`}>
-    <p className="text-4xl font-black">{value}</p>
-    <p className="text-xs uppercase tracking-widest font-bold text-gray-500 mt-2">{label}</p>
+  <div className={`p-6 bg-white rounded-xl border border-surface-border shadow-card ${theme.statsCard[variant] || theme.statsCard.orange}`}>
+    <p className="text-4xl font-bold font-display">{value}</p>
+    <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mt-2">{label}</p>
   </div>
 ));
 StatsCard.displayName = 'StatsCard';

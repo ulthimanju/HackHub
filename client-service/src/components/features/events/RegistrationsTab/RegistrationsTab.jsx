@@ -41,10 +41,10 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-1 h-6 bg-orange-500 rounded-full" />
-        <h3 className="text-lg font-bold text-gray-900">Participants</h3>
+        <div className="w-0.5 h-5 bg-brand-500 rounded-full" />
+        <h3 className="text-base font-semibold text-ink-primary font-display">Participants</h3>
         {!loading && (
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-100">
+          <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-brand-50 text-brand-600 border border-brand-100">
             {registrations.length}
           </span>
         )}
@@ -54,17 +54,17 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
         </div>
       ) : error ? (
         <Alert type="error">{error}</Alert>
       ) : registrations.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-          <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center">
-            <Users className="w-8 h-8 text-gray-300" />
+          <div className="w-16 h-16 bg-surface-hover rounded-xl flex items-center justify-center">
+            <Users className="w-8 h-8 text-ink-disabled" />
           </div>
-          <p className="text-lg font-semibold text-gray-500">No participants yet</p>
-          <p className="text-sm text-gray-400 max-w-xs">No one has registered for this event yet.</p>
+          <p className="text-base font-semibold text-ink-muted">No participants yet</p>
+          <p className="text-sm text-ink-muted max-w-xs">No one has registered for this event yet.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -77,15 +77,15 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
                 <button
                   key={tab.value}
                   onClick={() => setFilter(tab.value)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
                     isActive
-                      ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600'
+                      ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
+                      : 'bg-white text-ink-secondary border-surface-border hover:border-brand-300 hover:text-brand-600'
                   }`}
                 >
                   {tab.label}
                   {count > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-md font-semibold ${isActive ? 'bg-white/20 text-white' : 'bg-surface-hover text-ink-muted'}`}>
                       {count}
                     </span>
                   )}
@@ -100,22 +100,22 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
               const sc = STATUS_CONFIG[reg.status] || STATUS_CONFIG.PENDING;
               const isUpdating = updatingId === reg.id;
               return (
-                <div key={reg.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center gap-4">
+                <div key={reg.id} className="bg-white rounded-xl p-4 border border-surface-border shadow-card flex items-center gap-4">
                   {/* Avatar */}
-                  <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-orange-600">
+                  <div className="w-9 h-9 rounded-full bg-brand-50 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-bold text-brand-600">
                       {reg.username?.charAt(0)?.toUpperCase() || '?'}
                     </span>
                   </div>
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{reg.username || 'Unknown'}</p>
-                    <p className="text-sm text-gray-400 truncate">{reg.userEmail}</p>
+                    <p className="font-medium text-ink-primary truncate">{reg.username || 'Unknown'}</p>
+                    <p className="text-sm text-ink-muted truncate">{reg.userEmail}</p>
                   </div>
                   {/* Registered at */}
                   <div className="hidden sm:block text-right shrink-0">
-                    <p className="text-xs text-gray-400">Registered</p>
-                    <p className="text-xs font-medium text-gray-600">{formatDateShort(reg.registrationTime)}</p>
+                    <p className="text-xs text-ink-muted">Registered</p>
+                    <p className="text-xs font-medium text-ink-secondary">{formatDateShort(reg.registrationTime)}</p>
                   </div>
                   {/* Status badge */}
                   <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-bold border ${sc.cls}`}>

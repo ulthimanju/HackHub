@@ -108,6 +108,9 @@ resilience4j:
     configs:
       default:
         timeoutDuration: 10s
+    instances:
+      eventService:
+        timeoutDuration: 30s
 
 application:
   security:

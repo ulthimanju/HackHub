@@ -103,19 +103,6 @@ const Profile = () => {
     };
   }, [doSave]);
 
-  // Save on hard refresh / tab close
-  useEffect(() => {
-    const onUnload = () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-        debounceRef.current = null;
-        authService.updateProfile({ ...formDataRef.current, experienceLevel: formDataRef.current.experienceLevel || null }).catch(() => {});
-      }
-    };
-    window.addEventListener('beforeunload', onUnload);
-    return () => window.removeEventListener('beforeunload', onUnload);
-  }, []);
-
   const handleRequestOtp = async () => {
     setError('');
     setOtpLoading(true);
@@ -158,17 +145,13 @@ const Profile = () => {
   };
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="w-full space-y-6 pb-20">
       <ProfileHeader user={user} saveStatus={saveStatus} />
 
-      {error && (
-        <div className="animate-in slide-in-from-top-2">
-          <Alert type="error" title="Action Required">{error}</Alert>
-        </div>
-      )}
+      {error && <Alert type="error" title="Action Required">{error}</Alert>}
 
       <Section title="Professional Profile">
-        <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-8">
+        <div className="bg-white p-6 rounded-xl border border-surface-border shadow-card space-y-6">
 
           <Input
             label="Username (Unique ID)"
@@ -176,7 +159,6 @@ const Profile = () => {
             value={formData.username}
             disabled
             placeholder="Your unique identifier"
-            className="rounded-xl bg-gray-50 cursor-not-allowed opacity-75"
           />
 
           <Input
@@ -188,13 +170,13 @@ const Profile = () => {
           />
 
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-gray-700">Bio</label>
+            <label className="text-xs font-medium text-ink-muted uppercase tracking-wide">Bio</label>
             <textarea
               rows={3}
               value={formData.bio}
               onChange={e => setFormData({ ...formData, bio: e.target.value })}
               placeholder="Tell others what you build, what you're interested in, or what you're looking for in a team..."
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+              className="w-full px-3 py-2 rounded-lg border border-surface-border text-sm text-ink-primary placeholder-ink-disabled focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 resize-none bg-white transition"
             />
           </div>
 
@@ -206,38 +188,36 @@ const Profile = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-gray-700">Experience Level</label>
+              <label className="text-xs font-medium text-ink-muted uppercase tracking-wide">Experience Level</label>
               <div className="relative">
                 <select
                   value={formData.experienceLevel}
                   onChange={e => setFormData({ ...formData, experienceLevel: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full px-3 py-2 rounded-lg border border-surface-border text-sm text-ink-primary bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition"
                 >
                   <option value="">Select level…</option>
                   {EXPERIENCE_LEVELS.map(l => (
                     <option key={l} value={l}>{l.charAt(0) + l.slice(1).toLowerCase()}</option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-ink-muted pointer-events-none" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-gray-700">Open to Team Invites</label>
+              <label className="text-xs font-medium text-ink-muted uppercase tracking-wide">Open to Team Invites</label>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, openToInvites: !formData.openToInvites })}
-                  className={`relative inline-flex items-center w-16 h-8 rounded-xl transition-colors duration-300 focus:outline-none ${
-                    formData.openToInvites ? 'bg-orange-500' : 'bg-gray-400'
+                  className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 ${
+                    formData.openToInvites ? 'bg-brand-500' : 'bg-surface-active'
                   }`}
                 >
-                  <span className={`absolute left-2.5 text-white text-xs font-extrabold leading-none transition-opacity duration-200 ${formData.openToInvites ? 'opacity-100' : 'opacity-0'}`}>I</span>
-                  <span className={`absolute right-2 w-3.5 h-3.5 rounded-lg border-2 border-white transition-opacity duration-200 ${!formData.openToInvites ? 'opacity-100' : 'opacity-0'}`} />
-                  <span className={`absolute w-6 h-6 bg-gray-900 rounded-xl shadow-md transition-transform duration-300 ${formData.openToInvites ? 'translate-x-9' : 'translate-x-1'}`} />
+                  <span className={`absolute w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${formData.openToInvites ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
-                <span className={`text-sm font-medium ${formData.openToInvites ? 'text-orange-600' : 'text-gray-500'}`}>
-                  {formData.openToInvites ? "Yes, I'm open to invites" : 'Not open to invites'}
+                <span className={`text-sm font-medium ${formData.openToInvites ? 'text-brand-600' : 'text-ink-muted'}`}>
+                  {formData.openToInvites ? "Open to invites" : 'Not open to invites'}
                 </span>
               </div>
             </div>

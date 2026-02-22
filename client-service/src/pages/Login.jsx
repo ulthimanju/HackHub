@@ -34,40 +34,40 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Column - Image (60%) */}
-      <div className="hidden lg:flex lg:w-[60%] bg-orange-50 items-center justify-center p-12">
-        <div className="max-w-2xl w-full">
-          <img 
-            src={loginSvg} 
-            alt="Login Illustration" 
-            className="w-full h-auto object-contain animate-fade-in"
+    <div className="min-h-screen flex bg-surface-page">
+      {/* Left Column — Illustration */}
+      <div className="hidden lg:flex lg:w-[55%] bg-brand-50 items-center justify-center p-12">
+        <div className="max-w-xl w-full">
+          <img
+            src={loginSvg}
+            alt="Login Illustration"
+            className="w-full h-auto object-contain"
           />
         </div>
       </div>
 
-      {/* Right Column - Form (40% or 100% on mobile) */}
-      <div className="w-full lg:w-[40%] flex items-center justify-center px-6 sm:px-12 lg:px-16">
-        <div className="max-w-md w-full space-y-8">
+      {/* Right Column — Form */}
+      <div className="w-full lg:w-[45%] flex items-center justify-center px-6 sm:px-12 lg:px-16 bg-white">
+        <div className="max-w-sm w-full space-y-7">
           <div>
-            <div className="flex lg:hidden justify-center mb-8">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <LogIn className="w-6 h-6 text-orange-600" />
+            <div className="flex lg:hidden justify-center mb-6">
+              <div className="w-10 h-10 bg-brand-50 rounded-lg flex items-center justify-center">
+                <LogIn className="w-5 h-5 text-brand-600" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Sign in to EHub</h2>
-            <p className="mt-3 text-sm text-gray-600">
-              Welcome back! Please enter your details or{' '}
-              <button 
+            <h2 className="font-display font-semibold text-2xl text-ink-primary">Sign in to EHub</h2>
+            <p className="mt-2 text-sm text-ink-muted">
+              Welcome back! Or{' '}
+              <button
                 onClick={() => navigate('/register')}
-                className="font-semibold text-orange-600 hover:text-orange-500 transition-colors"
+                className="font-medium text-brand-600 hover:text-brand-700 transition-colors"
               >
                 create a new account
               </button>
             </p>
           </div>
-          
-          {(successMessage) && (
+
+          {successMessage && (
             <Alert type="success" title="Success">
               {successMessage}
             </Alert>
@@ -79,7 +79,7 @@ const Login = () => {
             </Alert>
           )}
 
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <Input
                 label="Username"
@@ -99,18 +99,16 @@ const Login = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-orange-600 hover:text-orange-500">
-                  Forgot password?
-                </a>
-              </div>
+            <div className="flex items-center justify-end">
+              <a href="#" className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">
+                Forgot password?
+              </a>
             </div>
 
             <Button
               type="submit"
               variant="primary"
-              className="w-full py-3"
+              fullWidth
               loading={loading}
             >
               Sign in

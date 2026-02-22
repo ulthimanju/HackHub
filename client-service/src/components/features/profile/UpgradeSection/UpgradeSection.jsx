@@ -15,21 +15,21 @@ const UpgradeSection = memo(({
 }) => {
   return (
     <Section title="Account Upgrade">
-      <div className="bg-orange-50 border border-orange-100 rounded-2xl p-6 space-y-6 transition-all hover:bg-orange-50/80">
+      <div className="bg-brand-50 border border-brand-100 rounded-xl p-6 space-y-6">
         <div className="flex gap-5">
-          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-orange-600 shrink-0 shadow-sm border border-orange-100">
+          <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-brand-600 shrink-0 shadow-card border border-brand-100">
             <ShieldAlert className="w-7 h-7" />
           </div>
           <div>
-            <h4 className="text-lg font-bold text-orange-900 tracking-tight">Become an Organizer</h4>
-            <p className="text-orange-800/80 text-sm mt-1 leading-relaxed font-medium">
+            <h4 className="text-base font-semibold text-brand-900 font-display">Become an Organizer</h4>
+            <p className="text-brand-800/80 text-sm mt-1 leading-relaxed">
               Host your own hackathons, manage teams, and evaluate submissions. 
               Requires a quick email verification to verify your identity.
             </p>
           </div>
         </div>
 
-        <form onSubmit={onUpgrade} className="space-y-4 pt-4 border-t border-orange-200/40">
+        <form onSubmit={onUpgrade} className="space-y-4 pt-4 border-t border-brand-200/40">
           {!showOtpInput ? (
             <Button 
               type="button" 
@@ -37,12 +37,12 @@ const UpgradeSection = memo(({
               onClick={onRequestOtp}
               loading={otpLoading}
               icon={Send}
-              className="w-full py-4 rounded-xl shadow-lg shadow-orange-200/50 hover:shadow-orange-300/50"
+              className="w-full"
             >
               Request Upgrade OTP
             </Button>
           ) : (
-            <div className="space-y-4 animate-in slide-in-from-top-2 fade-in">
+            <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-end gap-3">
                 <div className="flex-1 w-full">
                   <Input
@@ -51,7 +51,6 @@ const UpgradeSection = memo(({
                     value={otp}
                     onChange={(e) => onOtpChange(e.target.value)}
                     placeholder="Enter 6-digit code"
-                    className="rounded-xl"
                     autoFocus
                   />
                 </div>
@@ -60,7 +59,7 @@ const UpgradeSection = memo(({
                   variant="outline" 
                   onClick={onRequestOtp}
                   loading={otpLoading}
-                  className="w-full sm:w-auto h-[46px] mb-1 px-6 rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
+                  className="w-full sm:w-auto h-[46px] mb-1 px-6"
                 >
                   Resend
                 </Button>
@@ -68,7 +67,7 @@ const UpgradeSection = memo(({
               <Button 
                 type="submit" 
                 variant="primary" 
-                className="w-full py-4 rounded-xl shadow-lg shadow-orange-200/50"
+                className="w-full"
                 loading={loading}
               >
                 Confirm & Upgrade Account

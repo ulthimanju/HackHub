@@ -1,19 +1,13 @@
 import React, { memo } from 'react';
-import { CalendarDays, Globe, MapPin, Flag, Tag } from 'lucide-react';
+import { CalendarDays, Globe, MapPin, Flag, Tag, ArrowRight } from 'lucide-react';
 
 const STATUS_VARIANTS = {
-  upcoming:           { label: 'Upcoming',           color: 'text-blue-600 border-blue-200 bg-blue-50' },
-  registration_open:  { label: 'Registration Open',  color: 'text-green-600 border-green-200 bg-green-50' },
-  ongoing:            { label: 'Ongoing',             color: 'text-orange-600 border-orange-200 bg-orange-50' },
-  judging:            { label: 'Judging',             color: 'text-yellow-600 border-yellow-200 bg-yellow-50' },
-  results_announced:  { label: 'Results Announced',  color: 'text-cyan-600 border-cyan-200 bg-cyan-50' },
-  completed:          { label: 'Completed',           color: 'text-gray-500 border-gray-200 bg-gray-50' },
-};
-
-const REG_STATUS_CONFIG = {
-  PENDING:  { label: 'Pending Approval', cls: 'text-yellow-600 bg-yellow-50 border-yellow-100' },
-  APPROVED: { label: 'Approved',         cls: 'text-green-600 bg-green-50 border-green-100'   },
-  REJECTED: { label: 'Rejected',         cls: 'text-red-500 bg-red-50 border-red-100'         },
+  upcoming:           { label: 'Upcoming',           color: 'text-blue-600 border-blue-100 bg-blue-50' },
+  registration_open:  { label: 'Registration Open',  color: 'text-green-600 border-green-100 bg-green-50' },
+  ongoing:            { label: 'Ongoing',             color: 'text-brand-600 border-brand-100 bg-brand-50' },
+  judging:            { label: 'Judging',             color: 'text-amber-600 border-amber-100 bg-amber-50' },
+  results_announced:  { label: 'Results Announced',  color: 'text-teal-600 border-teal-100 bg-teal-50' },
+  completed:          { label: 'Completed',           color: 'text-ink-muted border-surface-border bg-surface-hover' },
 };
 
 const formatDateRange = (start, end) => {
@@ -52,93 +46,89 @@ const EventCard = memo(({ event, user, registrationStatus, onJoin, onManage, can
 
   return (
     <div
-      className="bg-white border border-gray-100 rounded-3xl shadow-sm cursor-pointer hover:shadow-md hover:border-orange-200 transition-all overflow-hidden"
+      className="bg-white border border-surface-border rounded-xl shadow-card cursor-pointer hover:shadow-card-hover hover:border-brand-200 transition-all group"
       onClick={() => isOrganizer ? onManage?.(event.id) : onJoin?.(event.id)}
     >
-      <div className="flex">
-        {/* ── Left column ── */}
-        <div className="flex-1 p-5 space-y-3 min-w-0">
-          <h3 className="text-lg font-bold text-gray-900 leading-snug line-clamp-2">{event.name}</h3>
+      <div className="p-5 space-y-3">
+        {/* Header: title + status */}
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-base font-semibold text-ink-primary font-display leading-snug line-clamp-2 group-hover:text-brand-600 transition-colors flex-1">
+            {event.name}
+          </h3>
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-md border shrink-0 ${statusCfg.color}`}>
+            {statusCfg.label}
+          </span>
+        </div>
 
-          {/* Days left + location */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {daysLeft !== null && daysLeft > 0 ? (
-              <span className="inline-flex items-center gap-1.5 bg-teal-500 text-white text-xs font-semibold px-3 py-1 rounded-full shrink-0">
-                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
-              </span>
-            ) : daysLeft !== null && daysLeft <= 0 ? (
-              <span className="inline-flex items-center gap-1.5 bg-gray-200 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full shrink-0">Ended</span>
-            ) : null}
-            <span className="flex items-center gap-1.5 text-sm text-gray-600">
-              {event.isVirtual
-                ? <Globe className="w-4 h-4 text-gray-400 shrink-0" />
-                : <MapPin className="w-4 h-4 text-gray-400 shrink-0" />}
-              {location}
+        {/* Location + days left */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="flex items-center gap-1.5 text-sm text-ink-secondary">
+            {event.isVirtual
+              ? <Globe className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+              : <MapPin className="w-3.5 h-3.5 text-ink-muted shrink-0" />}
+            {location}
+          </span>
+          {daysLeft !== null && daysLeft > 0 ? (
+            <span className="inline-flex items-center gap-1 bg-teal-500 text-white text-xs font-medium px-2.5 py-0.5 rounded-md shrink-0">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              {daysLeft}d left
             </span>
-          </div>
+          ) : daysLeft !== null && daysLeft <= 0 ? (
+            <span className="inline-flex items-center gap-1 bg-surface-hover text-ink-muted text-xs font-medium px-2.5 py-0.5 rounded-md shrink-0">Ended</span>
+          ) : null}
+        </div>
 
-          {/* Prizes + participants */}
-          <div className="flex items-center gap-5 flex-wrap text-sm">
+        {/* Date range */}
+        <div className="flex items-center gap-1.5 text-ink-muted text-xs">
+          <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+          <span>{formatDateRange(event.startDate, event.endDate)}</span>
+        </div>
+
+        {/* Prize + participants */}
+        {(prizeLabel || event.maxParticipants) && (
+          <div className="flex items-center gap-4 flex-wrap text-sm">
             {prizeLabel && (
-              <span className="flex items-center gap-1 text-sm">
-                <span className="font-bold text-gray-900">🏆</span>
-                <span className="text-gray-700 truncate">{prizeLabel}</span>
+              <span className="flex items-center gap-1 text-ink-secondary">
+                <span>🏆</span>
+                <span className="truncate">{prizeLabel}</span>
               </span>
             )}
             {event.maxParticipants && (
-              <span>
-                <span className="font-bold text-gray-900">{event.registeredCount ?? 0}/{event.maxParticipants}</span>
-                {' '}<span className="text-gray-500">participants</span>
+              <span className="text-ink-muted">
+                <span className="font-medium text-ink-primary">{event.registeredCount ?? 0}/{event.maxParticipants}</span>
+                {' '}participants
               </span>
             )}
           </div>
+        )}
 
-          {/* Register button */}
-          {canRegister && (
-            <div>
-              <button
-                onClick={e => { e.stopPropagation(); onRegister?.(); }}
-                className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-full transition-colors"
-              >
-                Register Now
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ── Divider ── */}
-        <div className="w-px bg-gray-100 self-stretch my-4" />
-
-        {/* ── Right column ── */}
-        <div className="w-52 shrink-0 p-5 space-y-3">
-          {/* Status pill */}
-          <div className="flex items-center gap-2">
-            <Flag className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${statusCfg.color}`}>
-              {statusCfg.label}
-            </span>
+        {/* Theme tags */}
+        {themes.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Tag className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+            {themes.map(t => (
+              <span key={t} className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md">
+                {t}
+              </span>
+            ))}
           </div>
+        )}
 
-          {/* Date range */}
-          <div className="flex items-start gap-2 text-gray-600">
-            <CalendarDays className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
-            <span className="text-xs leading-snug">{formatDateRange(event.startDate, event.endDate)}</span>
-          </div>
-
-          {/* Theme tags */}
-          {themes.length > 0 && (
-            <div className="flex items-start gap-2">
-              <Tag className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
-              <div className="flex flex-wrap gap-1">
-                {themes.map(t => (
-                  <span key={t} className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
+        {/* Footer: register or view arrow */}
+        <div className="flex items-center justify-between pt-1">
+          {canRegister ? (
+            <button
+              onClick={e => { e.stopPropagation(); onRegister?.(); }}
+              className="px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-medium rounded-lg transition-colors active:scale-[0.98]"
+            >
+              Register Now
+            </button>
+          ) : (
+            <span />
           )}
+          <span className="text-xs text-brand-500 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+            {isOrganizer ? 'Manage' : 'View'} <ArrowRight className="w-3 h-3" />
+          </span>
         </div>
       </div>
     </div>

@@ -1,12 +1,13 @@
 import React, { memo, useState } from 'react';
 import Button from '../../../common/Button/Button';
-import { Check } from 'lucide-react';
+import Input from '../../../common/Input/Input';
+import Textarea from '../../../common/Textarea/Textarea';
+import Checkbox from '../../../common/Checkbox/Checkbox';
+import TagAutocomplete from '../../../common/TagAutocomplete/TagAutocomplete';
+import DateTimePicker from '../../../common/DateTimePicker/DateTimePicker';
+import { Mail, MapPin, Users, Trophy, BookOpen, Plus, X, Sparkles } from 'lucide-react';
+import { ALL_THEMES } from '../../../../constants/themes';
 import { validateEventStep } from './validateEventStep';
-import EventFormStep1 from './EventFormStep1';
-import EventFormStep2 from './EventFormStep2';
-import EventFormStep3 from './EventFormStep3';
-
-const STEP_LABELS = ['Basics', 'Logistics', 'Content'];
 
 const INITIAL_FORM = {
   name: '', description: '', theme: '', contactEmail: '',
@@ -15,7 +16,6 @@ const INITIAL_FORM = {
   maxParticipants: '', teamSize: '1', prizes: [], rules: [],
 };
 
-// Converts an ISO datetime string from the server to datetime-local input format
 const toInputDate = (iso) => iso ? iso.slice(0, 16) : '';
 
 const buildInitial = (data) => data ? {
@@ -37,9 +37,17 @@ const buildInitial = (data) => data ? {
   rules:                 data.rules                 ?? [],
 } : INITIAL_FORM;
 
+function SectionTitle({ children }) {
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      <span className="w-0.5 h-5 bg-brand-500 rounded-full" />
+      <h3 className="text-base font-semibold font-display text-ink-primary">{children}</h3>
+    </div>
+  );
+}
+
 const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
   const isEditing = !!initialData;
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(() => buildInitial(initialData));
   const [newPrize, setNewPrize] = useState('');
   const [newRule, setNewRule] = useState('');
@@ -48,37 +56,23 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const updated = { ...formData, [name]: type === 'checkbox' ? checked : value };
-
-    // Auto-fill registration dates when startDate is entered (only if fields are empty)
     if (name === 'startDate' && value) {
       const now = new Date().toISOString().slice(0, 16);
       const dayBefore = new Date(new Date(value).getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
       if (!updated.registrationStartDate) updated.registrationStartDate = now;
       if (!updated.registrationEndDate)   updated.registrationEndDate   = dayBefore;
     }
-
     setFormData(updated);
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const validate = (s) => {
-    const errs = validateEventStep(s, formData);
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+  const handleThemeChange = (newThemes) => {
+    handleChange({ target: { name: 'theme', value: newThemes.join(', ') } });
   };
 
-  const nextStep = () => { if (validate(step)) setStep(s => s + 1); };
-  const prevStep = () => setStep(s => s - 1);
-
-  const handleSubmit = () => {
-    if (validate(3)) {
-      onSubmit({
-        ...formData,
-        maxParticipants: formData.maxParticipants ? parseInt(formData.maxParticipants, 10) : null,
-        teamSize: formData.teamSize ? parseInt(formData.teamSize, 10) : null,
-      });
-    }
-  };
+  const selectedThemes = formData.theme
+    ? formData.theme.split(',').map(t => t.trim()).filter(Boolean)
+    : [];
 
   const addListItem = (field, value, setValue) => {
     if (value.trim()) {
@@ -91,56 +85,236 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
     setFormData(prev => ({ ...prev, [field]: prev[field].filter((_, i) => i !== index) }));
   };
 
+  const handleSubmit = () => {
+    const errs = {
+      ...validateEventStep(1, formData),
+      ...validateEventStep(2, formData),
+      ...validateEventStep(3, formData),
+    };
+    setErrors(errs);
+    if (Object.keys(errs).length === 0) {
+      onSubmit({
+        ...formData,
+        maxParticipants: formData.maxParticipants ? parseInt(formData.maxParticipants, 10) : null,
+        teamSize: formData.teamSize ? parseInt(formData.teamSize, 10) : null,
+      });
+    }
+  };
+
+  const regAutoFilled = formData.startDate && formData.registrationStartDate && formData.registrationEndDate;
+
   return (
-    <div className="space-y-8">
-      {/* Step indicator */}
-      <div className="flex items-center justify-between mb-8 px-4">
-        {[1, 2, 3].map((s) => (
-          <React.Fragment key={s}>
-            <div className="flex flex-col items-center gap-2">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                step === s ? 'bg-orange-500 text-white ring-4 ring-orange-100' :
-                step > s  ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'
-              }`}>
-                {step > s ? <Check className="w-6 h-6" /> : s}
-              </div>
-              <span className={`text-[10px] uppercase font-bold tracking-widest ${step === s ? 'text-orange-600' : 'text-gray-400'}`}>
-                {STEP_LABELS[s - 1]}
-              </span>
-            </div>
-            {s < 3 && <div className={`flex-1 h-0.5 mx-4 -mt-6 transition-all ${step > s ? 'bg-green-500' : 'bg-gray-100'}`} />}
-          </React.Fragment>
-        ))}
-      </div>
+    <div className="space-y-10">
 
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
-          {step === 1 && <EventFormStep1 formData={formData} errors={errors} onChange={handleChange} />}
-          {step === 2 && <EventFormStep2 formData={formData} errors={errors} onChange={handleChange} />}
-          {step === 3 && (
-            <EventFormStep3
-              formData={formData}
-              newPrize={newPrize} setNewPrize={setNewPrize}
-              newRule={newRule} setNewRule={setNewRule}
-              addListItem={addListItem} removeListItem={removeListItem}
+      {/* Basics */}
+      <section>
+        <SectionTitle>Basics</SectionTitle>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="md:col-span-2">
+            <Input
+              label="Event Name*"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="e.g. Global Hack 2026"
+              error={errors.name}
+              required
             />
-          )}
+          </div>
+          <div className="md:col-span-2">
+            <Textarea
+              label="Description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="What is this hackathon about?"
+              rows={4}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <TagAutocomplete
+              label="Themes"
+              items={ALL_THEMES}
+              selected={selectedThemes}
+              onChange={handleThemeChange}
+              placeholder="Search themes to add..."
+              emptyText="No themes selected"
+            />
+          </div>
+          <Input
+            label="Contact Email*"
+            name="contactEmail"
+            type="email"
+            icon={Mail}
+            value={formData.contactEmail}
+            onChange={handleChange}
+            placeholder="organizer@example.com"
+            error={errors.contactEmail}
+            required
+          />
         </div>
+      </section>
 
-        <div className="flex items-center justify-between pt-8 border-t border-gray-100">
-          <div>
-            {step === 1
-              ? <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
-              : <Button type="button" variant="secondary" onClick={prevStep}>Back</Button>
-            }
+      <div className="border-t border-surface-border" />
+
+      {/* Logistics */}
+      <section>
+        <SectionTitle>Logistics</SectionTitle>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="md:col-span-2">
+            <DateTimePicker
+              label="Start Date*"
+              name="startDate"
+              value={formData.startDate}
+              onChange={handleChange}
+              error={errors.startDate}
+              required
+            />
           </div>
-          <div className="flex gap-3">
-            {step < 3
-              ? <Button type="button" variant="primary" onClick={nextStep} size="lg">Continue</Button>
-              : <Button type="button" variant="primary" onClick={handleSubmit} loading={loading} size="lg">{isEditing ? 'Update Event' : 'Create Event'}</Button>
-            }
+          <div className="md:col-span-2">
+            <DateTimePicker
+              label="End Date*"
+              name="endDate"
+              value={formData.endDate}
+              onChange={handleChange}
+              error={errors.endDate}
+              required
+            />
+          </div>
+          <div className="md:col-span-2">
+            <DateTimePicker
+              label="Registration Starts"
+              name="registrationStartDate"
+              value={formData.registrationStartDate}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <DateTimePicker
+              label="Registration Ends"
+              name="registrationEndDate"
+              value={formData.registrationEndDate}
+              onChange={handleChange}
+              error={errors.registrationEndDate}
+            />
+          </div>
+          {regAutoFilled && (
+            <div className="md:col-span-2 flex items-center gap-2 text-xs text-brand-600 bg-brand-50 border border-brand-100 rounded-xl px-3 py-2">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              Registration dates auto-filled — opens now and closes 1 day before event starts. Adjust above if needed.
+            </div>
+          )}
+          <div className="flex items-center pt-2">
+            <Checkbox
+              label="Virtual Event"
+              name="isVirtual"
+              checked={formData.isVirtual}
+              onChange={handleChange}
+            />
+          </div>
+          <Input
+            label={formData.isVirtual ? 'Virtual Platform' : 'Venue Location'}
+            name="location"
+            icon={MapPin}
+            value={formData.location}
+            onChange={handleChange}
+            placeholder={formData.isVirtual ? 'e.g. Discord' : 'e.g. Main Hall'}
+          />
+          <Input
+            label="Max Participants"
+            name="maxParticipants"
+            type="number"
+            icon={Users}
+            value={formData.maxParticipants}
+            onChange={handleChange}
+            placeholder="Unlimited"
+          />
+          <Input
+            label="Team Size"
+            name="teamSize"
+            type="number"
+            min="1"
+            icon={Users}
+            value={formData.teamSize}
+            onChange={handleChange}
+          />
+        </div>
+      </section>
+
+      <div className="border-t border-surface-border" />
+
+      {/* Content */}
+      <section>
+        <SectionTitle>Content</SectionTitle>
+        <div className="space-y-6">
+          {/* Prizes */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-ink-secondary">Prizes</label>
+            <div className="flex gap-2">
+              <Input
+                value={newPrize}
+                onChange={(e) => setNewPrize(e.target.value)}
+                placeholder="e.g. $1000 for Winner"
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem('prizes', newPrize, setNewPrize))}
+              />
+              <Button type="button" variant="secondary" onClick={() => addListItem('prizes', newPrize, setNewPrize)}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            {formData.prizes.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {formData.prizes.map((prize, index) => (
+                  <span key={index} className="inline-flex items-center gap-2 bg-brand-50 text-brand-700 px-3 py-1.5 rounded-lg text-sm font-medium border border-brand-100">
+                    <Trophy className="w-3.5 h-3.5" />
+                    {prize}
+                    <button type="button" onClick={() => removeListItem('prizes', index)} className="hover:text-red-500 transition-colors">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Rules */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-ink-secondary">Rules</label>
+            <div className="flex gap-2">
+              <Input
+                value={newRule}
+                onChange={(e) => setNewRule(e.target.value)}
+                placeholder="e.g. Original work only"
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addListItem('rules', newRule, setNewRule))}
+              />
+              <Button type="button" variant="secondary" onClick={() => addListItem('rules', newRule, setNewRule)}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            {formData.rules.length > 0 && (
+              <div className="space-y-2">
+                {formData.rules.map((rule, index) => (
+                  <div key={index} className="flex items-center justify-between bg-surface-hover px-4 py-2.5 rounded-lg border border-surface-border group">
+                    <div className="flex items-center gap-3">
+                      <BookOpen className="w-4 h-4 text-ink-muted" />
+                      <span className="text-sm text-ink-primary">{rule}</span>
+                    </div>
+                    <button type="button" onClick={() => removeListItem('rules', index)} className="text-ink-disabled opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+      </section>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-4 border-t border-surface-border">
+        <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button type="button" variant="primary" onClick={handleSubmit} loading={loading} size="lg">
+          {isEditing ? 'Update Event' : 'Create Event'}
+        </Button>
       </div>
     </div>
   );

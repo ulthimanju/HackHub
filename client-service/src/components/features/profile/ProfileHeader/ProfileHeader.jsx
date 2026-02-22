@@ -3,14 +3,14 @@ import { Mail, Check, X, Github, Linkedin, Globe, Zap, Loader2 } from 'lucide-re
 import Badge from '../../../common/Badge/Badge';
 
 const LEVEL_COLOR = {
-  BEGINNER: 'bg-blue-50 text-blue-600',
-  INTERMEDIATE: 'bg-yellow-50 text-yellow-600',
-  ADVANCED: 'bg-green-50 text-green-700',
+  BEGINNER:     'bg-blue-50 text-blue-600',
+  INTERMEDIATE: 'bg-amber-50 text-amber-600',
+  ADVANCED:     'bg-green-50 text-green-700',
 };
 
 const SaveIndicator = ({ status }) => {
   if (status === 'saving') return (
-    <span className="flex items-center gap-1.5 text-xs text-gray-400">
+    <span className="flex items-center gap-1.5 text-xs text-ink-muted">
       <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…
     </span>
   );
@@ -29,76 +29,78 @@ const SaveIndicator = ({ status }) => {
 
 const ProfileHeader = memo(({ user, saveStatus = 'idle' }) => {
   return (
-    <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm transition-all hover:shadow-md space-y-6">
+    <div className="bg-white p-6 rounded-xl border border-surface-border shadow-card space-y-5">
       {/* Top row: avatar + identity + save indicator */}
-      <div className="flex flex-col md:flex-row items-center gap-8">
-        <div className="relative group shrink-0">
-          <div className="w-20 h-20 bg-orange-500 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-105">
-            <span className="text-3xl font-extrabold text-white select-none">
+      <div className="flex flex-col md:flex-row items-center gap-6">
+        <div className="relative shrink-0">
+          <div className="w-16 h-16 bg-brand-500 rounded-xl flex items-center justify-center">
+            <span className="text-2xl font-bold text-white select-none font-display">
               {(user?.displayName || user?.username)?.[0]?.toUpperCase() || '?'}
             </span>
           </div>
           {user?.openToInvites && (
-            <div className="absolute -bottom-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-4 border-white shadow-sm" title="Open to invites" />
+            <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white" title="Open to invites" />
           )}
         </div>
 
-        <div className="flex-1 text-center md:text-left space-y-2">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
+        <div className="flex-1 text-center md:text-left space-y-1.5">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+            <h2 className="font-display font-semibold text-xl text-ink-primary">
               {user?.displayName || user?.username}
             </h2>
             {user?.displayName && (
-              <span className="text-sm text-gray-400 font-medium">@{user.username}</span>
+              <span className="text-sm text-ink-muted">@{user.username}</span>
             )}
-            <Badge variant={user?.role === 'organizer' ? 'success' : 'info'} className="px-3 py-1 capitalize">
+            <Badge variant={user?.role === 'organizer' ? 'success' : 'info'} className="capitalize">
               {user?.role}
             </Badge>
             {user?.experienceLevel && (
-              <span className={`text-xs font-bold px-3 py-1 rounded-full ${LEVEL_COLOR[user.experienceLevel] || 'bg-gray-100 text-gray-600'}`}>
-                <Zap className="inline w-3 h-3 mr-1" />{user.experienceLevel.charAt(0) + user.experienceLevel.slice(1).toLowerCase()}
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${LEVEL_COLOR[user.experienceLevel] || 'bg-surface-hover text-ink-muted'}`}>
+                <Zap className="inline w-3 h-3 mr-0.5" />{user.experienceLevel.charAt(0) + user.experienceLevel.slice(1).toLowerCase()}
               </span>
             )}
             {user?.openToInvites && (
-              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-600">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600">
                 Open to Invites
               </span>
             )}
           </div>
 
-          <p className="text-gray-500 flex items-center justify-center md:justify-start gap-2 font-medium">
-            <Mail className="w-4 h-4 text-orange-500" /> {user?.email}
+          <p className="text-ink-muted text-sm flex items-center justify-center md:justify-start gap-1.5">
+            <Mail className="w-3.5 h-3.5 text-brand-500" /> {user?.email}
           </p>
 
           {/* Social links */}
           {(user?.githubUrl || user?.linkedinUrl || user?.portfolioUrl) && (
-            <div className="flex items-center justify-center md:justify-start gap-4 pt-1">
+            <div className="flex items-center justify-center md:justify-start gap-4 pt-0.5">
               {user.githubUrl && (
-                <a href={user.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors">
-                  <Github className="w-4 h-4" /> GitHub
+                <a href={user.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-ink-muted hover:text-ink-primary transition-colors">
+                  <Github className="w-3.5 h-3.5" /> GitHub
                 </a>
               )}
               {user.linkedinUrl && (
-                <a href={user.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600 transition-colors">
-                  <Linkedin className="w-4 h-4" /> LinkedIn
+                <a href={user.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-ink-muted hover:text-blue-600 transition-colors">
+                  <Linkedin className="w-3.5 h-3.5" /> LinkedIn
                 </a>
               )}
               {user.portfolioUrl && (
-                <a href={user.portfolioUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-orange-500 transition-colors">
-                  <Globe className="w-4 h-4" /> Portfolio
+                <a href={user.portfolioUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-ink-muted hover:text-brand-500 transition-colors">
+                  <Globe className="w-3.5 h-3.5" /> Portfolio
                 </a>
               )}
             </div>
           )}
 
           {/* Skills */}
-          <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
-            {(user?.skills || []).map(skill => (
-              <Badge key={skill} variant="secondary" className="bg-gray-100 text-gray-700 border-none px-3 py-1 text-xs font-semibold">
-                {skill}
-              </Badge>
-            ))}
-          </div>
+          {(user?.skills || []).length > 0 && (
+            <div className="flex flex-wrap justify-center md:justify-start gap-1.5 pt-1">
+              {(user.skills).map(skill => (
+                <span key={skill} className="text-xs bg-surface-hover text-ink-secondary border border-surface-border px-2 py-0.5 rounded-md font-medium">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="shrink-0">
@@ -108,8 +110,8 @@ const ProfileHeader = memo(({ user, saveStatus = 'idle' }) => {
 
       {/* Bio */}
       {user?.bio && (
-        <div className="pt-2 border-t border-gray-50">
-          <p className="text-sm text-gray-600 leading-relaxed">{user.bio}</p>
+        <div className="pt-3 border-t border-surface-border">
+          <p className="text-sm text-ink-secondary leading-relaxed">{user.bio}</p>
         </div>
       )}
     </div>

@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, ExternalLink, Pencil, ChevronUp, Flag, Save } from 'lucide-react';
 import Button from '../../../common/Button/Button';
-import eventService from '../../../../services/eventService';
-import aiService from '../../../../services/aiService';
-import teamService from '../../../../services/teamService';
+import { useSubmissions } from '../../../../hooks/useSubmissions';
 
 /**
  * Props:
@@ -17,12 +15,13 @@ import teamService from '../../../../services/teamService';
  *   onFinalizeClick  – () => void        (opens FinalizeResultsModal in parent)
  */
 export default function SubmissionsTab({ teams, loading, eventStatus, eventId, problemStatements, permissions, onTeamsRefresh, onFinalizeClick }) {
-  const [evaluating, setEvaluating]   = useState(false);
-  const [evaluateMsg, setEvaluateMsg] = useState('');
-  const [reviewOpen, setReviewOpen]   = useState({});
-  const [reviewData, setReviewData]   = useState({});
-  const [reviewSaving, setReviewSaving] = useState({});
-  const [reviewMsg, setReviewMsg]     = useState({});
+  const {
+    evaluating, evaluateMsg,
+    reviewOpen, reviewData, reviewSaving, reviewMsg,
+    handlers,
+  } = useSubmissions(eventId, onTeamsRefresh);
+
+  const [localReviewData, setLocalReviewData] = useState({});
 
   const submitted    = [...teams.filter(t => t.repoUrl)].sort((a, b) => {
     const scoreA = a.manualScore ?? a.score ?? -1;
@@ -30,45 +29,26 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
     return scoreB - scoreA;
   });
   const notSubmitted = teams.filter(t => !t.repoUrl);
-  const status       = eventStatus?.toLowerCase();
-
-  const handleReviewSave = async (teamId) => {
-    const data = reviewData[teamId] || {};
-    setReviewSaving(prev => ({ ...prev, [teamId]: true }));
-    setReviewMsg(prev => ({ ...prev, [teamId]: '' }));
-    try {
-      await eventService.updateManualReview(teamId, {
-        manualScore:    data.manualScore != null ? Number(data.manualScore) : null,
-        organizerNotes: data.organizerNotes || null,
-      });
-      setReviewMsg(prev => ({ ...prev, [teamId]: '✓ Saved' }));
-      await onTeamsRefresh();
-    } catch {
-      setReviewMsg(prev => ({ ...prev, [teamId]: 'Save failed' }));
-    } finally {
-      setReviewSaving(prev => ({ ...prev, [teamId]: false }));
-    }
-  };
 
   return (
     <div className="space-y-4">
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
         </div>
       ) : teams.length === 0 ? (
         <div className="flex flex-col items-center py-16 gap-3 text-center">
-          <Trophy className="w-10 h-10 text-gray-300" />
-          <p className="font-semibold text-gray-500">No teams yet</p>
-          <p className="text-sm text-gray-400">Submissions will appear here once teams submit their projects.</p>
+          <Trophy className="w-9 h-9 text-ink-disabled" />
+          <p className="font-medium text-ink-muted">No teams yet</p>
+          <p className="text-sm text-ink-muted">Submissions will appear here once teams submit their projects.</p>
         </div>
       ) : (
         <>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-gray-700">{submitted.length} submitted</span>
-              <span className="text-gray-300">·</span>
-              <span className="text-sm text-gray-400">{notSubmitted.length} pending</span>
+              <span className="text-sm font-medium text-ink-primary">{submitted.length} submitted</span>
+              <span className="text-ink-disabled">·</span>
+              <span className="text-sm text-ink-muted">{notSubmitted.length} pending</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {permissions.canFinalizeResults && (
@@ -85,18 +65,7 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
                 <Button
                   size="sm"
                   disabled={evaluating || submitted.length === 0}
-                  onClick={async () => {
-                    setEvaluating(true);
-                    setEvaluateMsg('');
-                    try {
-                      await aiService.evaluateEvent(eventId);
-                      setEvaluateMsg('✓ Evaluation queued for all teams');
-                    } catch (e) {
-                      setEvaluateMsg(e.response?.data || 'Evaluation failed');
-                    } finally {
-                      setEvaluating(false);
-                    }
-                  }}
+                  onClick={handlers.evaluateAll}
                 >
                   {evaluating ? 'Queuing…' : 'Evaluate All'}
                 </Button>
@@ -106,9 +75,9 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
 
           {submitted.length === 0 ? (
             <div className="flex flex-col items-center py-12 gap-3 text-center">
-              <Trophy className="w-10 h-10 text-gray-300" />
-              <p className="font-semibold text-gray-500">No submissions yet</p>
-              <p className="text-sm text-gray-400">Teams haven't submitted their projects yet.</p>
+              <Trophy className="w-9 h-9 text-ink-disabled" />
+              <p className="font-medium text-ink-muted">No submissions yet</p>
+              <p className="text-sm text-ink-muted">Teams haven't submitted their projects yet.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -119,31 +88,31 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
                 const finalScore = manualScore ?? aiScore;
                 const hasScore   = finalScore != null;
                 const isOpen     = reviewOpen[team.id] || false;
-                const rd         = reviewData[team.id] || { manualScore: team.manualScore ?? '', organizerNotes: team.organizerNotes || '' };
+                const rd         = localReviewData[team.id] || { manualScore: team.manualScore ?? '', organizerNotes: team.organizerNotes || '' };
 
                 return (
-                  <div key={team.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div key={team.id} className="bg-white rounded-xl border border-surface-border shadow-card overflow-hidden">
                     <div className="p-5 flex flex-col gap-3">
                       {/* Header row */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-gray-400 w-6 text-center">#{idx + 1}</span>
-                          <h4 className="font-bold text-gray-900 text-base">{team.name}</h4>
+                          <span className="text-xs font-medium text-ink-muted w-6 text-center">#{idx + 1}</span>
+                          <h4 className="font-semibold text-ink-primary font-display">{team.name}</h4>
                           {team.shortCode && (
-                            <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded-lg">{team.shortCode}</span>
+                            <span className="text-xs font-mono text-ink-muted bg-surface-hover px-2 py-0.5 rounded-md">{team.shortCode}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {hasScore ? (
-                            <span className={`text-sm font-bold px-3 py-1 rounded-xl ${
-                              finalScore >= 80 ? 'bg-green-100 text-green-700' :
-                              finalScore >= 60 ? 'bg-yellow-100 text-yellow-700' :
-                                                 'bg-red-100 text-red-600'
+                            <span className={`text-sm font-semibold px-3 py-1 rounded-lg font-display ${
+                              finalScore >= 80 ? 'bg-green-50 text-green-700' :
+                              finalScore >= 60 ? 'bg-amber-50 text-amber-700' :
+                                                 'bg-red-50 text-red-600'
                             }`}>
                               {Math.round(finalScore)}/100
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-xl">Not scored</span>
+                            <span className="text-xs text-ink-muted bg-surface-hover px-2.5 py-1 rounded-md">Not scored</span>
                           )}
                         </div>
                       </div>
@@ -152,12 +121,12 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
                       {(aiScore != null || manualScore != null) && (
                         <div className="flex gap-2">
                           {aiScore != null && (
-                            <span className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2.5 py-1 rounded-lg font-medium">
+                            <span className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2.5 py-1 rounded-md font-medium">
                               AI: {Math.round(aiScore)}/100
                             </span>
                           )}
                           {manualScore != null && (
-                            <span className="text-xs bg-orange-50 text-orange-600 border border-orange-100 px-2.5 py-1 rounded-lg font-medium">
+                            <span className="text-xs bg-brand-50 text-brand-600 border border-brand-100 px-2.5 py-1 rounded-md font-medium">
                               Manual: {Math.round(manualScore)}/100 ✓
                             </span>
                           )}
@@ -166,41 +135,41 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
 
                       {/* AI Summary */}
                       {team.aiSummary && (
-                        <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
-                          <p className="text-xs font-semibold text-blue-600 mb-0.5">AI Evaluation</p>
-                          <p className="text-sm text-gray-700 leading-snug">{team.aiSummary}</p>
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5">
+                          <p className="text-xs font-medium text-blue-600 mb-0.5">AI Evaluation</p>
+                          <p className="text-sm text-ink-secondary leading-snug">{team.aiSummary}</p>
                         </div>
                       )}
 
                       {/* Organizer notes if set and panel closed */}
                       {team.organizerNotes && !isOpen && (
-                        <div className="bg-orange-50 border border-orange-100 rounded-xl px-3 py-2.5">
-                          <p className="text-xs font-semibold text-orange-600 mb-0.5">Organizer Notes</p>
-                          <p className="text-sm text-gray-700 leading-snug">{team.organizerNotes}</p>
+                        <div className="bg-brand-50 border border-brand-100 rounded-lg px-3 py-2.5">
+                          <p className="text-xs font-medium text-brand-600 mb-0.5">Organizer Notes</p>
+                          <p className="text-sm text-ink-secondary leading-snug">{team.organizerNotes}</p>
                         </div>
                       )}
 
                       {/* Problem */}
-                      <div className={`rounded-xl px-3 py-2.5 ${problem ? 'bg-orange-50 border border-orange-100' : 'bg-gray-50 border border-dashed border-gray-200'}`}>
+                      <div className={`rounded-lg px-3 py-2.5 ${problem ? 'bg-brand-50 border border-brand-100' : 'bg-surface-hover border border-dashed border-surface-border'}`}>
                         {problem ? (
                           <>
-                            <p className="text-xs font-semibold text-orange-600 mb-0.5">Problem Statement</p>
-                            <p className="text-sm font-medium text-gray-800">{problem.name}</p>
+                            <p className="text-xs font-medium text-brand-600 mb-0.5">Problem Statement</p>
+                            <p className="text-sm font-medium text-ink-primary">{problem.name}</p>
                           </>
                         ) : (
-                          <p className="text-xs text-gray-400 italic">No problem selected</p>
+                          <p className="text-xs text-ink-muted italic">No problem selected</p>
                         )}
                       </div>
 
                       {/* Links */}
                       <a href={team.repoUrl} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 font-medium underline underline-offset-2 break-all">
+                        className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 font-medium underline underline-offset-2 break-all">
                         <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                         {team.repoUrl}
                       </a>
                       {team.demoUrl && (
                         <a href={team.demoUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 underline underline-offset-2 break-all">
+                          className="flex items-center gap-2 text-sm text-ink-secondary hover:text-ink-primary underline underline-offset-2 break-all">
                           <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                           Demo: {team.demoUrl}
                         </a>
@@ -209,12 +178,12 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
                       {/* Footer */}
                       <div className="flex items-center justify-between">
                         {team.submissionTime && (
-                          <p className="text-xs text-gray-400">Submitted {new Date(team.submissionTime).toLocaleString()}</p>
+                          <p className="text-xs text-ink-muted">Submitted {new Date(team.submissionTime).toLocaleString()}</p>
                         )}
                         {permissions.canManualReview && (
                           <button
-                            onClick={() => setReviewOpen(prev => ({ ...prev, [team.id]: !isOpen }))}
-                            className="ml-auto flex items-center gap-1 text-xs font-medium text-orange-600 hover:text-orange-700 transition-colors"
+                            onClick={() => handlers.toggleReview(team.id)}
+                            className="ml-auto flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors"
                           >
                             {isOpen
                               ? <><ChevronUp className="w-3.5 h-3.5" /> Close Review</>
@@ -226,32 +195,33 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
 
                     {/* Manual review panel */}
                     {isOpen && (
-                      <div className="border-t border-gray-100 bg-orange-50/40 px-5 py-4 space-y-3">
-                        <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Manual Review</p>
+                      <div className="border-t border-surface-border bg-brand-50/40 px-5 py-4 space-y-3">
+                        <p className="text-xs font-medium text-brand-700 uppercase tracking-widest">Manual Review</p>
                         <div className="flex gap-3">
                           <div className="w-28">
-                            <label className="text-xs text-gray-500 block mb-1">Score (0–100)</label>
+                            <label className="text-xs text-ink-muted block mb-1">Score (0–100)</label>
                             <input
                               type="number" min={0} max={100}
                               value={rd.manualScore}
-                              onChange={e => setReviewData(prev => ({ ...prev, [team.id]: { ...rd, manualScore: e.target.value } }))}
-                              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
+                              onChange={e => setLocalReviewData(prev => ({ ...prev, [team.id]: { ...rd, manualScore: e.target.value } }))}
+                              className="w-full px-3 py-2 rounded-lg border border-surface-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 bg-white"
                               placeholder="e.g. 85"
                             />
                           </div>
                           <div className="flex-1">
-                            <label className="text-xs text-gray-500 block mb-1">Notes</label>
+                            <label className="text-xs text-ink-muted block mb-1">Notes</label>
                             <textarea
                               rows={2}
                               value={rd.organizerNotes}
-                              onChange={e => setReviewData(prev => ({ ...prev, [team.id]: { ...rd, organizerNotes: e.target.value } }))}
-                              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white resize-none"
+                              onChange={e => setLocalReviewData(prev => ({ ...prev, [team.id]: { ...rd, organizerNotes: e.target.value } }))}
+                              className="w-full px-3 py-2 rounded-lg border border-surface-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 bg-white resize-none"
                               placeholder="Add notes for this team…"
                             />
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <Button size="sm" icon={Save} disabled={reviewSaving[team.id]} onClick={() => handleReviewSave(team.id)}>
+                          <Button size="sm" icon={Save} disabled={reviewSaving[team.id]}
+                            onClick={() => handlers.saveReview(team.id, rd)}>
                             {reviewSaving[team.id] ? 'Saving…' : 'Save Review'}
                           </Button>
                           {reviewMsg[team.id] && (

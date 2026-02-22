@@ -133,17 +133,20 @@ const ExploreEvents = () => {
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-24">
-          <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
         </div>
       ) : error ? (
         <Alert type="error">{error}</Alert>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-          <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center">
-            <Search className="w-8 h-8 text-gray-300" />
-          </div>
-          <p className="text-lg font-semibold text-gray-500">No events found</p>
-          <p className="text-sm text-gray-400 max-w-xs">
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+          <img
+            src="https://illustrations.popsy.co/amber/digital-nomad.svg"
+            alt=""
+            className="w-44 h-44 object-contain"
+            onError={e => { e.target.style.display = 'none'; }}
+          />
+          <p className="text-base font-semibold text-ink-muted">No events found</p>
+          <p className="text-sm text-ink-muted max-w-xs">
             {search ? `No events match "${search}"` : 'There are no events in this category yet.'}
           </p>
           {(search || activeTab !== 'all' || activeThemes.length > 0) && (
@@ -202,30 +205,30 @@ const ExploreEvents = () => {
               <CheckCircle2 className="w-9 h-9 text-green-500" />
             </div>
             <div>
-              <p className="text-lg font-bold text-gray-900">You're registered!</p>
-              <p className="text-sm text-gray-500 mt-1">
-                You have successfully registered for <span className="font-semibold text-gray-800">{registerEvent?.name}</span>.
+              <p className="text-base font-semibold text-ink-primary font-display">You're registered!</p>
+              <p className="text-sm text-ink-muted mt-1">
+                You have successfully registered for <span className="font-medium text-ink-secondary">{registerEvent?.name}</span>.
               </p>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
             {registerError && <Alert type="error">{registerError}</Alert>}
-            <p className="text-sm text-gray-600">
-              You are about to register for <span className="font-semibold text-gray-900">{registerEvent?.name}</span>.
+            <p className="text-sm text-ink-secondary">
+              You are about to register for <span className="font-medium text-ink-primary">{registerEvent?.name}</span>.
             </p>
-            <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+            <div className="bg-surface-hover rounded-lg p-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Name</span>
-                <span className="font-semibold text-gray-800">{user?.username}</span>
+                <span className="text-ink-muted">Name</span>
+                <span className="font-medium text-ink-primary">{user?.username}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Email</span>
-                <span className="font-semibold text-gray-800">{user?.email}</span>
+                <span className="text-ink-muted">Email</span>
+                <span className="font-medium text-ink-primary">{user?.email}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Status</span>
-                <span className="font-semibold text-yellow-600">Pending approval</span>
+                <span className="text-ink-muted">Status</span>
+                <span className="font-medium text-amber-600">Pending approval</span>
               </div>
             </div>
           </div>

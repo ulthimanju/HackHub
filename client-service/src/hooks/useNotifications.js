@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 
 const MAX_NOTIFICATIONS = 50;
 
@@ -68,8 +67,9 @@ export function useNotifications(user) {
   useEffect(() => {
     if (!user?.id) return;
 
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const client = new Client({
-      webSocketFactory: () => new SockJS('/ws-notifications'),
+      brokerURL: `${wsProtocol}://${window.location.host}/ws-notifications/websocket`,
       connectHeaders: { 'X-User-Id': user.id },
       reconnectDelay: 5000,
       onConnect: () => {

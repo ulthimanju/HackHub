@@ -1,20 +1,28 @@
 import React, { memo } from 'react';
 import Button from '../../../common/Button/Button';
 
-const EmptyState = memo(({ icon: Icon, title, message, actionLabel, onActionClick }) => {
+const EmptyState = memo(({ icon: Icon, title, message, actionLabel, onActionClick, illustrationSrc }) => {
   return (
-    <div className="bg-white border border-gray-100 rounded-3xl p-12 text-center space-y-4 shadow-sm">
-      {Icon && (
-        <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mx-auto border-4 border-orange-100">
-          <Icon className="w-10 h-10" />
+    <div className="bg-white border border-dashed border-surface-border rounded-xl p-12 text-center space-y-5">
+      {/* Illustration or icon fallback */}
+      {illustrationSrc ? (
+        <img
+          src={illustrationSrc}
+          alt=""
+          className="w-44 h-44 mx-auto object-contain"
+          onError={e => { e.target.style.display = 'none'; }}
+        />
+      ) : Icon ? (
+        <div className="w-14 h-14 bg-surface-hover rounded-xl flex items-center justify-center text-ink-disabled mx-auto">
+          <Icon className="w-7 h-7" />
         </div>
-      )}
-      <div className="max-w-xs mx-auto space-y-2">
-        <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-        <p className="text-gray-500 text-sm leading-relaxed">{message}</p>
+      ) : null}
+      <div className="max-w-xs mx-auto space-y-1.5">
+        <h3 className="font-display font-semibold text-base text-ink-primary">{title}</h3>
+        <p className="text-ink-muted text-sm leading-relaxed">{message}</p>
       </div>
       {actionLabel && (
-        <Button variant="outline" className="rounded-xl px-8" onClick={onActionClick}>
+        <Button variant="outline" onClick={onActionClick}>
           {actionLabel}
         </Button>
       )}

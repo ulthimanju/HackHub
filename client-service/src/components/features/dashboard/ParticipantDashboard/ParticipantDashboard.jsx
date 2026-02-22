@@ -1,86 +1,83 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, BarChart2, ArrowRight } from 'lucide-react';
-import eventService from '../../../../services/eventService';
+import { BarChart2, ArrowRight } from 'lucide-react';
 import Button from '../../../common/Button/Button';
 import { theme } from '../../../../utils/theme';
+import { useParticipantDashboard } from '../../../../hooks/useParticipantDashboard';
 
 const STATUS_COLORS = {
-  UPCOMING: 'bg-blue-100 text-blue-700',
-  REGISTRATION_OPEN: 'bg-green-100 text-green-700',
-  ONGOING: 'bg-orange-100 text-orange-700',
-  JUDGING: 'bg-purple-100 text-purple-700',
-  RESULTS_ANNOUNCED: 'bg-teal-100 text-teal-700',
-  COMPLETED: 'bg-gray-100 text-gray-600',
+  UPCOMING:           'bg-blue-50 text-blue-700',
+  REGISTRATION_OPEN:  'bg-green-50 text-green-700',
+  ONGOING:            'bg-brand-50 text-brand-700',
+  JUDGING:            'bg-purple-50 text-purple-700',
+  RESULTS_ANNOUNCED:  'bg-teal-50 text-teal-700',
+  COMPLETED:          'bg-surface-hover text-ink-muted',
 };
 
 const REG_STATUS_COLORS = {
-  APPROVED: 'bg-green-100 text-green-700',
-  PENDING:  'bg-yellow-100 text-yellow-700',
-  REJECTED: 'bg-red-100 text-red-700',
+  APPROVED: 'bg-green-50 text-green-700',
+  PENDING:  'bg-amber-50 text-amber-700',
+  REJECTED: 'bg-red-50 text-red-700',
 };
 
 export default function ParticipantDashboard({ user }) {
   const navigate = useNavigate();
-  const [events, setEvents]       = useState([]);
-  const [statusMap, setStatusMap] = useState({});
-  const [loading, setLoading]     = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      eventService.getParticipantEvents(),
-      eventService.getMyRegistrationStatuses(),
-    ]).then(([evts, statuses]) => {
-      setEvents(evts);
-      const map = {};
-      statuses.forEach((r) => { map[r.eventId] = r.status; });
-      setStatusMap(map);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  const { events, statusMap, loading } = useParticipantDashboard();
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-7">
+      {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-1">Welcome back, {user?.displayName || user?.username}!</h2>
-          <p className="text-gray-500">Track your hackathon journey.</p>
+          <h2 className="font-display font-semibold text-2xl text-ink-primary">
+            Welcome back, {user?.displayName || user?.username}
+          </h2>
+          <p className="text-sm text-ink-muted mt-1">Track your hackathon journey.</p>
         </div>
         <Button variant="outline" icon={BarChart2} onClick={() => navigate('/explore')}>
           Explore Events
         </Button>
       </div>
 
+      {/* Events list */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">My Events</h3>
+        <p className="text-xs font-medium text-ink-muted uppercase tracking-widest mb-3">My Events</p>
         {loading ? (
-          <div className="text-gray-400 text-sm py-8 text-center">Loading…</div>
+          <div className="text-ink-muted text-sm py-8 text-center">Loading…</div>
         ) : events.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-200 py-16 flex flex-col items-center gap-3">
-            <Trophy className="w-10 h-10 text-gray-300" />
-            <p className="text-gray-500 font-medium">You haven't joined any events yet</p>
-            <Button variant="primary" onClick={() => navigate('/explore')}>Browse Events</Button>
+          <div className="bg-white rounded-xl border border-dashed border-surface-border py-10 flex flex-col items-center gap-3">
+            <img
+              src="https://illustrations.popsy.co/amber/work-from-home.svg"
+              alt=""
+              className="w-40 h-40 object-contain"
+              onError={e => { e.target.style.display = 'none'; }}
+            />
+            <p className="text-ink-muted font-medium text-sm">You haven't joined any events yet</p>
+            <Button variant="primary" size="sm" onClick={() => navigate('/explore')}>Browse Events</Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {events.map((event) => {
               const regStatus = statusMap[event.id];
               return (
                 <div
                   key={event.id}
-                  className="bg-white rounded-2xl border border-gray-100 p-5 hover:border-orange-200 hover:shadow-sm transition-all cursor-pointer group"
+                  className="bg-white rounded-xl border border-surface-border p-4 hover:border-brand-300 hover:shadow-card-hover transition-all cursor-pointer group shadow-card"
                   onClick={() => navigate(`/events/${event.id}`)}
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors truncate pr-2">{event.name}</h4>
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-xl whitespace-nowrap ${STATUS_COLORS[event.status] || 'bg-gray-100 text-gray-600'}`}>
-                      {event.status?.replace('_', ' ')}
+                    <h4 className="font-medium text-ink-primary group-hover:text-brand-600 transition-colors truncate pr-2 text-sm">
+                      {event.name}
+                    </h4>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-md whitespace-nowrap ${STATUS_COLORS[event.status] ?? 'bg-surface-hover text-ink-muted'}`}>
+                      {event.status?.replace(/_/g, ' ')}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 line-clamp-2 mb-3">{event.description}</p>
+                  <p className="text-xs text-ink-muted line-clamp-2 mb-3">{event.description}</p>
                   <div className="flex items-center justify-between">
                     {regStatus && (
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-xl ${REG_STATUS_COLORS[regStatus] || 'bg-gray-100 text-gray-500'}`}>
-                        Registration: {regStatus}
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${REG_STATUS_COLORS[regStatus] ?? 'bg-surface-hover text-ink-muted'}`}>
+                        {regStatus}
                       </span>
                     )}
                     <span className={`text-xs font-medium ${theme.primary.text} flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity`}>

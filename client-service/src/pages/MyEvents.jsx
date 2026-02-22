@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import eventService from '../services/eventService';
 
 import EventsHeader from '../components/features/events/EventsHeader/EventsHeader';
 import EmptyState from '../components/features/events/EmptyState/EmptyState';
-import Modal from '../components/common/Modal/Modal';
-import EventForm from '../components/features/events/EventForm/EventForm';
 import Alert from '../components/common/Alert/Alert';
 import EventCard from '../components/features/events/EventCard/EventCard';
 import EventFilters from '../components/common/EventFilters/EventFilters';
@@ -26,13 +24,12 @@ const STATUS_TABS = [
 const MyEvents = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [events, setEvents] = useState([]);
   const [registrationStatuses, setRegistrationStatuses] = useState({});
   const [loading, setLoading] = useState(true);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState(location.state?.success || '');
   const [activeTab, setActiveTab] = useState('all');
   const [activeThemes, setActiveThemes] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +38,10 @@ const MyEvents = () => {
 
   useEffect(() => {
     fetchEvents();
+    if (location.state?.success) {
+      setTimeout(() => setSuccess(''), 5000);
+      window.history.replaceState({}, '');
+    }
   }, []);
 
   const fetchEvents = async () => {
@@ -83,29 +84,13 @@ const MyEvents = () => {
     return matchesTab && matchesSearch && matchesTheme;
   }), [events, activeTab, searchQuery, activeThemes]);
 
-  const handleCreateEvent = async (eventData) => {
-    setCreateLoading(true);
-    setError('');
-    try {
-      await eventService.createEvent(eventData);
-      setSuccess('Event created successfully!');
-      setIsModalOpen(false);
-      fetchEvents();
-      setTimeout(() => setSuccess(''), 5000);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create event. Please check your details.');
-    } finally {
-      setCreateLoading(false);
-    }
-  };
-
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       <EventsHeader
         title="My Events"
         description="Manage and track your hackathon participations"
         showCreateButton={isOrganizer}
-        onCreateClick={() => setIsModalOpen(true)}
+        onCreateClick={() => navigate('/my-events/create')}
       />
 
       {(error || success) && (
@@ -128,7 +113,7 @@ const MyEvents = () => {
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
         </div>
       ) : filteredEvents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -146,6 +131,13 @@ const MyEvents = () => {
       ) : (
         <EmptyState
           icon={Calendar}
+          illustrationSrc={
+            activeTab !== 'all' || activeThemes.length > 0
+              ? 'https://illustrations.popsy.co/amber/digital-nomad.svg'
+              : isOrganizer
+                ? 'https://illustrations.popsy.co/amber/app-launch.svg'
+                : 'https://illustrations.popsy.co/amber/work-from-home.svg'
+          }
           title={activeTab !== 'all' || activeThemes.length > 0 ? 'No matches found' : 'No events found'}
           message={activeTab !== 'all' || activeThemes.length > 0
             ? 'Try a different filter.'
@@ -155,19 +147,6 @@ const MyEvents = () => {
           }
         />
       )}
-
-      {/* Create Event Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Create New Hackathon"
-      >
-        <EventForm
-          onSubmit={handleCreateEvent}
-          onCancel={() => setIsModalOpen(false)}
-          loading={createLoading}
-        />
-      </Modal>
     </div>
   );
 };
