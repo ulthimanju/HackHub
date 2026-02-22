@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import Editor from '@monaco-editor/react';
 import { BookOpen, Pencil, X, Save, Code2 } from 'lucide-react';
 import Button from '../../../common/Button/Button';
@@ -24,6 +25,11 @@ const SafeLink = ({ href, children, ...props }) => {
   return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
 };
 
+const SafeImage = ({ src, alt }) => {
+  if (!src || src.toLowerCase().startsWith('javascript:')) return null;
+  return <img src={src} alt={alt || ''} className="max-w-full rounded-lg my-3 border border-surface-border" />;
+};
+
 function MarkdownBody({ children }) {
   return (
     <div className={[
@@ -41,11 +47,11 @@ function MarkdownBody({ children }) {
       '[&_blockquote]:border-l-4 [&_blockquote]:border-brand-300 [&_blockquote]:pl-4 [&_blockquote]:text-ink-muted [&_blockquote]:italic [&_blockquote]:mb-3',
       '[&_hr]:border-surface-border [&_hr]:my-5',
       '[&_strong]:font-semibold [&_strong]:text-ink-primary',
-      '[&_table]:w-full [&_table]:border-collapse [&_table]:mb-3',
-      '[&_th]:text-left [&_th]:p-2 [&_th]:border-b [&_th]:border-surface-border [&_th]:font-semibold [&_th]:text-ink-primary [&_th]:text-xs [&_th]:uppercase [&_th]:tracking-wide',
-      '[&_td]:p-2 [&_td]:border-b [&_td]:border-surface-border',
+      '[&_table]:w-full [&_table]:border-collapse [&_table]:mb-3 [&_table]:block [&_table]:overflow-x-auto',
+      '[&_th]:text-left [&_th]:p-2 [&_th]:border [&_th]:border-surface-border [&_th]:font-semibold [&_th]:text-ink-primary [&_th]:text-xs [&_th]:uppercase [&_th]:tracking-wide [&_th]:bg-surface-hover',
+      '[&_td]:p-2 [&_td]:border [&_td]:border-surface-border',
     ].join(' ')}>
-      <ReactMarkdown components={{ a: SafeLink }}>{children}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: SafeLink, img: SafeImage }}>{children}</ReactMarkdown>
     </div>
   );
 }
