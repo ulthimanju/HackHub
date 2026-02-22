@@ -69,6 +69,8 @@ services:
         target: APP_ITEM_LIMIT
       - source: app-time-limit
         target: APP_TIME_LIMIT
+      - source: jwt-secret
+        target: APPLICATION_SECURITY_JWT_SECRET_KEY
     networks:
       - ehub-network
 

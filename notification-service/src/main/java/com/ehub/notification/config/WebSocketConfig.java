@@ -1,5 +1,9 @@
 package com.ehub.notification.config;
 
+import com.ehub.notification.security.JwtService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -18,7 +22,10 @@ import java.util.Collections;
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final JwtService jwtService;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -41,12 +48,23 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-                    // In a real scenario, you'd extract from a header or token
-                    // The Gateway passes X-User-Id in the handshake request
-                    // For STOMP, the client should send it in the connect headers
-                    String userId = accessor.getFirstNativeHeader("X-User-Id");
-                    if (userId != null) {
-                        accessor.setUser(new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList()));
+                    String authHeader = accessor.getFirstNativeHeader("Authorization");
+                    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                        // Reject — no token provided
+                        throw new IllegalArgumentException("Missing or malformed Authorization header");
+                    }
+                    String token = authHeader.substring(7);
+                    try {
+                        Claims claims = jwtService.validateAndExtractClaims(token);
+                        String userId = jwtService.extractUserId(claims);
+                        if (userId == null) {
+                            throw new IllegalArgumentException("JWT does not contain userId claim");
+                        }
+                        accessor.setUser(new UsernamePasswordAuthenticationToken(
+                                userId, null, Collections.emptyList()
+                        ));
+                    } catch (JwtException e) {
+                        throw new IllegalArgumentException("Invalid or expired JWT token", e);
                     }
                 }
                 return message;

@@ -66,11 +66,13 @@ export function useNotifications(user) {
   // Connect STOMP
   useEffect(() => {
     if (!user?.id) return;
+    const token = localStorage.getItem('token');
+    if (!token) return; // no JWT → don't connect
 
     const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const client = new Client({
       brokerURL: `${wsProtocol}://${window.location.host}/ws-notifications/websocket`,
-      connectHeaders: { 'X-User-Id': user.id },
+      connectHeaders: { Authorization: `Bearer ${token}` },
       reconnectDelay: 5000,
       onConnect: () => {
         // User-specific alerts (registration approvals/rejections)
