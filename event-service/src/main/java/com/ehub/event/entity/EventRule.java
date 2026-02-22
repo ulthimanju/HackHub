@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "event_rules")
+@Table(name = "event_rule_docs")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
