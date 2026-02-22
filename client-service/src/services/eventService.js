@@ -19,6 +19,7 @@ const eventService = {
   updateProblemStatement:   (problemId, d)  => api.put(`/events/problemstatements/${problemId}`, d),
   getEventStats:            (eventId)       => api.get(`/events/${eventId}/stats`),
   advanceEventStatus:       (eventId)       => api.patch(`/events/${eventId}/advance-status`),
+  toggleJudging:            (eventId)       => api.patch(`/events/${eventId}/judging`),
 };
 
 export default eventService;

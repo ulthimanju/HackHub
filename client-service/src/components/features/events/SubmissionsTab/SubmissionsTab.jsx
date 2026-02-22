@@ -28,8 +28,8 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
   const [page, setPage] = useState(0);
 
   const submitted    = [...teams.filter(t => t.repoUrl)].sort((a, b) => {
-    const scoreA = a.manualScore ?? a.score ?? -1;
-    const scoreB = b.manualScore ?? b.score ?? -1;
+    const scoreA = (a.finalScore ?? a.manualScore ?? a.score) ?? -1;
+    const scoreB = (b.finalScore ?? b.manualScore ?? b.score) ?? -1;
     return scoreB - scoreA;
   });
   const notSubmitted = teams.filter(t => !t.repoUrl);
@@ -91,9 +91,9 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
               {paginatedSubmitted.map((team, idx) => {
                 const globalIdx = page * PAGE_SIZE + idx;
                 const problem    = problemStatements?.find(p => p.id === team.problemStatementId);
-                const aiScore    = team.score;
+                const aiScore     = team.score;
                 const manualScore = team.manualScore;
-                const finalScore = manualScore ?? aiScore;
+                const finalScore  = team.finalScore ?? manualScore ?? aiScore;
                 const hasScore   = finalScore != null;
                 const isOpen     = reviewOpen[team.id] || false;
                 const rd         = localReviewData[team.id] || { manualScore: team.manualScore ?? '', organizerNotes: team.organizerNotes || '' };

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   CalendarDays, MapPin, Users, Mail, Trophy, BookOpen, Clock,
-  Globe, ArrowRight, Check, ChevronRight, Pencil,
+  Globe, ArrowRight, Check, ChevronRight, Pencil, ToggleLeft, ToggleRight,
 } from 'lucide-react';
+import eventService from '../../../../services/eventService';
 
 const formatDateShort = (d) => {
   if (!d) return 'N/A';
@@ -37,6 +38,21 @@ export default function OverviewTab({ event, permissions, advancingStatus, advan
   const currentIdx = FLOW.findIndex(s => s.status === event.status);
   const current = FLOW[currentIdx];
   const canAdvance = current && current.next !== null;
+
+  const [judgingEnabled, setJudgingEnabled] = useState(event.judging !== false);
+  const [togglingJudging, setTogglingJudging] = useState(false);
+
+  const handleToggleJudging = async () => {
+    setTogglingJudging(true);
+    try {
+      const result = await eventService.toggleJudging(event.id);
+      setJudgingEnabled(result === 'JUDGING_ENABLED');
+    } catch {
+      // ignore — leave state as is
+    } finally {
+      setTogglingJudging(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -77,18 +93,38 @@ export default function OverviewTab({ event, permissions, advancingStatus, advan
 
           {/* Advance button */}
           {canAdvance ? (
-            <button
-              disabled={advancingStatus}
-              onClick={() => {
-                const next = FLOW[currentIdx + 1];
-                setConfirmAdvance({ open: true, currentLabel: current.label, nextLabel: next.label, desc: current.desc });
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors"
-            >
-              {advancingStatus ? 'Advancing…' : (
-                <><ChevronRight className="w-4 h-4" /> Advance to {FLOW[currentIdx + 1]?.label}</>
+            <div className="flex items-center gap-4 flex-wrap">
+              <button
+                disabled={advancingStatus}
+                onClick={() => {
+                  const next = FLOW[currentIdx + 1];
+                  setConfirmAdvance({ open: true, currentLabel: current.label, nextLabel: next.label, desc: current.desc });
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors"
+              >
+                {advancingStatus ? 'Advancing…' : (
+                  <><ChevronRight className="w-4 h-4" /> Advance to {FLOW[currentIdx + 1]?.label}</>
+                )}
+              </button>
+
+              {/* Judging toggle — only shown when event is ONGOING */}
+              {event.status === 'ONGOING' && (
+                <button
+                  disabled={togglingJudging}
+                  onClick={handleToggleJudging}
+                  title={judgingEnabled ? 'Judging phase is enabled after event ends. Click to skip it.' : 'Judging is skipped — results will be announced directly. Click to re-enable.'}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors disabled:opacity-60 ${
+                    judgingEnabled
+                      ? 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'
+                      : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                  }`}
+                >
+                  {judgingEnabled
+                    ? <><ToggleRight className="w-4 h-4" /> Judging: On</>
+                    : <><ToggleLeft className="w-4 h-4" /> Judging: Off</>}
+                </button>
               )}
-            </button>
+            </div>
           ) : (
             <span className="text-xs text-ink-muted font-medium">Event is complete — no further transitions.</span>
           )}

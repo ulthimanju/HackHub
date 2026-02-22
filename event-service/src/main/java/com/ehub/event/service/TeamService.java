@@ -341,7 +341,7 @@ public class TeamService {
         Event event = eventRepository.findById(team.getEventId())
                 .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         
-        if (event.getStatus() != EventStatus.ONGOING) {
+        if (event.calculateCurrentStatus() != EventStatus.ONGOING) {
             if (java.time.LocalDateTime.now().isBefore(event.getStartDate())) {
                 throw new RuntimeException(String.format(MessageKeys.SUBMISSIONS_NOT_OPEN.getMessage(), event.getStartDate()));
             } else {
@@ -447,6 +447,7 @@ public class TeamService {
                 .score(team.getScore())
                 .aiSummary(team.getAiSummary())
                 .manualScore(team.getManualScore())
+                .finalScore(team.getFinalScore())
                 .organizerNotes(team.getOrganizerNotes())
                 .skillsNeeded(team.getSkillsNeeded())
                 .members(memberDtos)

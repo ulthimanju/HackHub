@@ -25,6 +25,8 @@ public class TeamResponse {
     private String aiSummary;
     private Double manualScore;
     private String organizerNotes;
+    /** Final authoritative score: manualScore if set, otherwise AI score. */
+    private Double finalScore;
     private String leaderId;
     private List<String> skillsNeeded;
     private List<TeamMemberResponse> members;

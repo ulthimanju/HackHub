@@ -164,7 +164,7 @@ public class EventService {
                 .maxParticipants(event.getMaxParticipants())
                 .teamSize(event.getTeamSize())
                 .registeredCount(registeredCounts.getOrDefault(event.getId(), 0L).intValue())
-                .status(event.getStatus() != null ? event.getStatus() : event.calculateCurrentStatus())
+                .status(event.calculateCurrentStatus())
                 .organizerId(event.getOrganizerId())
                 .problemStatements(event.getProblemStatements().stream()
                         .map(this::mapToProblemStatementResponse)
@@ -223,6 +223,21 @@ public class EventService {
             throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
+        // Ambiguity 4.2: Retroactively validate teamSize reduction
+        if (request.getTeamSize() != null && event.getTeamSize() != null
+                && request.getTeamSize() < event.getTeamSize()) {
+            List<com.ehub.event.entity.Team> eventTeams = teamRepository.findByEventId(id);
+            for (com.ehub.event.entity.Team team : eventTeams) {
+                long memberCount = teamMemberRepository.findByTeamId(team.getId()).stream()
+                        .filter(m -> m.getStatus() == com.ehub.event.enums.TeamMemberStatus.ACCEPTED)
+                        .count();
+                if (memberCount > request.getTeamSize()) {
+                    throw new RuntimeException("Cannot reduce team size to " + request.getTeamSize()
+                            + " — team \"" + team.getName() + "\" already has " + memberCount + " accepted members.");
+                }
+            }
+        }
+
         event.setName(request.getName());
         event.setDescription(request.getDescription());
         event.setTheme(request.getTheme());
@@ -240,7 +255,23 @@ public class EventService {
         event.setLocation(request.getLocation());
         event.setMaxParticipants(request.getMaxParticipants());
         event.setTeamSize(request.getTeamSize());
+        // Recalculate status after timestamp changes
+        event.setStatus(event.calculateCurrentStatus());
         eventRepository.save(event);
+    }
+
+    @Transactional
+    public boolean toggleJudging(String id, String requesterId) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+        if (!event.getOrganizerId().equals(requesterId)) {
+            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
+        }
+        boolean newValue = !Boolean.TRUE.equals(event.getJudging());
+        event.setJudging(newValue);
+        event.setStatus(event.calculateCurrentStatus());
+        eventRepository.save(event);
+        return newValue;
     }
 
     @Transactional
@@ -578,7 +609,7 @@ public class EventService {
 
     /** Returns true only while event is in UPCOMING or REGISTRATION_OPEN phase. */
     private boolean isRegistrationPhase(Event event) {
-        EventStatus status = event.getStatus() != null ? event.getStatus() : event.calculateCurrentStatus();
+        EventStatus status = event.calculateCurrentStatus();
         return status == EventStatus.UPCOMING || status == EventStatus.REGISTRATION_OPEN;
     }
 }

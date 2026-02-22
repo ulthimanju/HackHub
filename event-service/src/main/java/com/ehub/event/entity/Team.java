@@ -53,4 +53,9 @@ public class Team {
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<TeamMember> members = new ArrayList<>();
+
+    /** Returns the authoritative score: manual score takes precedence over AI score. */
+    public Double getFinalScore() {
+        return manualScore != null ? manualScore : score;
+    }
 }

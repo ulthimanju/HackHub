@@ -144,6 +144,13 @@ public class EventController {
         return ResponseEntity.ok(newStatus.name());
     }
 
+    @PatchMapping("/{id}/judging")
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<String> toggleJudging(@PathVariable String id) {
+        boolean judgingEnabled = eventService.toggleJudging(id, getCurrentUserId());
+        return ResponseEntity.ok(judgingEnabled ? "JUDGING_ENABLED" : "JUDGING_DISABLED");
+    }
+
     @PatchMapping("/{id}/finalize-results")
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> finalizeResults(@PathVariable String id) {
