@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
+import Editor from '@monaco-editor/react';
 import { BookOpen, Pencil, X, Save, Eye, Code2 } from 'lucide-react';
 import Button from '../../../common/Button/Button';
 import eventService from '../../../../services/eventService';
@@ -156,15 +157,30 @@ export default function ReferencesTab({ eventId, permissions }) {
           </div>
         </div>
 
-        {/* Write pane */}
+        {/* Write pane — Monaco Editor */}
         {!preview && (
-          <textarea
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            rows={20}
-            placeholder={`# References\n\nAdd links, resources, and notes for participants here.\n\nSupports **Markdown** syntax.`}
-            className="w-full px-4 py-3 rounded-xl border border-surface-border bg-white text-sm text-ink-primary font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 resize-y"
-          />
+          <div className="rounded-xl border border-surface-border overflow-hidden" style={{ height: 480 }}>
+            <Editor
+              height="480px"
+              defaultLanguage="markdown"
+              value={draft}
+              onChange={value => setDraft(value ?? '')}
+              theme="light"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineHeight: 22,
+                wordWrap: 'on',
+                scrollBeyondLastLine: false,
+                renderLineHighlight: 'none',
+                overviewRulerLanes: 0,
+                hideCursorInOverviewRuler: true,
+                scrollbar: { vertical: 'auto', horizontal: 'hidden' },
+                padding: { top: 16, bottom: 16 },
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+              }}
+            />
+          </div>
         )}
 
         {/* Preview pane */}
