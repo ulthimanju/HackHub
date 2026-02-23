@@ -158,7 +158,7 @@ const MainLayout = memo(() => {
         )}
 
         {/* Main content */}
-        <main className={`flex-1 min-w-0 px-6 py-6 overflow-y-auto ${!isEventDetails ? 'lg:ml-56' : ''}`}>
+        <main className={`flex-1 min-w-0 px-6 pt-4 pb-6 overflow-y-auto ${!isEventDetails ? 'lg:ml-56' : ''}`}>
           <Outlet />
         </main>
       </div>
