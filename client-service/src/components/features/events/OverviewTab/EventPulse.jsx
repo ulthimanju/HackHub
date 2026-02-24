@@ -4,23 +4,10 @@ import {
 } from 'lucide-react';
 import Button from '../../../common/Button/Button';
 import eventService from '../../../../services/eventService';
+import { STATUS_ORDER, STATUS_META, ADVANCE_INFO } from '@/constants/eventPhases';
 
-const FLOW = [
-  { status: 'UPCOMING',          shortLabel: 'Upcoming' },
-  { status: 'REGISTRATION_OPEN', shortLabel: 'Registration' },
-  { status: 'ONGOING',           shortLabel: 'Ongoing' },
-  { status: 'JUDGING',           shortLabel: 'Judging' },
-  { status: 'RESULTS_ANNOUNCED', shortLabel: 'Results' },
-  { status: 'COMPLETED',         shortLabel: 'Completed' },
-];
+const FLOW = STATUS_ORDER.map(s => ({ status: s, shortLabel: STATUS_META[s].shortLabel }));
 
-const ADVANCE_INFO = {
-  UPCOMING:          { next: 'Open Registration',  desc: 'Participants will be able to see and register for this event.' },
-  REGISTRATION_OPEN: { next: 'Start Event',         desc: 'Registration will close and the event will officially begin.' },
-  ONGOING:           { next: 'Start Judging',       desc: 'Submissions will close and the event will move to the judging phase.' },
-  JUDGING:           { next: 'Publish Results',     desc: 'Scores will be published and the leaderboard will become visible to all.' },
-  RESULTS_ANNOUNCED: { next: 'Mark Completed',      desc: 'The event will be marked as fully completed. This is the final stage.' },
-};
 
 const STATUS_COLORS = {
   UPCOMING:          { accent: 'bg-blue-400',   badge: 'bg-blue-50 text-blue-700 border-blue-200',   dot: 'bg-blue-500'   },

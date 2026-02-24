@@ -11,9 +11,13 @@ const Tabs = memo(({ tabs, defaultActiveTab = 0, activeTab: controlledTab, onTab
         {tabs.map((tab, index) => (
           <button
             key={index}
-            onClick={() => setActiveTab(index)}
+            onClick={() => !tab.disabled && setActiveTab(index)}
+            disabled={tab.disabled}
+            title={tab.disabled && tab.disabledReason ? tab.disabledReason : undefined}
             className={`pb-2.5 px-0.5 text-sm font-medium border-b-2 transition-all duration-150 focus:outline-none whitespace-nowrap ${
-              activeTab === index ? theme.tab.active : theme.tab.inactive
+              tab.disabled
+                ? 'border-transparent text-ink-disabled cursor-not-allowed opacity-50'
+                : activeTab === index ? theme.tab.active : theme.tab.inactive
             }`}
           >
             {tab.label}

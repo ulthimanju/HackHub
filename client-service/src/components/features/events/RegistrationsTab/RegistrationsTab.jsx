@@ -23,7 +23,7 @@ const PAGE_SIZE = 10;
  *   statusUpdateError  – string
  *   onStatusUpdate     – async (registrationId, status) => void
  */
-const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading, error, updatingId, statusUpdateError, onStatusUpdate }) {
+const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading, error, updatingId, statusUpdateError, onStatusUpdate, canManageRegistrations = true }) {
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(0);
 
@@ -120,6 +120,7 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
                   {/* Status badge */}
                   <div className="shrink-0"><StatusBadge status={reg.status} /></div>
                   {/* Actions */}
+                  {canManageRegistrations && (
                   <div className="flex items-center gap-2 shrink-0">
                     {reg.status !== 'APPROVED' && (
                       <button
@@ -146,6 +147,7 @@ const RegistrationsTab = memo(function RegistrationsTab({ registrations, loading
                       </button>
                     )}
                   </div>
+                  )}
                 </div>
               );
             })}

@@ -13,6 +13,7 @@ import { useAuth } from '../../../../hooks/useAuth';
 import { useTeamTab } from '../../../../hooks/useTeamTab';
 import MatchmakingPanel from './MatchmakingPanel';
 import { sanitizeUrl } from '../../../../utils/sanitizeUrl';
+import { getPhasePolicy } from '../../../../constants/eventPhases';
 
 const TeamTab = ({ event, myRegistration }) => {
   const { user } = useAuth();
@@ -38,7 +39,7 @@ const TeamTab = ({ event, myRegistration }) => {
   const [viewProblemOpen, setViewProblemOpen] = useState(false);
 
   const isApproved = myRegistration?.status === 'APPROVED';
-  const isLocked = ['judging', 'results_announced', 'completed'].includes(event.status?.toLowerCase());
+  const { areTeamsLocked: isLocked } = getPhasePolicy(event.status);
 
   useEffect(() => { fetchTeams(); }, [fetchTeams]);
 

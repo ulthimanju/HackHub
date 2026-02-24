@@ -11,6 +11,7 @@ import EventFilters from '@/components/common/EventFilters/EventFilters';
 import Pagination from '@/components/common/Pagination/Pagination';
 import { CheckCircle2 } from 'lucide-react';
 import { ALL_THEMES } from '@/constants/themes';
+import { getPhasePolicy } from '@/constants/eventPhases';
 
 const STATUS_TABS = [
   { label: 'All',               value: 'all' },
@@ -83,10 +84,9 @@ const ExploreEvents = () => {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedEvents.map(event => {
-              const status      = event.status?.toLowerCase() || 'upcoming';
               const isRegistered = registeredIds.has(event.id);
               const myReg       = registrationStatuses[event.id];
-              const canRegister = status === 'registration_open' && !isRegistered;
+              const canRegister = getPhasePolicy(event.status).canRegister && !isRegistered;
               return (
                 <EventCard
                   key={event.id}

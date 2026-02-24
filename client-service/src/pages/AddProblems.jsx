@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import eventService from '@/services/eventService';
 import { extractErrorMessage } from '@/services/api';
@@ -7,6 +7,7 @@ import Button from '@/components/common/Button/Button';
 import Alert from '@/components/common/Alert/Alert';
 import CreationStepIndicator from '@/components/features/events/CreationStepIndicator/CreationStepIndicator';
 import { ArrowLeft, BookOpen, Plus, Trash2 } from 'lucide-react';
+import { getPhasePolicy } from '@/constants/eventPhases';
 
 const emptyRow = () => ({ name: '', statement: '', requirements: '' });
 
@@ -22,6 +23,17 @@ export default function AddProblems() {
   const [rows, setRows]             = useState([emptyRow()]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState('');
+  const [phaseBlocked, setPhaseBlocked] = useState(false);
+
+  // Guard: if not in creation flow, verify the current event phase allows problem management
+  useEffect(() => {
+    if (isCreationFlow || !id) return;
+    eventService.getEventById(id)
+      .then(event => {
+        if (!getPhasePolicy(event?.status).canManageProblems) setPhaseBlocked(true);
+      })
+      .catch(() => {}); // don't block on fetch failure
+  }, [id, isCreationFlow]);
 
   const updateRow = (index, field, value) =>
     setRows(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
@@ -89,6 +101,11 @@ export default function AddProblems() {
       {isCreationFlow && <CreationStepIndicator currentStep="problems" />}
 
       {error && <Alert type="error" title="Error">{error}</Alert>}
+      {phaseBlocked && (
+        <Alert type="error" title="Phase Locked">
+          Problem statements cannot be modified in the current event phase.
+        </Alert>
+      )}
 
       {/* Problems form */}
       <div className="bg-white border border-surface-border rounded-xl shadow-card p-6 space-y-0">
@@ -182,7 +199,7 @@ export default function AddProblems() {
           icon={BookOpen}
           onClick={handleSubmit}
           loading={submitting}
-          disabled={!filledRows.length || submitting}
+          disabled={!filledRows.length || submitting || phaseBlocked}
         >
           {submitting ? 'Adding…' : `Add ${filledRows.length || ''} Problem${filledRows.length !== 1 ? 's' : ''}`}
         </Button>

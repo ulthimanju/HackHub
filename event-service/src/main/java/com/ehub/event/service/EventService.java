@@ -48,6 +48,7 @@ public class EventService {
     private final TeamMemberRepository teamMemberRepository;
     private final NotificationClient notificationClient;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final LifecycleService lifecycleService;
 
     public List<EventResponse> getEventsByOrganizer(String organizerId) {
         List<Event> events = eventRepository.findByOrganizerId(organizerId);
@@ -135,6 +136,12 @@ public class EventService {
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         long count = registrationRepository.countByEventIdAndStatus(id, RegistrationStatus.APPROVED);
         return mapToEventResponse(event, Map.of(id, count));
+    }
+
+    public Map.Entry<String, LifecycleResponse> getEventLifecycleData(String id, String role) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+        return Map.entry(lifecycleService.computeEtag(event), lifecycleService.build(event, role));
     }
 
     public EventResponse getEventByShortCode(String shortCode) {

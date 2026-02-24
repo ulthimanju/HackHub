@@ -7,23 +7,10 @@ import Input from '@/components/common/Input/Input';
 import Modal from '@/components/common/Modal/Modal';
 import { extractErrorMessage } from '@/services/api';
 import eventService from '@/services/eventService';
+import { STATUS_ORDER, STATUS_META, ADVANCE_INFO } from '@/constants/eventPhases';
 
-const FLOW = [
-  { status: 'UPCOMING',          shortLabel: 'Upcoming' },
-  { status: 'REGISTRATION_OPEN', shortLabel: 'Registration' },
-  { status: 'ONGOING',           shortLabel: 'Ongoing' },
-  { status: 'JUDGING',           shortLabel: 'Judging' },
-  { status: 'RESULTS_ANNOUNCED', shortLabel: 'Results' },
-  { status: 'COMPLETED',         shortLabel: 'Completed' },
-];
+const FLOW = STATUS_ORDER.map(s => ({ status: s, shortLabel: STATUS_META[s].shortLabel }));
 
-const ADVANCE_INFO = {
-  UPCOMING:          { desc: 'Participants will be able to see and register for this event.' },
-  REGISTRATION_OPEN: { desc: 'Registration will close and the event will officially begin.' },
-  ONGOING:           { desc: 'Submissions will close and the event will move to the judging phase.' },
-  JUDGING:           { desc: 'Scores will be published and the leaderboard will become visible to all.' },
-  RESULTS_ANNOUNCED: { desc: 'The event will be marked as fully completed. This is the final stage.' },
-};
 
 /**
  * Settings tab for event owners — advance status, participant limits, and danger-zone actions.
@@ -37,7 +24,7 @@ const ADVANCE_INFO = {
  *   setConfirmAdvance: Function,
  * }} props
  */
-export default function SettingsTab({ event, onUpdateEvent, onDeleteEvent, advancingStatus, advanceError, setConfirmAdvance }) {
+export default function SettingsTab({ event, permissions, onUpdateEvent, onDeleteEvent, advancingStatus, advanceError, setConfirmAdvance }) {
   const navigate = useNavigate();
 
   // Advance status
@@ -162,7 +149,8 @@ export default function SettingsTab({ event, onUpdateEvent, onDeleteEvent, advan
         </div>
       </section>
 
-      {/* Participant Settings */}
+      {/* Participant Settings — hidden when editing is not allowed in this phase */}
+      {(permissions?.canEditEvent !== false) && (
       <section>
         <div className="mb-4">
           <h3 className="text-base font-semibold text-ink-primary">Participant Settings</h3>
@@ -199,6 +187,7 @@ export default function SettingsTab({ event, onUpdateEvent, onDeleteEvent, advan
           </div>
         </div>
       </section>
+      )}
 
       {/* Danger Zone */}
       <section>

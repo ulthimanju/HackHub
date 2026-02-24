@@ -30,6 +30,7 @@ api.interceptors.request.use(
 );
 
 // Auto-logout and redirect on 401 Unauthorized (expired/invalid token)
+// On 403/409 with phase-mismatch messages, signals useEventLifecycle to refresh.
 // Returns response.data directly so service methods don't need to unwrap it.
 api.interceptors.response.use(
   (response) => response.data,
@@ -38,6 +39,14 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    }
+    const status = error.response?.status;
+    if (status === 403 || status === 409) {
+      const msg = (error.response?.data?.message || '').toLowerCase();
+      const phaseKeywords = ['phase', 'locked', 'closed', 'registration', 'ongoing', 'started', 'judging', 'completed'];
+      if (phaseKeywords.some(k => msg.includes(k))) {
+        window.dispatchEvent(new CustomEvent('lifecycle-stale'));
+      }
     }
     return Promise.reject(error);
   }

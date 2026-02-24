@@ -9,6 +9,7 @@ import api from './api';
 const eventService = {
   getAllEvents:              (params)        => api.get('/events', { params }).then(r => r?.content ?? r),
   getEventById:             (id)            => api.get(`/events/${id}`),
+  getEventLifecycle:        (id)            => api.get(`/events/${id}/lifecycle`),
   getOrganizerEvents:       (params)        => api.get('/events/organizer', { params }).then(r => r?.content ?? r),
   getParticipantEvents:     (params)        => api.get('/events/my-registrations', { params }).then(r => r?.content ?? r),
   getMyRegistrationStatuses:()              => api.get('/events/my-registrations/status'),

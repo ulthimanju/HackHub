@@ -35,7 +35,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,
                         "/events", "/events/*", "/events/code/*",
                         "/events/organizer/*", "/events/participant/*",
-                        "/events/teams/*", "/events/teams/code/*").permitAll()
+                        "/events/teams/*", "/events/teams/code/*",
+                        "/events/*/lifecycle").permitAll()
                 // Every other request must be authenticated
                 .anyRequest().authenticated()
             )

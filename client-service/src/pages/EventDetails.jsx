@@ -4,6 +4,7 @@ import { useAbility } from '@/hooks/useAbility';
 import { useRef } from 'react';
 import { useEventPermissions } from '@/hooks/useEventPermissions';
 import { useEventDetails } from '@/hooks/useEventDetails';
+import { useEventLifecycle } from '@/hooks/useEventLifecycle';
 import Alert from '@/components/common/Alert/Alert';
 import Badge from '@/components/common/Badge/Badge';
 import Button from '@/components/common/Button/Button';
@@ -47,6 +48,7 @@ const EventDetails = () => {
   } = useEventDetails(id, isOrganizer);
 
   const permissions = useEventPermissions(eventDetails);
+  const { lifecycle } = useEventLifecycle(id);
 
   // Jump to a tab by label when navigating back from a sub-page (e.g. AddProblems)
   React.useEffect(() => {
@@ -126,6 +128,7 @@ const EventDetails = () => {
           updatingId={updatingId}
           statusUpdateError={statusUpdateError}
           onStatusUpdate={handlers.handleStatusUpdate}
+          canManageRegistrations={permissions.canManageRegistrations}
         />
       ),
     }] : []),
@@ -142,6 +145,10 @@ const EventDetails = () => {
     }] : []),
     ...(permissions.isOrganizer ? [{
       label: 'Submissions',
+      disabled: !permissions.canEvaluate && !permissions.canManualReview && !permissions.canFinalizeResults,
+      disabledReason: lifecycle?.phaseTimestamps?.eventEnd
+        ? `Submissions are reviewed during the judging phase`
+        : 'Available during the judging phase',
       content: (
         <SubmissionsTab
           teams={orgTeams}
@@ -157,6 +164,8 @@ const EventDetails = () => {
     }] : []),
     ...(!permissions.isOrganizer ? [{
       label: 'Team',
+      disabled: permissions.areTeamsLocked,
+      disabledReason: permissions.areTeamsLocked ? 'Team management is closed during this phase' : undefined,
       content: <TeamTab event={eventDetails} myRegistration={myRegistration} />,
     }] : []),
     {
@@ -175,6 +184,7 @@ const EventDetails = () => {
       content: (
         <SettingsTab
           event={eventDetails}
+          permissions={permissions}
           onUpdateEvent={handlers.handleUpdateEvent}
           onDeleteEvent={handlers.handleDeleteEvent}
           advancingStatus={advancingStatus}

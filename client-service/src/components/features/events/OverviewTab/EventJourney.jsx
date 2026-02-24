@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ClipboardList, CalendarCheck, Rocket, FlagTriangleRight, Trophy,
 } from 'lucide-react';
+import { STATUS_ORDER, STATUS_META } from '@/constants/eventPhases';
 
 const formatDate = (d) => {
   if (!d) return null;
@@ -13,23 +14,9 @@ const formatTime = (d) => {
   return new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
 };
 
-const CURRENT_MILESTONE = {
-  UPCOMING:          0,
-  REGISTRATION_OPEN: 1,
-  ONGOING:           2,
-  JUDGING:           3,
-  RESULTS_ANNOUNCED: 4,
-  COMPLETED:         5,
-};
+const FLOW = STATUS_ORDER.map(s => ({ status: s, shortLabel: STATUS_META[s].shortLabel }));
 
-const FLOW = [
-  { status: 'UPCOMING',          shortLabel: 'Upcoming' },
-  { status: 'REGISTRATION_OPEN', shortLabel: 'Registration' },
-  { status: 'ONGOING',           shortLabel: 'Ongoing' },
-  { status: 'JUDGING',           shortLabel: 'Judging' },
-  { status: 'RESULTS_ANNOUNCED', shortLabel: 'Results' },
-  { status: 'COMPLETED',         shortLabel: 'Completed' },
-];
+const CURRENT_MILESTONE = Object.fromEntries(STATUS_ORDER.map((s, i) => [s, i]));
 
 /**
  * Props:

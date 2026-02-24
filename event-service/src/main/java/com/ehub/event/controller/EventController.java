@@ -2,6 +2,7 @@ package com.ehub.event.controller;
 
 import com.ehub.event.dto.*;
 import com.ehub.event.service.EventService;
+import com.ehub.event.service.LifecycleService;
 import com.ehub.event.util.MessageKeys;
 import com.ehub.event.enums.RegistrationStatus;
 import com.ehub.event.enums.EventStatus;
@@ -10,11 +11,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/events")
@@ -25,6 +28,15 @@ public class EventController {
 
     private String getCurrentUserId() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
+    private String getCurrentUserRole() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return "ANONYMOUS";
+        return auth.getAuthorities().stream()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .findFirst()
+                .orElse("ANONYMOUS");
     }
 
     @GetMapping("/organizer")
@@ -73,6 +85,22 @@ public class EventController {
     @GetMapping("/{id}")
     public ResponseEntity<EventResponse> getEventById(@PathVariable String id) {
         return ResponseEntity.ok(eventService.getEventById(id));
+    }
+
+    @GetMapping("/{id}/lifecycle")
+    public ResponseEntity<?> getEventLifecycle(
+            @PathVariable String id,
+            @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
+        String role = getCurrentUserRole();
+        Map.Entry<String, LifecycleResponse> result = eventService.getEventLifecycleData(id, role);
+        String etag = "\"" + result.getKey() + "\"";
+        if (etag.equals(ifNoneMatch)) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
+        }
+        return ResponseEntity.ok()
+                .header("ETag", etag)
+                .header("Cache-Control", "no-cache")
+                .body(result.getValue());
     }
 
     @GetMapping("/code/{shortCode}")
