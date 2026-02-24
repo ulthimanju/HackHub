@@ -34,12 +34,18 @@ export default function SettingsTab({ event, permissions, onUpdateEvent, onDelet
 
   const [judgingEnabled,  setJudgingEnabled]  = useState(event?.judging !== false);
   const [togglingJudging, setTogglingJudging] = useState(false);
+  const [toggleError,     setToggleError]     = useState('');
   const handleToggleJudging = async () => {
     setTogglingJudging(true);
+    setToggleError('');
     try {
       const result = await eventService.toggleJudging(event.id);
       setJudgingEnabled(result === 'JUDGING_ENABLED');
-    } catch { /* ignore */ } finally { setTogglingJudging(false); }
+    } catch (err) {
+      setToggleError(extractErrorMessage(err, 'Failed to update judging setting.'));
+    } finally {
+      setTogglingJudging(false);
+    }
   };
 
   // Participant settings
@@ -139,6 +145,7 @@ export default function SettingsTab({ event, permissions, onUpdateEvent, onDelet
                   </button>
                 )}
               </div>
+              {toggleError && <p className="text-xs text-red-500">{toggleError}</p>}
             </div>
           ) : (
             <p className="text-sm text-ink-muted flex items-center gap-2">

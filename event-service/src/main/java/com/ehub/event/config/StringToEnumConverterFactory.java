@@ -3,6 +3,9 @@ package com.ehub.event.config;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 public class StringToEnumConverterFactory implements ConverterFactory<String, Enum> {
 
     @Override
@@ -14,8 +17,12 @@ public class StringToEnumConverterFactory implements ConverterFactory<String, En
                     return constant;
                 }
             }
+            String readable = targetType.getSimpleName()
+                    .replaceAll("([A-Z])", " $1").trim().toLowerCase();
+            String validValues = Arrays.stream(targetType.getEnumConstants())
+                    .map(Enum::name).collect(Collectors.joining(", "));
             throw new IllegalArgumentException(
-                "No enum constant '" + value + "' for " + targetType.getSimpleName());
+                    "Invalid " + readable + " value: '" + value + "'. Valid values: " + validValues);
         };
     }
 }
