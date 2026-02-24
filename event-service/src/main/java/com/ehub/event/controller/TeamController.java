@@ -26,6 +26,7 @@ public class TeamController {
 
     @PostMapping("/{eventId}")
     public ResponseEntity<String> createTeam(@PathVariable String eventId, @Valid @RequestBody TeamCreateRequest request) {
+        request.setUserId(getCurrentUserId());
         teamService.createTeam(eventId, request);
         return ResponseEntity.ok(MessageKeys.TEAM_CREATED.getMessage());
     }
@@ -62,6 +63,7 @@ public class TeamController {
 
     @PostMapping("/{teamId}/request")
     public ResponseEntity<String> requestToJoin(@PathVariable String teamId, @RequestBody TeamInviteRequest request) {
+        request.setUserId(getCurrentUserId());
         teamService.requestToJoin(teamId, request);
         return ResponseEntity.ok(MessageKeys.TEAM_JOIN_REQUEST_SENT.getMessage());
     }
@@ -130,11 +132,12 @@ public class TeamController {
     }
 
     @PostMapping("/{teamId}/score")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<Void> updateScore(
             @PathVariable String teamId,
             @RequestParam Double score,
             @RequestParam(required = false) String aiSummary) {
-        teamService.updateScore(teamId, score, aiSummary);
+        teamService.updateScore(teamId, score, aiSummary, getCurrentUserId());
         return ResponseEntity.ok().build();
     }
 }

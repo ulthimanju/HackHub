@@ -1,5 +1,11 @@
 import api from './api';
 
+/**
+ * Event service — CRUD for events, registrations, problem statements, rules, references, and stats.
+ *
+ * Paginated endpoints (`getAllEvents`, `getOrganizerEvents`, `getParticipantEvents`) unwrap Spring
+ * Page responses and return a plain array via `.then(r => r?.content ?? r)`.
+ */
 const eventService = {
   getAllEvents:              (params)        => api.get('/events', { params }).then(r => r?.content ?? r),
   getEventById:             (id)            => api.get(`/events/${id}`),

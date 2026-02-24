@@ -48,9 +48,6 @@ export default function OverviewTab({
   event,
   permissions,
   myRegistration,
-  advancingStatus,
-  advanceError,
-  setConfirmAdvance,
   copiedEmail,
   copyEmail,
   onSwitchToTeamTab,
@@ -60,9 +57,9 @@ export default function OverviewTab({
     <div className="space-y-5">
 
       {/* ── LAYER 1: The Narrative ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Description — large block (2/3) */}
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Description — large block (3/4) */}
+        <div className="lg:col-span-3">
           <div className="bg-white rounded-xl border border-surface-border shadow-card p-5 h-full">
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center shrink-0">
@@ -93,15 +90,9 @@ export default function OverviewTab({
           </div>
         </div>
 
-        {/* Event Journey — medium block (1/3) */}
+        {/* Event Journey — compact block (1/4) */}
         <div className="lg:col-span-1">
-          <EventJourney
-            event={event}
-            permissions={permissions}
-            advancingStatus={advancingStatus}
-            advanceError={advanceError}
-            setConfirmAdvance={setConfirmAdvance}
-          />
+          <EventJourney event={event} />
         </div>
       </div>
 

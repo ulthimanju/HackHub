@@ -12,6 +12,7 @@ import SectionTitle from '../../../common/Section/SectionTitle';
 import { useAuth } from '../../../../hooks/useAuth';
 import { useTeamTab } from '../../../../hooks/useTeamTab';
 import MatchmakingPanel from './MatchmakingPanel';
+import { sanitizeUrl } from '../../../../utils/sanitizeUrl';
 
 const TeamTab = ({ event, myRegistration }) => {
   const { user } = useAuth();
@@ -423,7 +424,7 @@ const TeamTab = ({ event, myRegistration }) => {
                     <div className="flex items-center gap-1.5">
                       <Github className="w-3.5 h-3.5 text-ink-muted shrink-0" />
                       <a
-                        href={myTeam.repoUrl}
+                        href={sanitizeUrl(myTeam.repoUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-brand-600 hover:underline truncate"

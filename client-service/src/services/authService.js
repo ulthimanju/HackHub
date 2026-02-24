@@ -1,5 +1,11 @@
 import api from './api';
 
+/**
+ * Authentication & profile service.
+ *
+ * All methods return promises that resolve to response payload (courtesy of api.js interceptor).
+ * OTP flows: call the matching `request*Otp` method first, then submit the OTP in the follow-up call.
+ */
 const authService = {
   login:               (username, password)    => api.post('/auth/login', { username, password }),
   register:            (username, email, password, otp) => api.post('/auth/register', { username, email, password, otp }),

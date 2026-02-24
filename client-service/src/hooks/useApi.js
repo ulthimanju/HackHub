@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { extractErrorMessage } from '../services/api';
 
 /**
  * Generic data-fetching hook.
@@ -18,7 +19,7 @@ export function useApi(fetchFn, deps = []) {
     setError(null);
     fetchFn()
       .then((result) => { if (!cancelled) { setData(result); } })
-      .catch((err)   => { if (!cancelled) { setError(err?.response?.data?.message ?? err?.message ?? 'Request failed'); } })
+      .catch((err)   => { if (!cancelled) { setError(extractErrorMessage(err, 'Request failed')); } })
       .finally(()    => { if (!cancelled) { setLoading(false); } });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -7,9 +7,9 @@ import lombok.Data;
 @Data
 public class TeamSubmissionRequest {
     @NotBlank(message = "Repository URL is required")
-    @Pattern(regexp = "^(https?://)?[^\\s/$.?#].[^\\s]*$", message = "Invalid Repository URL format")
+    @Pattern(regexp = "^https?://[^\\s]+$", message = "Repository URL must start with http:// or https://")
     private String repoUrl;
 
-    @Pattern(regexp = "^(https?://)?[^\\s/$.?#].[^\\s]*$", message = "Invalid Demo URL format")
+    @Pattern(regexp = "^https?://[^\\s]+$", message = "Demo URL must start with http:// or https://")
     private String demoUrl;
 }

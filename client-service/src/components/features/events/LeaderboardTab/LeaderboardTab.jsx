@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import Pagination from '../../../common/Pagination/Pagination';
+import { sanitizeUrl } from '../../../../utils/sanitizeUrl';
 
 const medals = ['🥇', '🥈', '🥉'];
 const PAGE_SIZE = 10;
@@ -95,7 +96,7 @@ const LeaderboardTab = memo(function LeaderboardTab({ eventStatus, teams, loadin
                   </p>
                 )}
                 {team.repoUrl && (
-                  <a href={team.repoUrl} target="_blank" rel="noopener noreferrer"
+                  <a href={sanitizeUrl(team.repoUrl)} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-2">
                     <ExternalLink className="w-3 h-3" /> View Project
                   </a>

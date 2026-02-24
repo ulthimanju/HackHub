@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { Mail, Check, X, Github, Linkedin, Globe, Zap, Loader2 } from 'lucide-react';
 import Badge from '../../../common/Badge/Badge';
 import { useAbility } from '../../../../hooks/useAbility';
+import { sanitizeUrl } from '../../../../utils/sanitizeUrl';
 
 const LEVEL_COLOR = {
   BEGINNER:     'bg-blue-50 text-blue-600',
@@ -76,17 +77,17 @@ const ProfileHeader = memo(({ user, saveStatus = 'idle' }) => {
           {(user?.githubUrl || user?.linkedinUrl || user?.portfolioUrl) && (
             <div className="flex items-center justify-center md:justify-start gap-4 pt-0.5">
               {user.githubUrl && (
-                <a href={user.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-ink-muted hover:text-ink-primary transition-colors">
+                <a href={sanitizeUrl(user.githubUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-ink-muted hover:text-ink-primary transition-colors">
                   <Github className="w-3.5 h-3.5" /> GitHub
                 </a>
               )}
               {user.linkedinUrl && (
-                <a href={user.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-ink-muted hover:text-blue-600 transition-colors">
+                <a href={sanitizeUrl(user.linkedinUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-ink-muted hover:text-blue-600 transition-colors">
                   <Linkedin className="w-3.5 h-3.5" /> LinkedIn
                 </a>
               )}
               {user.portfolioUrl && (
-                <a href={user.portfolioUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-ink-muted hover:text-brand-500 transition-colors">
+                <a href={sanitizeUrl(user.portfolioUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-ink-muted hover:text-brand-500 transition-colors">
                   <Globe className="w-3.5 h-3.5" /> Portfolio
                 </a>
               )}

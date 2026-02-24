@@ -1,5 +1,6 @@
 package com.ehub.auth.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ehub.auth.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,6 +31,7 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 

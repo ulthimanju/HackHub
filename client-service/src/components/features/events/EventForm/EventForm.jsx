@@ -218,24 +218,7 @@ const EventForm = memo(({ onSubmit, onCancel, loading, initialData }) => {
             onChange={handleChange}
             placeholder={formData.isVirtual ? 'e.g. Discord' : 'e.g. Main Hall'}
           />
-          <Input
-            label="Max Participants"
-            name="maxParticipants"
-            type="number"
-            icon={Users}
-            value={formData.maxParticipants}
-            onChange={handleChange}
-            placeholder="Unlimited"
-          />
-          <Input
-            label="Team Size"
-            name="teamSize"
-            type="number"
-            min="1"
-            icon={Users}
-            value={formData.teamSize}
-            onChange={handleChange}
-          />
+
         </div>
       </section>
 

@@ -3,6 +3,7 @@ import { Trophy, ExternalLink, Pencil, ChevronUp, Flag, Save } from 'lucide-reac
 import Button from '../../../common/Button/Button';
 import Pagination from '../../../common/Pagination/Pagination';
 import { useSubmissions } from '../../../../hooks/useSubmissions';
+import { sanitizeUrl } from '../../../../utils/sanitizeUrl';
 
 const PAGE_SIZE = 10;
 
@@ -170,13 +171,13 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
                       </div>
 
                       {/* Links */}
-                      <a href={team.repoUrl} target="_blank" rel="noopener noreferrer"
+                      <a href={sanitizeUrl(team.repoUrl)} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 font-medium underline underline-offset-2 break-all">
                         <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                         {team.repoUrl}
                       </a>
                       {team.demoUrl && (
-                        <a href={team.demoUrl} target="_blank" rel="noopener noreferrer"
+                        <a href={sanitizeUrl(team.demoUrl)} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-2 text-sm text-ink-secondary hover:text-ink-primary underline underline-offset-2 break-all">
                           <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                           Demo: {team.demoUrl}

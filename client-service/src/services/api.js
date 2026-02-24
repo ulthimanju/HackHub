@@ -1,5 +1,15 @@
 import axios from 'axios';
 
+/**
+ * Pre-configured Axios instance used by all service modules.
+ *
+ * - Base URL: `/api` (proxied to the API Gateway in development; nginx in production)
+ * - Request interceptor: attaches `Authorization: Bearer <token>` from localStorage
+ * - Response interceptor:
+ *     - Unwraps `response.data` so callers receive the payload directly
+ *     - Redirects to `/login` and clears stored credentials on HTTP 401
+ */
+
 const api = axios.create({
   baseURL: '/api', // This should be proxied to the API Gateway (8000)
   headers: {
@@ -34,3 +44,17 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+/**
+ * Extracts a human-readable error message from an Axios error.
+ * Handles: structured `{ message }` responses, plain string responses, and generic JS errors.
+ *
+ * @param {Error}  err                - The caught error.
+ * @param {string} [fallback]         - Fallback text if no message can be extracted.
+ * @returns {string}
+ */
+export const extractErrorMessage = (err, fallback = 'An unexpected error occurred.') =>
+  err?.response?.data?.message
+  ?? (typeof err?.response?.data === 'string' ? err.response.data : null)
+  ?? err?.message
+  ?? fallback;

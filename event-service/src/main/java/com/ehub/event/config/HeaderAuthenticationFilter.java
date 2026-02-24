@@ -15,23 +15,31 @@ import java.util.List;
 
 public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
+    private final String internalSecret;
+
+    public HeaderAuthenticationFilter(String internalSecret) {
+        this.internalSecret = internalSecret;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String userId = request.getHeader("X-User-Id");
-        String role = request.getHeader("X-User-Role");
+        String incomingSecret = request.getHeader("X-Internal-Secret");
 
-        if (userId != null && role != null) {
-            List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-                    new SimpleGrantedAuthority("ROLE_" + role)
-            );
+        // Only trust X-User-* headers when the request carries the gateway's internal secret
+        if (internalSecret != null && !internalSecret.isBlank() && internalSecret.equals(incomingSecret)) {
+            String userId = request.getHeader("X-User-Id");
+            String role   = request.getHeader("X-User-Role");
 
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    userId, null, authorities
-            );
-
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            if (userId != null && role != null) {
+                List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+                        new SimpleGrantedAuthority("ROLE_" + role)
+                );
+                SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(userId, null, authorities)
+                );
+            }
         }
 
         filterChain.doFilter(request, response);

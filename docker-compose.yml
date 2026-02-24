@@ -40,6 +40,8 @@ services:
         target: SPRING_DATASOURCE_PASSWORD
       - source: jwt-secret
         target: APPLICATION_SECURITY_JWT_SECRET_KEY
+      - source: internal-secret
+        target: GATEWAY_INTERNAL_SECRET
     networks:
       - ehub-network
 
@@ -90,6 +92,8 @@ services:
     secrets:
       - source: jwt-secret
         target: APPLICATION_SECURITY_JWT_SECRET_KEY
+      - source: internal-secret
+        target: GATEWAY_INTERNAL_SECRET
     networks:
       - ehub-network
 
@@ -130,6 +134,8 @@ services:
     secrets:
       - source: db-password
         target: SPRING_DATASOURCE_PASSWORD
+      - source: internal-secret
+        target: GATEWAY_INTERNAL_SECRET
     networks:
       - ehub-network
 
@@ -151,6 +157,8 @@ services:
         target: GROQ_API_KEY
       - source: github-token
         target: GITHUB_TOKEN
+      - source: internal-secret
+        target: GATEWAY_INTERNAL_SECRET
     networks:
       - ehub-network
 
@@ -171,6 +179,8 @@ secrets:
     file: .secrets/db-password.txt
   jwt-secret:
     file: .secrets/jwt-secret.txt
+  internal-secret:
+    file: .secrets/internal-secret.txt
   groq-api-key:
     file: .secrets/groq-api-key.txt
   gmail-app-password:

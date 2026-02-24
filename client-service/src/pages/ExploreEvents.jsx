@@ -1,28 +1,26 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import eventService from '../services/eventService';
-import Button from '../components/common/Button/Button';
-import Modal from '../components/common/Modal/Modal';
-import Alert from '../components/common/Alert/Alert';
-import EventCard from '../components/features/events/EventCard/EventCard';
-import EventFilters from '../components/common/EventFilters/EventFilters';
-import Pagination from '../components/common/Pagination/Pagination';
-import { Search, CheckCircle2 } from 'lucide-react';
-import { ALL_THEMES } from '../constants/themes';
-
-const PAGE_SIZE = 12;
+import { useAuth } from '@/hooks/useAuth';
+import { useEvents } from '@/hooks/useEvents';
+import { useRegistration } from '@/hooks/useRegistration';
+import Button from '@/components/common/Button/Button';
+import Modal from '@/components/common/Modal/Modal';
+import Alert from '@/components/common/Alert/Alert';
+import EventCard from '@/components/features/events/EventCard/EventCard';
+import EventFilters from '@/components/common/EventFilters/EventFilters';
+import Pagination from '@/components/common/Pagination/Pagination';
+import { CheckCircle2 } from 'lucide-react';
+import { ALL_THEMES } from '@/constants/themes';
 
 const STATUS_TABS = [
-  { label: 'All', value: 'all' },
+  { label: 'All',               value: 'all' },
   { label: 'Registration Open', value: 'registration_open' },
-  { label: 'Upcoming', value: 'upcoming' },
-  { label: 'Ongoing', value: 'ongoing' },
-  { label: 'Judging', value: 'judging' },
-  { label: 'Results', value: 'results_announced' },
-  { label: 'Completed', value: 'completed' },
+  { label: 'Upcoming',          value: 'upcoming' },
+  { label: 'Ongoing',           value: 'ongoing' },
+  { label: 'Judging',           value: 'judging' },
+  { label: 'Results',           value: 'results_announced' },
+  { label: 'Completed',         value: 'completed' },
 ];
-
 
 const ExploreEvents = () => {
   const { user } = useAuth();
@@ -30,103 +28,19 @@ const ExploreEvents = () => {
   const [searchParams] = useSearchParams();
   const search = searchParams.get('q') || '';
 
-  const [events, setEvents] = useState([]);
-  const [registeredIds, setRegisteredIds] = useState(new Set());
-  const [registrationStatuses, setRegistrationStatuses] = useState({}); // eventId -> { id, status }
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [activeTab, setActiveTab]       = React.useState('all');
+  const [activeThemes, setActiveThemes] = React.useState([]);
 
-  const [activeTab, setActiveTab] = useState('all');
-  const [activeThemes, setActiveThemes] = useState([]);
-  const [eventsPage, setEventsPage] = useState(0);
+  const {
+    filtered, paginatedEvents, loading, error,
+    page, setPage, totalPages, tabCounts,
+    registeredIds, registrationStatuses, markRegistered,
+  } = useEvents({ search, activeTab, activeThemes });
 
-  const [registerEvent, setRegisterEvent] = useState(null); // event object to register for
-  const [registering, setRegistering] = useState(false);
-  const [registerError, setRegisterError] = useState('');
-  const [registerSuccess, setRegisterSuccess] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [all, myRegs] = await Promise.all([
-          eventService.getAllEvents(),
-          eventService.getMyRegistrationStatuses(),
-        ]);
-        setEvents(all);
-        const ids = new Set((myRegs || []).map(r => r.eventId));
-        setRegisteredIds(ids);
-        const statusMap = {};
-        (myRegs || []).forEach(r => { statusMap[r.eventId] = r; });
-        setRegistrationStatuses(statusMap);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load events.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  const filtered = useMemo(() => {
-    return events.filter(e => {
-      const matchesTab = activeTab === 'all' || e.status?.toLowerCase() === activeTab;
-      const matchesSearch =
-        !search.trim() ||
-        e.name?.toLowerCase().includes(search.toLowerCase()) ||
-        e.description?.toLowerCase().includes(search.toLowerCase()) ||
-        e.theme?.toLowerCase().includes(search.toLowerCase());
-      const eventThemes = e.theme ? e.theme.split(',').map(t => t.trim()) : [];
-      const matchesTheme = activeThemes.length === 0 ||
-        activeThemes.every(t => eventThemes.includes(t));
-      return matchesTab && matchesSearch && matchesTheme;
-    });
-  }, [events, activeTab, search, activeThemes]);
-
-  // Reset page when filters change
-  React.useEffect(() => { setEventsPage(0); }, [activeTab, search, activeThemes]);
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginatedEvents = filtered.slice(eventsPage * PAGE_SIZE, (eventsPage + 1) * PAGE_SIZE);
-
-  const handleRegister = async () => {
-    if (!registerEvent) return;
-    setRegistering(true);
-    setRegisterError('');
-    try {
-      await eventService.registerForEvent(registerEvent.id, {
-        userId: user.id,
-        username: user.username,
-        userEmail: user.email,
-      });
-      setRegisteredIds(prev => new Set([...prev, registerEvent.id]));
-      setRegistrationStatuses(prev => ({
-        ...prev,
-        [registerEvent.id]: { status: 'PENDING' },
-      }));
-      setRegisterSuccess(true);
-    } catch (err) {
-      setRegisterError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setRegistering(false);
-    }
-  };
-
-  const closeModal = () => {
-    setRegisterEvent(null);
-    setRegisterError('');
-    setRegisterSuccess(false);
-  };
-
-  const tabCounts = useMemo(() => {
-    const counts = {};
-    STATUS_TABS.forEach(t => {
-      counts[t.value] = t.value === 'all'
-        ? events.length
-        : events.filter(e => e.status?.toLowerCase() === t.value).length;
-    });
-    return counts;
-  }, [events]);
+  const {
+    registerEvent, registering, registerError, registerSuccess,
+    openModal, closeModal, handleRegister,
+  } = useRegistration(user, markRegistered);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 pb-20">
@@ -167,13 +81,12 @@ const ExploreEvents = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedEvents.map(event => {
-              const status = event.status?.toLowerCase() || 'upcoming';
+              const status      = event.status?.toLowerCase() || 'upcoming';
               const isRegistered = registeredIds.has(event.id);
-              const myReg = registrationStatuses[event.id];
+              const myReg       = registrationStatuses[event.id];
               const canRegister = status === 'registration_open' && !isRegistered;
-
               return (
                 <EventCard
                   key={event.id}
@@ -183,17 +96,17 @@ const ExploreEvents = () => {
                   onJoin={(eventId) => navigate(`/events/${eventId}`)}
                   onManage={(eventId) => navigate(`/events/${eventId}`)}
                   canRegister={canRegister}
-                  onRegister={() => setRegisterEvent(event)}
+                  onRegister={() => openModal(event)}
                 />
               );
             })}
           </div>
           <Pagination
-            page={eventsPage}
+            page={page}
             totalPages={totalPages}
-            onPageChange={setEventsPage}
+            onPageChange={setPage}
             totalItems={filtered.length}
-            pageSize={PAGE_SIZE}
+            pageSize={12}
           />
         </>
       )}

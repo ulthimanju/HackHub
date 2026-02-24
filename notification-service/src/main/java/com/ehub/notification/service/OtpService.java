@@ -22,6 +22,9 @@ public class OtpService {
     @Value("${app.otp.rate-limit.time-limit-minutes}")
     private int timeLimitMinutes;
 
+    private static final int MAX_VALIDATION_ATTEMPTS = 5;
+    private static final int BLOCK_DURATION_MINUTES  = 15;
+
     public String generateOtp(String email) {
         String otpKey = "OTP:" + email;
         String limitKey = "OTP_LIMIT:" + email;
@@ -52,10 +55,33 @@ public class OtpService {
     }
 
     public boolean validateOtp(String email, String otp) {
-        String storedOtp = redisTemplate.opsForValue().get("OTP:" + email);
+        String blockedKey = "OTP_BLOCKED:" + email;
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(blockedKey))) {
+            throw new RuntimeException(
+                String.format(MessageKeys.OTP_TOO_MANY_ATTEMPTS.getMessage(), BLOCK_DURATION_MINUTES));
+        }
+
+        String otpKey     = "OTP:" + email;
+        String attemptKey = "OTP_ATTEMPTS:" + email;
+        String storedOtp  = redisTemplate.opsForValue().get(otpKey);
+
         if (storedOtp != null && storedOtp.equals(otp)) {
-            redisTemplate.delete("OTP:" + email);
+            redisTemplate.delete(otpKey);
+            redisTemplate.delete(attemptKey);
             return true;
+        }
+
+        // Failed attempt — increment counter
+        Long attempts = redisTemplate.opsForValue().increment(attemptKey);
+        if (attempts != null && attempts == 1) {
+            redisTemplate.expire(attemptKey, 30, TimeUnit.MINUTES);
+        }
+        if (attempts != null && attempts >= MAX_VALIDATION_ATTEMPTS) {
+            redisTemplate.delete(otpKey);
+            redisTemplate.delete(attemptKey);
+            redisTemplate.opsForValue().set(blockedKey, "1", BLOCK_DURATION_MINUTES, TimeUnit.MINUTES);
+            throw new RuntimeException(
+                String.format(MessageKeys.OTP_TOO_MANY_ATTEMPTS.getMessage(), BLOCK_DURATION_MINUTES));
         }
         return false;
     }

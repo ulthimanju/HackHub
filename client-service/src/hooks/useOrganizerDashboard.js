@@ -2,6 +2,16 @@ import { useMemo } from 'react';
 import { useApi } from './useApi';
 import eventService from '../services/eventService';
 
+/**
+ * Fetches the authenticated organizer's events and aggregates stats across all of them.
+ *
+ * @returns {{
+ *   events: object[],
+ *   statsMap: Record<string, object|null>,
+ *   totals: { registrations: number, pending: number, submissions: number, evaluated: number },
+ *   loading: boolean,
+ * }}
+ */
 export function useOrganizerDashboard() {
   const { data, loading } = useApi(async () => {
     const evts = await eventService.getOrganizerEvents();

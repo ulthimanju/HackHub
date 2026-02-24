@@ -1,25 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useAbility } from '../hooks/useAbility';
+import { useAbility } from '@/hooks/useAbility';
 import { useRef } from 'react';
-import { useEventPermissions } from '../hooks/useEventPermissions';
-import eventService from '../services/eventService';
-import teamService from '../services/teamService';
-import Alert from '../components/common/Alert/Alert';
-import Badge from '../components/common/Badge/Badge';
-import Button from '../components/common/Button/Button';
-import Tabs from '../components/common/Tabs/Tabs';
-import TeamTab from '../components/features/events/TeamTab/TeamTab';
-import AdvanceStatusModal from '../components/features/events/AdvanceStatusModal/AdvanceStatusModal';
-import FinalizeResultsModal from '../components/features/events/FinalizeResultsModal/FinalizeResultsModal';
-import OverviewTab from '../components/features/events/OverviewTab/OverviewTab';
-import ProblemStatementsTab from '../components/features/events/ProblemStatementsTab/ProblemStatementsTab';
-import RegistrationsTab from '../components/features/events/RegistrationsTab/RegistrationsTab';
-import OrgTeamsTab from '../components/features/events/OrgTeamsTab/OrgTeamsTab';
-import SubmissionsTab from '../components/features/events/SubmissionsTab/SubmissionsTab';
-import LeaderboardTab from '../components/features/events/LeaderboardTab/LeaderboardTab';
-import ReferencesTab from '../components/features/events/ReferencesTab/ReferencesTab';
-import RulesTab from '../components/features/events/RulesTab/RulesTab';
+import { useEventPermissions } from '@/hooks/useEventPermissions';
+import { useEventDetails } from '@/hooks/useEventDetails';
+import Alert from '@/components/common/Alert/Alert';
+import Badge from '@/components/common/Badge/Badge';
+import Button from '@/components/common/Button/Button';
+import Tabs from '@/components/common/Tabs/Tabs';
+import TeamTab from '@/components/features/events/TeamTab/TeamTab';
+import AdvanceStatusModal from '@/components/features/events/AdvanceStatusModal/AdvanceStatusModal';
+import FinalizeResultsModal from '@/components/features/events/FinalizeResultsModal/FinalizeResultsModal';
+import OverviewTab from '@/components/features/events/OverviewTab/OverviewTab';
+import ProblemStatementsTab from '@/components/features/events/ProblemStatementsTab/ProblemStatementsTab';
+import RegistrationsTab from '@/components/features/events/RegistrationsTab/RegistrationsTab';
+import OrgTeamsTab from '@/components/features/events/OrgTeamsTab/OrgTeamsTab';
+import SubmissionsTab from '@/components/features/events/SubmissionsTab/SubmissionsTab';
+import LeaderboardTab from '@/components/features/events/LeaderboardTab/LeaderboardTab';
+import ReferencesTab from '@/components/features/events/ReferencesTab/ReferencesTab';
+import RulesTab from '@/components/features/events/RulesTab/RulesTab';
+import SettingsTab from '@/components/features/events/SettingsTab/SettingsTab';
 import { ArrowLeft, Hash, Check, X } from 'lucide-react';
 
 const EventDetails = () => {
@@ -29,36 +29,27 @@ const EventDetails = () => {
   const { isOrganizer } = useAbility();
   const tabsRef = useRef([]);
 
-  // ── State ──────────────────────────────────────────────────────────────────
-  const [eventDetails, setEventDetails]           = useState(null);
-  const [loading, setLoading]                     = useState(true);
-  const [error, setError]                         = useState('');
-  const [copied, setCopied]                       = useState(false);
-  const [copiedEmail, setCopiedEmail]             = useState(false);
-  const [registrations, setRegistrations]         = useState([]);
-  const [registrationsLoading, setRegistrationsLoading] = useState(false);
-  const [registrationsError, setRegistrationsError]     = useState('');
-  const [updatingId, setUpdatingId]               = useState(null);
-  const [statusUpdateError, setStatusUpdateError] = useState('');
-  const [myRegistration, setMyRegistration]       = useState(null);
-  const [orgTeams, setOrgTeams]                   = useState([]);
-  const [orgTeamsLoading, setOrgTeamsLoading]     = useState(false);
-  const [orgTeamsError, setOrgTeamsError]         = useState('');
-  const [advancingStatus, setAdvancingStatus]     = useState(false);
-  const [advanceError, setAdvanceError]           = useState('');
-  const [confirmAdvance, setConfirmAdvance]       = useState({ open: false, currentLabel: '', nextLabel: '', desc: '' });
-  const [confirmFinalize, setConfirmFinalize]     = useState(false);
-  const [finalizeError, setFinalizeError]         = useState('');
-  const [leaderboardTeams, setLeaderboardTeams]   = useState([]);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+  const [copied,      setCopied]      = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
-  const [activeTab, setActiveTab]                 = useState(0);
+  const {
+    eventDetails,
+    loading, error,
+    registrations, registrationsLoading, registrationsError,
+    updatingId, statusUpdateError,
+    myRegistration,
+    orgTeams, orgTeamsLoading, orgTeamsError,
+    advancingStatus, advanceError, confirmAdvance, setConfirmAdvance,
+    confirmFinalize, setConfirmFinalize, finalizeError,
+    leaderboardTeams, leaderboardLoading,
+    handlers,
+  } = useEventDetails(id, isOrganizer);
+
   const permissions = useEventPermissions(eventDetails);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
-
   // Jump to a tab by label when navigating back from a sub-page (e.g. AddProblems)
-  useEffect(() => {
+  React.useEffect(() => {
     if (location.state?.tab) {
       const idx = tabsRef.current.findIndex(t => t?.label === location.state.tab);
       if (idx >= 0) setActiveTab(idx);
@@ -79,137 +70,6 @@ const EventDetails = () => {
     setTimeout(() => setCopiedEmail(false), 2000);
   };
 
-  const handleStatusUpdate = async (registrationId, status) => {
-    setUpdatingId(registrationId);
-    setStatusUpdateError('');
-    try {
-      await eventService.updateRegistrationStatus(registrationId, status);
-      setRegistrations(prev => prev.map(r => r.id === registrationId ? { ...r, status } : r));
-      if (status === 'REJECTED') {
-        teamService.getTeamsByEvent(id).then(data => setOrgTeams(data)).catch(() => {});
-      }
-    } catch (err) {
-      setStatusUpdateError(err.response?.data || err.message || 'Failed to update status.');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
-
-  const refreshTeams = async () => {
-    const data = await teamService.getTeamsByEvent(id);
-    setOrgTeams(data);
-  };
-
-  const handleAdvanceConfirm = async () => {
-    setAdvancingStatus(true);
-    setAdvanceError('');
-    try {
-      await eventService.advanceEventStatus(id);
-      const updated = await eventService.getEventById(id);
-      setEventDetails(updated);
-      setConfirmAdvance(s => ({ ...s, open: false }));
-    } catch (e) {
-      setAdvanceError(e.response?.data || 'Failed to advance status');
-    } finally {
-      setAdvancingStatus(false);
-    }
-  };
-
-  const handleFinalizeConfirm = async () => {
-    setAdvancingStatus(true);
-    setFinalizeError('');
-    try {
-      await teamService.finalizeResults(id);
-      const updated = await eventService.getEventById(id);
-      setEventDetails(updated);
-      setConfirmFinalize(false);
-    } catch (e) {
-      setFinalizeError(e.response?.data || 'Failed to finalize results');
-    } finally {
-      setAdvancingStatus(false);
-    }
-  };
-
-  // Problem statement callbacks passed to ProblemStatementsTab
-  const handleAddProblems = async (filledRows) => {
-    await eventService.addProblemStatementsBulk(id, filledRows);
-    const updated = await eventService.getEventById(id);
-    setEventDetails(updated);
-  };
-
-  const handleUpdateProblem = async (problemId, data) => {
-    await eventService.updateProblemStatement(problemId, data);
-    setEventDetails(prev => ({
-      ...prev,
-      problemStatements: prev.problemStatements.map(p => p.id === problemId ? { ...p, ...data } : p),
-    }));
-  };
-
-  const handleDeleteProblem = async (problemId) => {
-    await eventService.deleteProblemStatement(problemId);
-    setEventDetails(prev => ({
-      ...prev,
-      problemStatements: prev.problemStatements.filter(p => p.id !== problemId),
-    }));
-  };
-
-  useEffect(() => {
-    const fetchEventDetails = async () => {
-      setLoading(true);
-      try {
-        const data = await eventService.getEventById(id);
-        setEventDetails(data);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch event details.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchRegistrations = async () => {
-      setRegistrationsLoading(true);
-      setRegistrationsError('');
-      try {
-        const data = await eventService.getEventRegistrations(id);
-        setRegistrations(data);
-      } catch (err) {
-        setRegistrationsError(err.response?.data?.message || 'Failed to load participants.');
-      } finally {
-        setRegistrationsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchEventDetails();
-      if (isOrganizer) {
-        fetchRegistrations();
-        setOrgTeamsLoading(true);
-        teamService.getTeamsByEvent(id)
-          .then(data => setOrgTeams(data))
-          .catch(err => setOrgTeamsError(err.response?.data?.message || 'Failed to load teams.'))
-          .finally(() => setOrgTeamsLoading(false));
-      } else {
-        eventService.getMyRegistrationStatuses().then(statuses => {
-          const reg = statuses.find(r => r.eventId === id);
-          if (reg) setMyRegistration(reg);
-        }).catch(() => {});
-      }
-    }
-  }, [id, isOrganizer]);
-
-  // Load teams for leaderboard when results are announced (visible to all users)
-  useEffect(() => {
-    if (!eventDetails || isOrganizer) return;
-    const status = eventDetails.status?.toLowerCase();
-    if (['results_announced', 'completed'].includes(status)) {
-      setLeaderboardLoading(true);
-      teamService.getTeamsByEvent(id)
-        .then(data => setLeaderboardTeams(data))
-        .catch(() => {})
-        .finally(() => setLeaderboardLoading(false));
-    }
-  }, [eventDetails?.status, id, isOrganizer]);
-
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -217,23 +77,12 @@ const EventDetails = () => {
       </div>
     );
   }
-
-  if (error) {
-    return <Alert type="error" title="Error">{error}</Alert>;
-  }
-
-  if (!eventDetails) {
-    return <Alert type="info" title="Not Found">Event details could not be loaded.</Alert>;
-  }
-
+  if (error)         return <Alert type="error" title="Error">{error}</Alert>;
+  if (!eventDetails) return <Alert type="info" title="Not Found">Event details could not be loaded.</Alert>;
 
   const statusVariants = {
-    upcoming: 'blue',
-    registration_open: 'success',
-    ongoing: 'orange',
-    judging: 'warning',
-    results_announced: 'info',
-    completed: 'secondary',
+    upcoming: 'blue', registration_open: 'success', ongoing: 'orange',
+    judging: 'warning', results_announced: 'info', completed: 'secondary',
   };
 
   const tabs = [
@@ -244,9 +93,6 @@ const EventDetails = () => {
           event={eventDetails}
           permissions={permissions}
           myRegistration={myRegistration}
-          advancingStatus={advancingStatus}
-          advanceError={advanceError}
-          setConfirmAdvance={setConfirmAdvance}
           copiedEmail={copiedEmail}
           copyEmail={copyEmail}
           onSwitchToTeamTab={() => {
@@ -263,29 +109,13 @@ const EventDetails = () => {
           eventId={id}
           problems={eventDetails.problemStatements}
           permissions={permissions}
-          onUpdate={handleUpdateProblem}
-          onDelete={handleDeleteProblem}
+          onUpdate={handlers.handleUpdateProblem}
+          onDelete={handlers.handleDeleteProblem}
         />
       ),
     },
-    {
-      label: 'References',
-      content: (
-        <ReferencesTab
-          eventId={id}
-          permissions={permissions}
-        />
-      ),
-    },
-    {
-      label: 'Rules',
-      content: (
-        <RulesTab
-          eventId={id}
-          permissions={permissions}
-        />
-      ),
-    },
+    { label: 'References', content: <ReferencesTab eventId={id} permissions={permissions} /> },
+    { label: 'Rules',      content: <RulesTab      eventId={id} permissions={permissions} /> },
     ...(permissions.isEventOwner ? [{
       label: 'Participants',
       content: (
@@ -295,7 +125,7 @@ const EventDetails = () => {
           error={registrationsError}
           updatingId={updatingId}
           statusUpdateError={statusUpdateError}
-          onStatusUpdate={handleStatusUpdate}
+          onStatusUpdate={handlers.handleStatusUpdate}
         />
       ),
     }] : []),
@@ -320,8 +150,8 @@ const EventDetails = () => {
           eventId={id}
           problemStatements={eventDetails.problemStatements}
           permissions={permissions}
-          onTeamsRefresh={refreshTeams}
-          onFinalizeClick={() => { setFinalizeError(''); setConfirmFinalize(true); }}
+          onTeamsRefresh={handlers.refreshTeams}
+          onFinalizeClick={() => { setConfirmFinalize(true); }}
         />
       ),
     }] : []),
@@ -340,9 +170,21 @@ const EventDetails = () => {
         />
       ),
     },
+    ...(permissions.isEventOwner ? [{
+      label: '⚙️ Settings',
+      content: (
+        <SettingsTab
+          event={eventDetails}
+          onUpdateEvent={handlers.handleUpdateEvent}
+          onDeleteEvent={handlers.handleDeleteEvent}
+          advancingStatus={advancingStatus}
+          advanceError={advanceError}
+          setConfirmAdvance={setConfirmAdvance}
+        />
+      ),
+    }] : []),
   ];
 
-  // Sync tabs into ref so the location.state handler can find by label
   tabsRef.current = tabs;
 
   return (
@@ -352,14 +194,14 @@ const EventDetails = () => {
         advancing={advancingStatus}
         error={advanceError}
         onCancel={() => setConfirmAdvance(s => ({ ...s, open: false }))}
-        onConfirm={handleAdvanceConfirm}
+        onConfirm={handlers.handleAdvanceConfirm}
       />
       <FinalizeResultsModal
         open={confirmFinalize}
         finalizing={advancingStatus}
         error={finalizeError}
         onCancel={() => setConfirmFinalize(false)}
-        onConfirm={handleFinalizeConfirm}
+        onConfirm={handlers.handleFinalizeConfirm}
       />
 
       {/* Header */}

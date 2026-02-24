@@ -1,5 +1,14 @@
 import api from './api';
 
+/**
+ * Team service — full lifecycle management for hackathon teams.
+ *
+ * Covers: creation, membership (join requests, invitations, responses, transfers, leave, dismantle),
+ * project submission, problem statement selection, skills/matchmaking, and judging/manual review.
+ *
+ * Note: several methods accept a `_leaderId` / `_userId` param that is currently unused by the API
+ * (auth is enforced server-side via JWT) — kept for call-site clarity.
+ */
 const teamService = {
   getTeamsByEvent:      (eventId, name, params)    => api.get(`/events/teams/${eventId}`, { params: { ...(name ? { name } : {}), ...params } }).then(r => r?.content ?? r),
   getTeamByShortCode:   (shortCode)               => api.get(`/events/teams/code/${shortCode}`),

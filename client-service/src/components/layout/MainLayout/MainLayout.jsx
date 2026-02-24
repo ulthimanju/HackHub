@@ -27,7 +27,9 @@ const MainLayout = memo(() => {
   }, [location.pathname]);
 
   const isEventDetails = location.pathname.startsWith('/events/');
-  const isExplorePage  = currentPage === 'explore';
+  const isExplorePage   = currentPage === 'explore';
+  const isDashboard     = currentPage === 'dashboard';
+  const showSearch      = isExplorePage || isDashboard;
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
 
@@ -48,8 +50,8 @@ const MainLayout = memo(() => {
     <div className={`min-h-screen ${theme.surface.page} flex flex-col`}>
       {/* ── Header (fixed) ── */}
       <header className={`fixed top-0 left-0 right-0 z-30 ${theme.surface.header}`}>
-        <div className="w-full px-5 h-14 flex items-center justify-between gap-4">
-          {/* Logo */}
+        <div className="relative w-full px-5 h-14 flex items-center">
+          {/* Logo — left */}
           <button
             onClick={() => handlePageChange('dashboard')}
             className="font-display font-bold text-base text-ink-primary hover:text-brand-600 transition-colors shrink-0"
@@ -57,9 +59,9 @@ const MainLayout = memo(() => {
             EHub
           </button>
 
-          {/* Search — only on Explore page */}
-          {isExplorePage && (
-            <div className="relative w-64 hidden sm:block">
+          {/* Search — absolutely centered */}
+          {showSearch && (
+            <div className="absolute left-1/2 -translate-x-1/2 w-72 hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
               <input
                 type="text"
@@ -79,7 +81,7 @@ const MainLayout = memo(() => {
             </div>
           )}
 
-          {/* Right controls */}
+          {/* Right controls — pushed to edge */}
           <div className="flex items-center gap-1.5 ml-auto">
             <NotificationBell
               notifications={notifications}
@@ -88,36 +90,6 @@ const MainLayout = memo(() => {
               markAllAsRead={markAllAsRead}
               clearAll={clearAll}
             />
-
-            <div className="w-px h-5 bg-surface-border mx-1" />
-
-            {/* Avatar / profile pill */}
-            <button
-              onClick={() => handlePageChange('profile')}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all duration-150 ${
-                currentPage === 'profile'
-                  ? 'bg-brand-50 ring-1 ring-brand-200'
-                  : 'hover:bg-surface-hover'
-              }`}
-            >
-              <div className="w-7 h-7 bg-brand-500 rounded-lg flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                {user?.username?.substring(0, 2).toUpperCase() ?? 'U'}
-              </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium text-ink-primary leading-none">{user?.username}</p>
-                <p className="text-xs text-ink-muted mt-0.5 capitalize">{user?.role}</p>
-              </div>
-            </button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-              className="!p-1.5 hover:bg-red-50 hover:text-red-600 text-ink-muted"
-              title="Sign out"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
           </div>
         </div>
       </header>
@@ -137,13 +109,15 @@ const MainLayout = memo(() => {
                   Dashboard
                 </NavItem>
               )}
-              <NavItem
-                icon={Calendar}
-                active={currentPage === 'my-events'}
-                onClick={() => handlePageChange('my-events')}
-              >
-                My Events
-              </NavItem>
+              {!isOrganizer && (
+                <NavItem
+                  icon={Calendar}
+                  active={currentPage === 'my-events'}
+                  onClick={() => handlePageChange('my-events')}
+                >
+                  My Events
+                </NavItem>
+              )}
               {!isOrganizer && (
                 <NavItem
                   icon={Compass}
@@ -154,6 +128,34 @@ const MainLayout = memo(() => {
                 </NavItem>
               )}
             </nav>
+
+            {/* Profile section at bottom of sidebar */}
+            <div className="shrink-0 border-t border-surface-border p-3">
+              <button
+                onClick={() => handlePageChange('profile')}
+                className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-all duration-150 ${
+                  currentPage === 'profile'
+                    ? 'bg-brand-50 ring-1 ring-brand-200'
+                    : 'hover:bg-surface-hover'
+                }`}
+              >
+                <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                  {user?.username?.substring(0, 2).toUpperCase() ?? 'U'}
+                </div>
+                <div className="flex-1 text-left overflow-hidden">
+                  <p className="text-sm font-medium text-ink-primary leading-none truncate">{user?.username}</p>
+                  <p className="text-xs text-ink-muted mt-0.5 capitalize">{user?.role}</p>
+                </div>
+              </button>
+              <button
+                onClick={logout}
+                title="Sign out"
+                className="mt-1 w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-ink-muted hover:bg-red-50 hover:text-red-600 transition-all duration-150"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                <span className="text-sm">Sign out</span>
+              </button>
+            </div>
           </aside>
         )}
 

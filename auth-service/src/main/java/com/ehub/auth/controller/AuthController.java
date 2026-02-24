@@ -36,7 +36,7 @@ public class AuthController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<UserResponse> updateProfile(Authentication authentication, @RequestBody UpdateProfileRequest request) {
+    public ResponseEntity<UserResponse> updateProfile(Authentication authentication, @Valid @RequestBody UpdateProfileRequest request) {
         return ResponseEntity.ok(service.updateProfile(authentication.getName(), request));
     }
 
@@ -47,8 +47,16 @@ public class AuthController {
     }
 
     @PostMapping("/search/by-skills")
-    public ResponseEntity<List<User>> getUsersBySkills(@RequestBody List<String> skills) {
-        return ResponseEntity.ok(service.getUsersBySkills(skills));
+    public ResponseEntity<List<UserResponse>> getUsersBySkills(@RequestBody List<String> skills) {
+        List<UserResponse> result = service.getUsersBySkills(skills).stream()
+                .map(u -> UserResponse.builder()
+                        .id(u.getId())
+                        .username(u.getUsername())
+                        .skills(u.getSkills())
+                        .bio(u.getBio())
+                        .build())
+                .toList();
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/register")

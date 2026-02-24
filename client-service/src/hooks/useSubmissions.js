@@ -1,9 +1,31 @@
 import { useState, useCallback } from 'react';
 import teamService from '../services/teamService';
 import aiService from '../services/aiService';
+import { extractErrorMessage } from '../services/api';
 
+/**
+ * Manages AI evaluation and manual organizer review state for all team submissions
+ * in a given event.
+ *
+ * @param {string}   eventId       - The event to evaluate.
+ * @param {Function} onTeamsRefresh - Callback to reload the teams list after a save/evaluate action.
+ * @returns {{
+ *   evaluating: boolean,
+ *   evaluateMsg: string,
+ *   reviewOpen: Record<string, boolean>,
+ *   reviewData: Record<string, { manualScore?: number, organizerNotes?: string }>,
+ *   reviewSaving: Record<string, boolean>,
+ *   reviewMsg: Record<string, string>,
+ *   handlers: {
+ *     saveReview: (teamId: string) => Promise<void>,
+ *     evaluateAll: () => Promise<void>,
+ *     toggleReview: (teamId: string) => void,
+ *     updateReviewField: (teamId: string, field: string, value: any) => void,
+ *   },
+ * }}
+ */
 export function useSubmissions(eventId, onTeamsRefresh) {
-  const [evaluating, setEvaluating]     = useState(false);
+  const [evaluating, setEvaluating]= useState(false);
   const [evaluateMsg, setEvaluateMsg]   = useState('');
   const [reviewOpen, setReviewOpen]     = useState({});
   const [reviewData, setReviewData]     = useState({});
@@ -36,7 +58,7 @@ export function useSubmissions(eventId, onTeamsRefresh) {
       setEvaluateMsg('AI evaluation started. Refresh to see results.');
       await onTeamsRefresh();
     } catch (e) {
-      setEvaluateMsg(e.response?.data?.message || 'AI evaluation failed.');
+      setEvaluateMsg(extractErrorMessage(e, 'AI evaluation failed.'));
     } finally {
       setEvaluating(false);
     }

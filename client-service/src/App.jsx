@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { EventCreationProvider } from './context/EventCreationContext';
 import { PageSpinner } from './components/common/Spinner/Spinner';
 import { useAbility } from './hooks/useAbility';
 
@@ -35,6 +36,13 @@ function ProtectedRoute({ children, allowedRoles }) {
   return children;
 }
 
+// Organizers go to dashboard; participants use My Events
+function MyEventsRoute() {
+  const { isOrganizer } = useAbility();
+  if (isOrganizer) return <Navigate to="/" replace />;
+  return <MyEvents />;
+}
+
 function AppRoutes() {
   const { user, loading } = useAuth();
 
@@ -60,13 +68,15 @@ function AppRoutes() {
       <Route 
         element={
           <ProtectedRoute>
-            <MainLayout />
+            <EventCreationProvider>
+              <MainLayout />
+            </EventCreationProvider>
           </ProtectedRoute>
         }
       >
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/my-events" element={<MyEvents />} />
+        <Route path="/my-events" element={<MyEventsRoute />} />
         <Route path="/my-events/create" element={
           <ProtectedRoute allowedRoles={['organizer']}>
             <CreateEvent />

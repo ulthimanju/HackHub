@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import eventService from '../services/eventService';
-import Button from '../components/common/Button/Button';
-import Alert from '../components/common/Alert/Alert';
+import eventService from '@/services/eventService';
+import { extractErrorMessage } from '@/services/api';
+import { useEventCreation } from '@/context/EventCreationContext';
+import Button from '@/components/common/Button/Button';
+import Alert from '@/components/common/Alert/Alert';
+import CreationStepIndicator from '@/components/features/events/CreationStepIndicator/CreationStepIndicator';
 import { ArrowLeft, BookOpen, Plus, Trash2 } from 'lucide-react';
 
 const emptyRow = () => ({ name: '', statement: '', requirements: '' });
@@ -10,10 +13,15 @@ const emptyRow = () => ({ name: '', statement: '', requirements: '' });
 export default function AddProblems() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { state: creationState, problemsAdded } = useEventCreation();
 
-  const [rows, setRows]           = useState([emptyRow()]);
+  // True when arriving here directly after creating a new event
+  const isCreationFlow = creationState.mode === 'create' && creationState.step === 'problems';
+  const eventName      = creationState.eventName || '';
+
+  const [rows, setRows]             = useState([emptyRow()]);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError]         = useState('');
+  const [error, setError]           = useState('');
 
   const updateRow = (index, field, value) =>
     setRows(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
@@ -35,11 +43,25 @@ export default function AddProblems() {
         id,
         filledRows.map(r => ({ name: r.name.trim(), statement: r.statement.trim(), requirements: r.requirements.trim() }))
       );
-      navigate(`/events/${id}`, { state: { tab: 'Problems' } });
+      if (isCreationFlow) {
+        problemsAdded();
+        navigate(`/events/${id}`, { state: { success: 'Event created successfully!' } });
+      } else {
+        navigate(`/events/${id}`, { state: { tab: 'Problems' } });
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add problem statements.');
+      setError(extractErrorMessage(err, 'Failed to add problem statements.'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSkip = () => {
+    if (isCreationFlow) {
+      problemsAdded();
+      navigate(`/events/${id}`, { state: { success: 'Event created successfully!' } });
+    } else {
+      navigate(-1);
     }
   };
 
@@ -53,11 +75,18 @@ export default function AddProblems() {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div>
+        <div className="flex-1">
           <h1 className="font-display font-semibold text-2xl text-ink-primary">Add Problem Statements</h1>
-          <p className="text-sm text-ink-muted mt-0.5">Fill in each problem's details. All fields are required.</p>
+          <p className="text-sm text-ink-muted mt-0.5">
+            {eventName
+              ? <>For <span className="font-medium text-ink-secondary">{eventName}</span> — all fields are required.</>
+              : 'Fill in each problem\'s details. All fields are required.'}
+          </p>
         </div>
       </div>
+
+      {/* Step indicator — only shown in the guided creation flow */}
+      {isCreationFlow && <CreationStepIndicator currentStep="problems" />}
 
       {error && <Alert type="error" title="Error">{error}</Alert>}
 
@@ -65,7 +94,6 @@ export default function AddProblems() {
       <div className="bg-white border border-surface-border rounded-xl shadow-card p-6 space-y-0">
         {rows.map((r, index) => (
           <React.Fragment key={index}>
-            {/* Divider between problems */}
             {index > 0 && (
               <div className="flex items-center gap-3 py-5">
                 <div className="flex-1 border-t border-surface-border" />
@@ -77,12 +105,10 @@ export default function AddProblems() {
             )}
 
             <div className="flex gap-4 items-start">
-              {/* Number badge */}
               <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center shrink-0 mt-1">
                 <span className="text-xs font-bold text-blue-500">{index + 1}</span>
               </div>
 
-              {/* Fields */}
               <div className="flex-1 space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-ink-muted uppercase tracking-wide mb-1.5">
@@ -121,7 +147,6 @@ export default function AddProblems() {
                 </div>
               </div>
 
-              {/* Remove button */}
               {rows.length > 1 && (
                 <button
                   onClick={() => removeRow(index)}
@@ -135,7 +160,6 @@ export default function AddProblems() {
           </React.Fragment>
         ))}
 
-        {/* Add another */}
         <div className="pt-5">
           <button
             onClick={() => setRows(prev => [...prev, emptyRow()])}
@@ -149,7 +173,9 @@ export default function AddProblems() {
 
       {/* Footer actions */}
       <div className="flex items-center justify-between pt-2">
-        <Button variant="ghost" onClick={() => navigate(-1)}>Cancel</Button>
+        <Button variant="ghost" onClick={handleSkip}>
+          {isCreationFlow ? 'Skip for now' : 'Cancel'}
+        </Button>
         <Button
           variant="primary"
           size="lg"

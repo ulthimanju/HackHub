@@ -21,7 +21,7 @@ export const theme = {
   surface: {
     page:    'bg-surface-page',
     card:    'bg-white border border-surface-border rounded-xl shadow-card',
-    header:  'bg-white border-b border-surface-border sticky top-0 z-10',
+    header:  'bg-white border-b border-surface-border',
     sidebar: 'bg-white border-r border-surface-border',
     divider: 'border-surface-border',
   },

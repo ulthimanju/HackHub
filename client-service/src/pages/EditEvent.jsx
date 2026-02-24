@@ -1,70 +1,95 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import eventService from '../services/eventService';
-import EventForm from '../components/features/events/EventForm/EventForm';
-import Alert from '../components/common/Alert/Alert';
-import { PageSpinner } from '../components/common/Spinner/Spinner';
+import eventService from '@/services/eventService';
+import { extractErrorMessage } from '@/services/api';
+import { useEventCreation } from '@/context/EventCreationContext';
+import EventForm from '@/components/features/events/EventForm/EventForm';
+import Alert from '@/components/common/Alert/Alert';
+import Button from '@/components/common/Button/Button';
 import { ArrowLeft } from 'lucide-react';
 
-export default function EditEvent() {
+const EditEvent = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { state: creationState, startEdit, eventUpdated } = useEventCreation();
 
-  const [eventData, setEventData] = useState(null);
-  const [loading, setLoading]     = useState(true);
-  const [submitLoading, setSubmitLoading] = useState(false);
-  const [error, setError]         = useState('');
+  const [eventDetails,   setEventDetails]   = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState('');
+  const [updateLoading,  setUpdateLoading]  = useState(false);
+  const [updateError,    setUpdateError]    = useState('');
 
   useEffect(() => {
+    // Reuse cached data from context if it's for this event (avoids a redundant GET)
+    if (creationState.mode === 'edit' && creationState.eventId === id && creationState.eventData) {
+      setEventDetails(creationState.eventData);
+      setLoading(false);
+      return;
+    }
+
     eventService.getEventById(id)
-      .then(setEventData)
-      .catch(() => setError('Failed to load event details.'))
-      .finally(() => setLoading(false));
+      .then(data => {
+        setEventDetails(data);
+        startEdit(id, data);
+      })
+      .catch(err  => setError(extractErrorMessage(err, 'Failed to fetch event details.')))
+      .finally(()  => setLoading(false));
   }, [id]);
 
   const handleSubmit = async (formData) => {
-    setSubmitLoading(true);
-    setError('');
+    setUpdateLoading(true);
+    setUpdateError('');
     try {
-      await eventService.updateEvent(id, formData);
-      navigate(`/events/${id}`, { state: { tab: 'Overview' } });
-    } catch (e) {
-      setError(e.response?.data?.message || 'Failed to update event.');
+      const updated = await eventService.updateEvent(id, formData);
+      // Cache whatever was returned (may be null/undefined if API returns no body)
+      eventUpdated(updated ?? formData);
+      navigate(`/events/${id}`);
+    } catch (err) {
+      setUpdateError(extractErrorMessage(err, 'Failed to update event.'));
     } finally {
-      setSubmitLoading(false);
+      setUpdateLoading(false);
     }
   };
 
-  if (loading) return <PageSpinner />;
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto py-8">
+        <Alert type="error" title="Error">{error}</Alert>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate('/')}>
+          Back to Dashboard
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-4 space-y-6">
-      {/* Page header */}
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded-lg hover:bg-surface-hover text-ink-muted transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="font-display font-semibold text-2xl text-ink-primary">Edit Event</h1>
-          <p className="text-sm text-ink-muted mt-0.5">Update the details for this hackathon.</p>
-        </div>
+        <Button variant="secondary" size="sm" icon={ArrowLeft} onClick={() => navigate(`/events/${id}`)}>
+          Back
+        </Button>
+        <h2 className="text-2xl font-bold text-gray-900">Edit Event</h2>
       </div>
 
-      {error && <Alert type="error" title="Error">{error}</Alert>}
-
-      <div className="bg-white border border-surface-border rounded-xl shadow-card p-6">
-        {eventData && (
-          <EventForm
-            initialData={eventData}
-            onSubmit={handleSubmit}
-            onCancel={() => navigate(-1)}
-            loading={submitLoading}
-          />
-        )}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+        {updateError && <Alert type="error" title="Update Failed" className="mb-6">{updateError}</Alert>}
+        <EventForm
+          initialData={eventDetails}
+          onSubmit={handleSubmit}
+          onCancel={() => navigate(`/events/${id}`)}
+          loading={updateLoading}
+        />
       </div>
     </div>
   );
-}
+};
+
+export default EditEvent;

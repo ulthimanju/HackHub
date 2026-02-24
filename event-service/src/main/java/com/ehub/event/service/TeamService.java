@@ -374,9 +374,17 @@ public class TeamService {
     }
 
     @Transactional
-    public void updateScore(String teamId, Double score, String aiSummary) {
+    public void updateScore(String teamId, Double score, String aiSummary, String requesterId) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
+
+        Event event = eventRepository.findById(team.getEventId())
+                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+
+        if (!event.getOrganizerId().equals(requesterId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the event owner can set scores.");
+        }
+
         team.setScore(score);
         team.setAiSummary(aiSummary);
         teamRepository.save(team);

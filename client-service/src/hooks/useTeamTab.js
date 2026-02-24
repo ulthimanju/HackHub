@@ -1,8 +1,36 @@
 import { useState, useCallback } from 'react';
 import teamService from '../services/teamService';
+import { extractErrorMessage } from '../services/api';
 
+/**
+ * Full team lifecycle management for an event's TeamTab.
+ * Loads teams for the event and exposes all team actions (create, join, leave, submit, etc.)
+ * with shared loading/error state via the internal `withAction` helper.
+ *
+ * @param {string} eventId - The event to manage teams for.
+ * @param {{ id: string, username: string, email: string }} user - The authenticated user.
+ * @returns {{
+ *   teams: object[],
+ *   loading: boolean,
+ *   error: string,
+ *   actionLoading: string,
+ *   actionError: string,
+ *   fetchTeams: () => Promise<void>,
+ *   handlers: {
+ *     createTeam: (name: string) => Promise<void>,
+ *     requestToJoin: (teamId: string) => Promise<void>,
+ *     respondToInvite: (teamId: string, targetUserId: string, accept: boolean) => Promise<void>,
+ *     leaveTeam: (teamId: string) => Promise<void>,
+ *     dismantleTeam: (teamId: string) => Promise<void>,
+ *     inviteMember: (teamId: string, payload: object) => Promise<void>,
+ *     submitProject: (teamId: string, payload: object) => Promise<void>,
+ *     selectProblemStatement: (teamId: string, problemId: string|null) => Promise<void>,
+ *     transferLeadership: (teamId: string, newLeaderId: string) => Promise<void>,
+ *   },
+ * }}
+ */
 export function useTeamTab(eventId, user) {
-  const [teams, setTeams]             = useState([]);
+  const [teams, setTeams]= useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
   const [actionLoading, setActionLoading] = useState('');
@@ -15,7 +43,7 @@ export function useTeamTab(eventId, user) {
       const data = await teamService.getTeamsByEvent(eventId);
       setTeams(data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load teams.');
+      setError(extractErrorMessage(err, 'Failed to load teams.'));
     } finally {
       setLoading(false);
     }
@@ -28,7 +56,7 @@ export function useTeamTab(eventId, user) {
       await fn();
       await fetchTeams();
     } catch (err) {
-      setActionError(err.response?.data?.message || err.response?.data || 'Action failed.');
+      setActionError(extractErrorMessage(err, 'Action failed.'));
     } finally {
       setActionLoading('');
     }

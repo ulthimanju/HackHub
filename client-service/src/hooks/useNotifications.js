@@ -24,6 +24,24 @@ function persist(userId, notifications) {
   }
 }
 
+/**
+ * Real-time notification system backed by STOMP/WebSocket with localStorage persistence.
+ *
+ * Subscribes to two channels when the user is authenticated:
+ * - `/user/queue/alerts`  — personal alerts (registration approvals/rejections)
+ * - `/topic/global-alerts` — broadcast alerts (results announced)
+ *
+ * Notifications are capped at 50 entries and persisted per-user in localStorage.
+ *
+ * @param {{ id: string }|null} user - The authenticated user; pass null/undefined to disconnect.
+ * @returns {{
+ *   notifications: object[],
+ *   unreadCount: number,
+ *   markAsRead: (id: string) => void,
+ *   markAllAsRead: () => void,
+ *   clearAll: () => void,
+ * }}
+ */
 export function useNotifications(user) {
   const [notifications, setNotifications] = useState([]);
   const clientRef = useRef(null);
