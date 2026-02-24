@@ -8,8 +8,6 @@ import java.util.List;
 public class TeamCreateRequest {
     @NotBlank(message = "Team name is required")
     private String name;
-    
-    private String userId;  // always overridden by the server from the authenticated principal
 
     private String username;
     private String userEmail;

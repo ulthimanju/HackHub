@@ -26,8 +26,7 @@ public class TeamController {
 
     @PostMapping("/{eventId}")
     public ResponseEntity<String> createTeam(@PathVariable String eventId, @Valid @RequestBody TeamCreateRequest request) {
-        request.setUserId(getCurrentUserId());
-        teamService.createTeam(eventId, request);
+        teamService.createTeam(eventId, request, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.TEAM_CREATED.getMessage());
     }
 
@@ -73,6 +72,15 @@ public class TeamController {
             @PathVariable String teamId,
             @RequestParam boolean accept) {
         teamService.respondToInvite(teamId, getCurrentUserId(), accept);
+        return ResponseEntity.ok(MessageKeys.TEAM_STATUS_UPDATED.getMessage());
+    }
+
+    @PatchMapping("/{teamId}/requests/{requestingUserId}/respond")
+    public ResponseEntity<String> respondToJoinRequest(
+            @PathVariable String teamId,
+            @PathVariable String requestingUserId,
+            @RequestParam boolean accept) {
+        teamService.respondToJoinRequest(teamId, getCurrentUserId(), requestingUserId, accept);
         return ResponseEntity.ok(MessageKeys.TEAM_STATUS_UPDATED.getMessage());
     }
 
@@ -127,7 +135,7 @@ public class TeamController {
     public ResponseEntity<String> updateManualReview(
             @PathVariable String teamId,
             @RequestBody ManualReviewRequest request) {
-        teamService.updateManualReview(teamId, request.getManualScore(), request.getOrganizerNotes());
+        teamService.updateManualReview(teamId, request.getManualScore(), request.getOrganizerNotes(), getCurrentUserId());
         return ResponseEntity.ok("Review saved");
     }
 

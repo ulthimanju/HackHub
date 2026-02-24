@@ -65,7 +65,6 @@ export function useTeamTab(eventId, user) {
   const createTeam = (name) => withAction('create', () =>
     teamService.createTeam(eventId, {
       name,
-      userId:    user.id,
       username:  user.username,
       userEmail: user.email,
     })
@@ -82,6 +81,11 @@ export function useTeamTab(eventId, user) {
   const respondToInvite = (teamId, targetUserId, accept) =>
     withAction(`rsp-${targetUserId}`, () =>
       teamService.respondToInvite(teamId, targetUserId, accept)
+    );
+
+  const respondToJoinRequest = (teamId, requestingUserId, accept) =>
+    withAction(`rsp-${requestingUserId}`, () =>
+      teamService.respondToJoinRequest(teamId, requestingUserId, accept)
     );
 
   const leaveTeam = (teamId) => withAction('leave', () =>
@@ -113,7 +117,7 @@ export function useTeamTab(eventId, user) {
     actionLoading, actionError,
     fetchTeams,
     handlers: {
-      createTeam, requestToJoin, respondToInvite,
+      createTeam, requestToJoin, respondToInvite, respondToJoinRequest,
       leaveTeam, dismantleTeam, inviteMember,
       submitProject, selectProblemStatement, transferLeadership,
     },

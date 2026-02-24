@@ -20,6 +20,8 @@ import com.ehub.event.enums.TeamRole;
 import com.ehub.event.util.ShortCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import com.ehub.event.exception.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -56,7 +58,7 @@ public class EventService {
 
     public EventStatsResponse getEventStats(String eventId) {
         eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         return EventStatsResponse.builder()
                 .totalRegistrations(registrationRepository.countByEventId(eventId))
                 .pendingRegistrations(registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.PENDING))
@@ -130,16 +132,38 @@ public class EventService {
 
     public EventResponse getEventById(String id) {
         Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         long count = registrationRepository.countByEventIdAndStatus(id, RegistrationStatus.APPROVED);
         return mapToEventResponse(event, Map.of(id, count));
     }
 
     public EventResponse getEventByShortCode(String shortCode) {
         Event event = eventRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         long count = registrationRepository.countByEventIdAndStatus(event.getId(), RegistrationStatus.APPROVED);
         return mapToEventResponse(event, Map.of(event.getId(), count));
+    }
+
+    /** Cross-field date validation: registration must close before the event starts. */
+    private void validateEventDates(EventRequest request) {
+        if (request.getRegistrationEndDate() != null && request.getStartDate() != null
+                && !request.getRegistrationEndDate().isBefore(request.getStartDate())) {
+            throw new RuntimeException(MessageKeys.REGISTRATION_END_BEFORE_START.getMessage());
+        }
+        if (request.getStartDate() != null && request.getEndDate() != null
+                && !request.getStartDate().isBefore(request.getEndDate())) {
+            throw new RuntimeException("Event start date must be before end date.");
+        }
+    }
+
+    /** Fetches the event and verifies the requester is its owner. Throws 403 otherwise. */
+    private Event requireEventOwnership(String eventId, String requesterId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+        if (!event.getOrganizerId().equals(requesterId)) {
+            throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_ORGANIZER.getMessage());
+        }
+        return event;
     }
 
     private EventResponse mapToEventResponse(Event event, Map<String, Long> registeredCounts) {
@@ -182,6 +206,7 @@ public class EventService {
     }
 
     public String createEvent(EventRequest request, String currentUserId) {
+        validateEventDates(request);
         String id = UUID.randomUUID().toString();
         String shortCode = ShortCodeGenerator.generate(8);
         
@@ -214,12 +239,8 @@ public class EventService {
 
     @Transactional
     public void updateEvent(String id, EventRequest request, String requesterId) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
-        }
+        validateEventDates(request);
+        Event event = requireEventOwnership(id, requesterId);
 
         // Ambiguity 4.2: Retroactively validate teamSize reduction
         if (request.getTeamSize() != null && event.getTeamSize() != null
@@ -259,11 +280,7 @@ public class EventService {
 
     @Transactional
     public boolean toggleJudging(String id, String requesterId) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
-        }
+        Event event = requireEventOwnership(id, requesterId);
         boolean newValue = !Boolean.TRUE.equals(event.getJudging());
         event.setJudging(newValue);
         event.setStatus(event.calculateCurrentStatus());
@@ -273,27 +290,17 @@ public class EventService {
 
     @Transactional
     public void deleteEvent(String id, String requesterId) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
-        }
-        
+        requireEventOwnership(id, requesterId);
         eventRepository.deleteById(id);
     }
 
     @Transactional
     public EventStatus advanceEventStatus(String id, String requesterId) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
-        }
+        Event event = requireEventOwnership(id, requesterId);
 
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        EventStatus current = event.calculateCurrentStatus();
+        // Use the stored DB status as the authoritative current state
+        EventStatus current = event.getStatus() != null ? event.getStatus() : EventStatus.UPCOMING;
 
         switch (current) {
             case UPCOMING -> {
@@ -336,7 +343,7 @@ public class EventService {
                 // Mark as completed
                 event.setResultsDate(now.minusSeconds(1));
             }
-            default -> throw new RuntimeException("Event cannot be advanced from status: " + current);
+            default -> throw new IllegalStateException("Event cannot be advanced from status: " + current);
         }
 
         event.setStatus(event.calculateCurrentStatus());
@@ -373,14 +380,9 @@ public class EventService {
 
     @Transactional
     public void addProblemStatements(String eventId, List<ProblemStatementRequest> requests, String requesterId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
-        }
+        Event event = requireEventOwnership(eventId, requesterId);
         if (!isRegistrationPhase(event)) {
-            throw new RuntimeException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
+            throw new IllegalStateException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
         }
 
         int currentCount = event.getProblemStatements().size();
@@ -404,14 +406,9 @@ public class EventService {
 
     @Transactional
     public void addProblemStatement(String eventId, ProblemStatementRequest request, String requesterId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
-        }
+        Event event = requireEventOwnership(eventId, requesterId);
         if (!isRegistrationPhase(event)) {
-            throw new RuntimeException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
+            throw new IllegalStateException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
         }
 
         String id = UUID.randomUUID().toString();
@@ -432,10 +429,13 @@ public class EventService {
     @Transactional
     public void updateProblemStatement(String id, ProblemStatementRequest request, String requesterId) {
         ProblemStatement problem = problemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.PROBLEM_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PROBLEM_NOT_FOUND.getMessage()));
         
         if (!problem.getEvent().getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
+            throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_ORGANIZER.getMessage());
+        }
+        if (isEventStarted(problem.getEvent())) {
+            throw new IllegalStateException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
         }
 
         problem.setName(request.getName());
@@ -447,13 +447,13 @@ public class EventService {
     @Transactional
     public void deleteProblemStatement(String id, String requesterId) {
         ProblemStatement problem = problemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.PROBLEM_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PROBLEM_NOT_FOUND.getMessage()));
         
         if (!problem.getEvent().getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
+            throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_ORGANIZER.getMessage());
         }
         if (!isRegistrationPhase(problem.getEvent())) {
-            throw new RuntimeException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
+            throw new IllegalStateException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
         }
 
         problemRepository.deleteById(id);
@@ -461,21 +461,16 @@ public class EventService {
 
     @Transactional
     public void registerForEvent(String eventId, RegistrationRequest request, String currentUserId) {
-        // Enforce that the registration is for the authenticated user
-        if (!currentUserId.equals(request.getUserId())) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_SELF_REGISTER.getMessage());
-        }
-
         if (registrationRepository.existsByEventIdAndUserId(eventId, currentUserId)) {
-            throw new RuntimeException(MessageKeys.ALREADY_REGISTERED.getMessage());
+            throw new IllegalStateException(MessageKeys.ALREADY_REGISTERED.getMessage());
         }
 
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
 
         // Constraint: Check registration deadline
         if (event.getRegistrationEndDate() != null && LocalDateTime.now().isAfter(event.getRegistrationEndDate())) {
-            throw new RuntimeException(MessageKeys.REGISTRATION_CLOSED.getMessage());
+            throw new IllegalStateException(MessageKeys.REGISTRATION_CLOSED.getMessage());
         }
 
         // Constraint: Check max participants capacity
@@ -484,7 +479,7 @@ public class EventService {
                     .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
                     .count();
             if (approvedCount >= event.getMaxParticipants()) {
-                throw new RuntimeException(MessageKeys.EVENT_CAPACITY_REACHED.getMessage());
+                throw new IllegalStateException(MessageKeys.EVENT_CAPACITY_REACHED.getMessage());
             }
         }
 
@@ -544,10 +539,10 @@ public class EventService {
     @Transactional
     public void cancelRegistration(String registrationId, String currentUserId) {
         Registration registration = registrationRepository.findById(registrationId)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.REGISTRATION_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.REGISTRATION_NOT_FOUND.getMessage()));
         
         if (!registration.getUserId().equals(currentUserId)) {
-             throw new RuntimeException(MessageKeys.UNAUTHORIZED_CANCEL_REGISTRATION.getMessage());
+             throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_CANCEL_REGISTRATION.getMessage());
         }
 
         registrationRepository.delete(registration);
@@ -556,13 +551,13 @@ public class EventService {
     @Transactional
     public void updateRegistrationStatus(String registrationId, RegistrationStatus status, String requesterId) {
         Registration registration = registrationRepository.findById(registrationId)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.REGISTRATION_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.REGISTRATION_NOT_FOUND.getMessage()));
         
         Event event = eventRepository.findById(registration.getEventId())
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
 
         if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_MANAGE_REGISTRATIONS.getMessage());
+            throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_MANAGE_REGISTRATIONS.getMessage());
         }
 
         registration.setStatus(status);
@@ -606,7 +601,14 @@ public class EventService {
 
     /** Returns true only while event is in UPCOMING or REGISTRATION_OPEN phase. */
     private boolean isRegistrationPhase(Event event) {
-        EventStatus status = event.calculateCurrentStatus();
+        EventStatus status = event.getStatus();
         return status == EventStatus.UPCOMING || status == EventStatus.REGISTRATION_OPEN;
+    }
+
+    /** Returns true once participants are actively working (ONGOING or beyond). */
+    private boolean isEventStarted(Event event) {
+        EventStatus s = event.getStatus();
+        return s == EventStatus.ONGOING || s == EventStatus.JUDGING
+                || s == EventStatus.RESULTS_ANNOUNCED || s == EventStatus.COMPLETED;
     }
 }

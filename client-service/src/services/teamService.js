@@ -16,6 +16,7 @@ const teamService = {
   inviteMember:         (teamId, _leaderId, data)  => api.post(`/events/teams/${teamId}/invite`, data),
   requestToJoin:        (teamId, data)             => api.post(`/events/teams/${teamId}/request`, data),
   respondToInvite:      (teamId, _userId, accept)  => api.patch(`/events/teams/${teamId}/respond`, null, { params: { accept } }),
+  respondToJoinRequest: (teamId, requestingUserId, accept) => api.patch(`/events/teams/${teamId}/requests/${requestingUserId}/respond`, null, { params: { accept } }),
   dismantleTeam:        (teamId, _leaderId)        => api.delete(`/events/teams/${teamId}`),
   transferLeadership:   (teamId, _cLId, newLeaderId) => api.patch(`/events/teams/${teamId}/transfer`, null, { params: { newLeaderId } }),
   leaveTeam:            (teamId, _userId)          => api.delete(`/events/teams/${teamId}/leave`),
@@ -25,7 +26,7 @@ const teamService = {
   suggestMembers:       (teamId, params)           => api.get(`/events/matchmaking/suggest-members/${teamId}`, { params }),
   // Judging / results (domain: team scoring)
   updateManualReview:   (teamId, data)             => api.patch(`/events/teams/${teamId}/manual-review`, data),
-  finalizeResults:      (eventId)                  => api.patch(`/events/${eventId}/finalize-results`),
+  finalizeResults:      (eventId)                  => api.patch(`/events/${eventId}/finalize`),
 };
 
 export default teamService;

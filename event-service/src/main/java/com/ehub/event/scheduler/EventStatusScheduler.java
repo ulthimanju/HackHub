@@ -16,6 +16,16 @@ public class EventStatusScheduler {
     private final EventRepository eventRepository;
     private final MissionNotificationService missionNotificationService;
 
+    /** Canonical ordering used to decide whether a transition is "forward". */
+    private static final List<EventStatus> STATUS_ORDER = List.of(
+            EventStatus.UPCOMING,
+            EventStatus.REGISTRATION_OPEN,
+            EventStatus.ONGOING,
+            EventStatus.JUDGING,
+            EventStatus.RESULTS_ANNOUNCED,
+            EventStatus.COMPLETED
+    );
+
     @Scheduled(fixedRate = 60000) // Run every minute
     public void checkEventStatusTransitions() {
         List<Event> events = eventRepository.findAll();
@@ -24,13 +34,19 @@ public class EventStatusScheduler {
             EventStatus lastOfficialStatus = event.getStatus();
 
             if (lastOfficialStatus == null || lastOfficialStatus != currentActualStatus) {
-                event.setStatus(currentActualStatus);
-                eventRepository.save(event);
-                
-                // Trigger transition actions
-                handleTransition(event, lastOfficialStatus, currentActualStatus);
+                // Only advance — never downgrade a status that was manually set ahead
+                if (isForwardTransition(lastOfficialStatus, currentActualStatus)) {
+                    event.setStatus(currentActualStatus);
+                    eventRepository.save(event);
+                    handleTransition(event, lastOfficialStatus, currentActualStatus);
+                }
             }
         }
+    }
+
+    private boolean isForwardTransition(EventStatus from, EventStatus to) {
+        if (from == null) return true;
+        return STATUS_ORDER.indexOf(to) > STATUS_ORDER.indexOf(from);
     }
 
     private void handleTransition(Event event, EventStatus from, EventStatus to) {

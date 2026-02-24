@@ -151,7 +151,7 @@ public class EventController {
         return ResponseEntity.ok(judgingEnabled ? "JUDGING_ENABLED" : "JUDGING_DISABLED");
     }
 
-    @PatchMapping("/{id}/finalize-results")
+    @PatchMapping("/{id}/finalize")
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> finalizeResults(@PathVariable String id) {
         // Delegates to advanceEventStatus — event must be in JUDGING state

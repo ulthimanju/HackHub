@@ -72,7 +72,8 @@ public enum MessageKeys {
     SUBMISSION_BLOCKED_SCORE_ANNOUNCED("Submissions are locked. Your team's score has already been announced."),
     EVENT_LOCKED("This action is not allowed. The event has entered judging or results phase."),
     INVALID_STATUS_TRANSITION("Results can only be finalized when the event is in the Judging phase."),
-    PROBLEM_STATEMENTS_LOCKED("Problem statements cannot be added or removed once the registration phase has ended.");
+    PROBLEM_STATEMENTS_LOCKED("Problem statements cannot be added or removed once the registration phase has ended."),
+    REGISTRATION_END_BEFORE_START("Registration must close before the event starts.");
 
     private final String message;
 }

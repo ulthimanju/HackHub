@@ -4,6 +4,8 @@ import com.ehub.event.entity.Event;
 import com.ehub.event.entity.EventReference;
 import com.ehub.event.repository.EventReferenceRepository;
 import com.ehub.event.repository.EventRepository;
+import com.ehub.event.exception.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import com.ehub.event.util.MessageKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,10 +29,10 @@ public class ReferenceService {
     @Transactional
     public void upsertReferences(String eventId, String contentMd, String requesterId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
 
         if (!event.getOrganizerId().equals(requesterId)) {
-            throw new RuntimeException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
+            throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_CREATOR.getMessage());
         }
 
         EventReference ref = EventReference.builder()

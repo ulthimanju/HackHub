@@ -67,6 +67,9 @@ const TeamTab = ({ event, myRegistration }) => {
   const handleRespond = (teamId, targetUserId, accept) =>
     handlers.respondToInvite(teamId, targetUserId, accept);
 
+  const handleRespondToRequest = (teamId, requestingUserId, accept) =>
+    handlers.respondToJoinRequest(teamId, requestingUserId, accept);
+
   const handleLeave = () =>
     handlers.leaveTeam(myTeam.id).then(() => setConfirmLeave(false));
 
@@ -358,7 +361,7 @@ const TeamTab = ({ event, myRegistration }) => {
                     </div>
                     <div className="flex gap-1.5 shrink-0">
                       <button
-                        onClick={() => handleRespond(myTeam.id, m.userId, true)}
+                        onClick={() => handleRespondToRequest(myTeam.id, m.userId, true)}
                         disabled={!!actionLoading}
                         title="Accept"
                         className="w-8 h-8 rounded-lg bg-green-50 hover:bg-green-100 flex items-center justify-center text-green-600 disabled:opacity-40 transition-colors"
@@ -368,7 +371,7 @@ const TeamTab = ({ event, myRegistration }) => {
                           : <CheckCircle2 className="w-4 h-4" />}
                       </button>
                       <button
-                        onClick={() => handleRespond(myTeam.id, m.userId, false)}
+                        onClick={() => handleRespondToRequest(myTeam.id, m.userId, false)}
                         disabled={!!actionLoading}
                         title="Reject"
                         className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 disabled:opacity-40 transition-colors"

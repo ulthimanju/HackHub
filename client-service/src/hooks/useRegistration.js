@@ -48,7 +48,6 @@ export function useRegistration(user, onSuccess) {
     setRegisterError('');
     try {
       await eventService.registerForEvent(registerEvent.id, {
-        userId:    user.id,
         username:  user.username,
         userEmail: user.email,
       });
