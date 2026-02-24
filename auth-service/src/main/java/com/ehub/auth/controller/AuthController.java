@@ -100,7 +100,7 @@ public class AuthController {
             HttpServletRequest httpRequest) {
         String otp = body.get("otp");
         if (otp == null || otp.isBlank()) {
-            return ResponseEntity.badRequest().body(null);
+            throw new RuntimeException("OTP is required to upgrade role");
         }
         return ResponseEntity.ok(service.upgradeToOrganizer(authentication.getName(), otp, extractToken(httpRequest)));
     }
