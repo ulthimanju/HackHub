@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class OtpRequest {
-    @NotBlank
-    @Email
+    @NotBlank(message = "Email is required")
+    @Email(message = "Please enter a valid email address")
     private String email;
 }

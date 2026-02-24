@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class RegistrationRequest {
     private String username;
     
-    @NotBlank
-    @Email
+    @NotBlank(message = "Email is required")
+    @Email(message = "Please enter a valid email address")
     private String userEmail;
 }

@@ -13,12 +13,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PasswordResetRequest {
-    @NotBlank
-    @Email
+    @NotBlank(message = "Email is required")
+    @Email(message = "Please enter a valid email address")
     private String email;
-    @NotBlank
-    @Size(min = 6)
+    @NotBlank(message = "New password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String newPassword;
-    @NotBlank
+    @NotBlank(message = "OTP code is required")
     private String otp;
 }

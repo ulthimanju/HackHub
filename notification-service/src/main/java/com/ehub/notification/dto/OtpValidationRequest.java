@@ -6,9 +6,9 @@ import lombok.Data;
 
 @Data
 public class OtpValidationRequest {
-    @NotBlank
-    @Email
+    @NotBlank(message = "Email is required")
+    @Email(message = "Please enter a valid email address")
     private String email;
-    @NotBlank
+    @NotBlank(message = "OTP code is required")
     private String otp;
 }

@@ -6,11 +6,11 @@ import lombok.Data;
 
 @Data
 public class EmailRequest {
-    @NotBlank
-    @Email
+    @NotBlank(message = "Recipient email is required")
+    @Email(message = "Please enter a valid email address")
     private String to;
-    @NotBlank
+    @NotBlank(message = "Subject is required")
     private String subject;
-    @NotBlank
+    @NotBlank(message = "Message body is required")
     private String message;
 }

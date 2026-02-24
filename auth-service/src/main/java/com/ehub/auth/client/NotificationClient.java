@@ -48,6 +48,7 @@ public class NotificationClient {
             restTemplate.postForObject(baseUrl + path, Map.of("email", email), String.class);
         } catch (RestClientException e) {
             log.warn("Could not send OTP email to {}: {}", email, e.getMessage());
+            throw new RuntimeException(MessageKeys.NOTIFICATION_SERVICE_UNAVAILABLE.getMessage());
         }
     }
 
