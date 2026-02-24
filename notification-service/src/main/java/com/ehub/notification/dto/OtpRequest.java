@@ -9,4 +9,7 @@ public class OtpRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Please enter a valid email address")
     private String email;
+
+    /** Required only for the consolidated /otp/generate endpoint. */
+    private OtpPurpose purpose;
 }

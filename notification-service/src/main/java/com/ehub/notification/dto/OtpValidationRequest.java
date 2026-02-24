@@ -11,4 +11,7 @@ public class OtpValidationRequest {
     private String email;
     @NotBlank(message = "OTP code is required")
     private String otp;
+
+    /** Required only for the consolidated /otp/validate endpoint. */
+    private OtpPurpose purpose;
 }
