@@ -56,14 +56,37 @@ export default api;
 
 /**
  * Extracts a human-readable error message from an Axios error.
- * Handles: structured `{ message }` responses, plain string responses, and generic JS errors.
  *
- * @param {Error}  err                - The caught error.
- * @param {string} [fallback]         - Fallback text if no message can be extracted.
+ * Priority:
+ *   1. Structured backend payload — `err.response.data.message` (ErrorResponse contract)
+ *   2. Plain string response body
+ *   3. HTTP status-code specific fallbacks (500, 502/503/504, 429)
+ *   4. Network / timeout failures → connection message
+ *   5. Generic JS error message or provided fallback
+ *
+ * @param {Error}  err        - The caught Axios or JS error.
+ * @param {string} [fallback] - Fallback text if no message can be extracted.
  * @returns {string}
  */
-export const extractErrorMessage = (err, fallback = 'An unexpected error occurred.') =>
-  err?.response?.data?.message
-  ?? (typeof err?.response?.data === 'string' ? err.response.data : null)
-  ?? err?.message
-  ?? fallback;
+export const extractErrorMessage = (err, fallback = 'An unexpected error occurred.') => {
+  // P1: Structured backend ErrorResponse contract
+  if (err?.response?.data?.message) return err.response.data.message;
+
+  // P2: Plain string response body
+  if (typeof err?.response?.data === 'string' && err.response.data) return err.response.data;
+
+  // P3: HTTP status-code specific fallbacks
+  const status = err?.response?.status;
+  if (status === 500) return 'Server error. Please try again shortly.';
+  if (status === 502 || status === 503 || status === 504) return 'Service unavailable. Please try again later.';
+  if (status === 429) return 'Too many requests. Please wait a moment and try again.';
+
+  // P4: Network / timeout failures
+  if (err?.code === 'ERR_NETWORK' || err?.message === 'Network Error')
+    return 'Please check your internet connection.';
+  if (err?.code === 'ECONNABORTED' || err?.message?.toLowerCase().includes('timeout'))
+    return 'Connection timed out. Please check your internet connection.';
+
+  // P5: Generic JS error or fallback
+  return err?.message || fallback;
+};

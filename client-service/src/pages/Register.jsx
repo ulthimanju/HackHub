@@ -7,6 +7,7 @@ import Input from '../components/common/Input/Input';
 import Alert from '../components/common/Alert/Alert';
 import { UserPlus, Send } from 'lucide-react';
 import registerSvg from '../assets/images/register.svg';
+import { extractErrorMessage } from '../services/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -37,7 +38,7 @@ const Register = () => {
       await authService.requestOtp(formData.email);
       setSuccess('OTP sent to your email. Please check your inbox.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP.');
+      setError(extractErrorMessage(err, 'Failed to send OTP.'));
     } finally {
       setOtpLoading(false);
     }
@@ -52,7 +53,7 @@ const Register = () => {
       await register(formData.username, formData.email, formData.password, formData.otp);
       navigate('/login', { state: { message: 'Account created successfully! Please sign in.' } });
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please check your details.');
+      setError(extractErrorMessage(err, 'Registration failed. Please check your details.'));
     } finally {
       setLoading(false);
     }

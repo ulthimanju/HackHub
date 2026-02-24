@@ -6,6 +6,7 @@ import Input from '../components/common/Input/Input';
 import Alert from '../components/common/Alert/Alert';
 import { LogIn } from 'lucide-react';
 import loginSvg from '../assets/images/login.svg';
+import { extractErrorMessage } from '../services/api';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -27,7 +28,7 @@ const Login = () => {
       await login(username, password);
       navigate('/profile');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+      setError(extractErrorMessage(err, 'Failed to login. Please check your credentials.'));
     } finally {
       setLoading(false);
     }

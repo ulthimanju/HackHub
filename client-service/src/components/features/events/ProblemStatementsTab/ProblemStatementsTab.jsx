@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../../../common/Button/Button';
 import Modal from '../../../common/Modal/Modal';
 import Alert from '../../../common/Alert/Alert';
+import { extractErrorMessage } from '../../../../services/api';
 
 const emptyRow = () => ({ name: '', statement: '', requirements: '' });
 
@@ -43,7 +44,7 @@ export default function ProblemStatementsTab({ eventId, problems, permissions, o
       });
       setEditProblem(null);
     } catch (err) {
-      setEditError(err.response?.data?.message || 'Failed to update problem statement.');
+      setEditError(extractErrorMessage(err, 'Failed to update problem statement.'));
     } finally {
       setEditSubmitting(false);
     }

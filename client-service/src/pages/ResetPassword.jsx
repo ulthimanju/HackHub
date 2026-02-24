@@ -6,6 +6,7 @@ import Input from '../components/common/Input/Input';
 import Alert from '../components/common/Alert/Alert';
 import { KeyRound, Send, ArrowLeft } from 'lucide-react';
 import registerSvg from '../assets/images/register.svg';
+import { extractErrorMessage } from '../services/api';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const ResetPassword = () => {
       setInfo('A 6-digit code has been sent to your email.');
       setStep(2);
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to send OTP. Check the email address and try again.');
+      setError(extractErrorMessage(err, 'Failed to send OTP. Check the email address and try again.'));
     } finally {
       setOtpLoading(false);
     }
@@ -43,7 +44,7 @@ const ResetPassword = () => {
       await authService.requestResetOtp(email);
       setInfo('A new code has been sent to your email.');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to resend OTP.');
+      setError(extractErrorMessage(err, 'Failed to resend OTP.'));
     } finally {
       setOtpLoading(false);
     }
@@ -60,7 +61,7 @@ const ResetPassword = () => {
       await authService.resetPassword(email, otp, newPassword);
       navigate('/login', { state: { message: 'Password reset successfully! Please sign in with your new password.' } });
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || 'Reset failed. The code may be invalid or expired.');
+      setError(extractErrorMessage(err, 'Reset failed. The code may be invalid or expired.'));
     } finally {
       setLoading(false);
     }

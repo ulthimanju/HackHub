@@ -5,6 +5,7 @@ import Alert from '../components/common/Alert/Alert';
 import Section from '../components/common/Section/Section';
 import Input from '../components/common/Input/Input';
 import { User, Github, Linkedin, Globe, ChevronDown } from 'lucide-react';
+import { extractErrorMessage } from '../services/api';
 
 // Refactored Components
 import ProfileHeader from '../components/features/profile/ProfileHeader/ProfileHeader';
@@ -111,7 +112,7 @@ const Profile = () => {
       await authService.requestRoleUpgradeOtp();
       setShowOtpInput(true);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP.');
+      setError(extractErrorMessage(err, 'Failed to send OTP.'));
     } finally {
       setOtpLoading(false);
     }
@@ -129,7 +130,7 @@ const Profile = () => {
       setShowOtpInput(false);
       setOtp('');
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || 'Role upgrade failed.');
+      setError(extractErrorMessage(err, 'Role upgrade failed.'));
     } finally {
       setLoading(false);
     }
