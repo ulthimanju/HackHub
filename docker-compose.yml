@@ -156,6 +156,7 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       APPLICATION_EVENT_SERVICE_URL: http://event-service:8084
       WORKSPACE_ROOT: /app/workspaces
+      WORKSPACE_VOLUME_NAME: ehub_ehub-workspaces
     secrets:
       - source: groq-api-key
         target: GROQ_API_KEY

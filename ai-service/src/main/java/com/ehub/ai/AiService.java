@@ -29,8 +29,14 @@ public class AiService {
     @Value("${APPLICATION_EVENT_SERVICE_URL}")
     private String eventServiceUrl;
 
+    @Value("${GATEWAY_INTERNAL_SECRET:}")
+    private String internalSecret;
+
     @Value("${WORKSPACE_ROOT:/app/workspaces}")
     private String workspaceRoot;
+
+    @Value("${WORKSPACE_VOLUME_NAME:ehub_ehub-workspaces}")
+    private String workspaceVolumeName;
 
     @PostConstruct
     public void startWorker() {
@@ -55,7 +61,11 @@ public class AiService {
         new Thread(() -> {
             try {
                 String url = eventServiceUrl + "/events/teams/event/" + eventId + "/evaluation-context";
-                ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("X-Internal-Secret", internalSecret);
+                HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+                
+                ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, List.class);
 
                 if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                     List<Map<String, Object>> teams = response.getBody();
@@ -72,7 +82,13 @@ public class AiService {
 
     public Double evaluateTeam(String teamId) {
         String url = eventServiceUrl + "/events/teams/" + teamId + "/evaluation-context";
-        Map<String, Object> team = restTemplate.getForObject(url, Map.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Internal-Secret", internalSecret);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+        
+        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Map.class);
+        Map<String, Object> team = response.getBody();
+        
         if (team != null) {
             team.put("retryCount", 0);
             return processEvaluation(team);
@@ -132,7 +148,11 @@ public class AiService {
     private void updateScoreInEventService(String teamId, Double score, String summary) {
         try {
             String url = eventServiceUrl + "/events/teams/" + teamId + "/score?score=" + score + "&aiSummary=" + summary;
-            restTemplate.postForEntity(url, null, String.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Internal-Secret", internalSecret);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            
+            restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
         } catch (Exception e) {
             System.err.println("Failed to update score for team " + teamId + ": " + e.getMessage());
         }
@@ -160,7 +180,7 @@ public class AiService {
         List<String> dockerCmd = new ArrayList<>(List.of(
             "docker", "run", "--rm",
             "-v", "gemini-credentials:/root/.gemini:ro",  // OAuth credentials (login once, reuse always)
-            "-v", "ehub-workspaces:/workspaces",
+            "-v", workspaceVolumeName + ":/workspaces",
             "gemini-cli:latest",
             "gemini-cli", "analyze", "--path", containerPath, "--prompt", prompt, "--format", "json"
         ));

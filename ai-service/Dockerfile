@@ -1,14 +1,13 @@
-# syntax=docker/dockerfile:1
 # Build stage
 FROM maven:3.8.4-openjdk-17 AS build
 WORKDIR /home/app
 
 COPY pom.xml .
 COPY ai-service/pom.xml ai-service/pom.xml
-RUN --mount=type=cache,target=/root/.m2 mvn install -N && mvn -f ai-service/pom.xml dependency:resolve -q
+RUN mvn install -N && mvn -f ai-service/pom.xml dependency:resolve -q
 
 COPY ai-service/src ai-service/src
-RUN --mount=type=cache,target=/root/.m2 mvn -f ai-service/pom.xml package -DskipTests
+RUN mvn -f ai-service/pom.xml package -DskipTests
 
 # Package stage
 FROM eclipse-temurin:17-jre-alpine
