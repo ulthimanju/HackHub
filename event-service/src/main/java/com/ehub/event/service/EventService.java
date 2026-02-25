@@ -151,10 +151,10 @@ public class EventService {
         return mapToEventResponse(event, Map.of(event.getId(), count));
     }
 
-    /** Cross-field date validation: registration must close before the event starts. */
+    /** Cross-field date validation: registration must close before or when the event starts. */
     private void validateEventDates(EventRequest request) {
         if (request.getRegistrationEndDate() != null && request.getStartDate() != null
-                && !request.getRegistrationEndDate().isBefore(request.getStartDate())) {
+                && request.getRegistrationEndDate().isAfter(request.getStartDate())) {
             throw new RuntimeException(MessageKeys.REGISTRATION_END_BEFORE_START.getMessage());
         }
         if (request.getStartDate() != null && request.getEndDate() != null
