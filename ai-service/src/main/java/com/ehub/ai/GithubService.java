@@ -1,43 +1,20 @@
 package com.ehub.ai;
 
-import org.kohsuke.github.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 
 @Service
 public class GithubService {
 
-    // Groq free tier TPM limit for llama-3.3-70b-versatile is 12K — keep content under ~30KB (~7.5K tokens)
-    private static final int GEMINI_MAX_CHARS = 30_000;
-    private static final int FETCH_TIMEOUT_SECONDS = 90;
-
-    // Whitelist: only raw source code and docs — compiled/binary files are excluded by definition
-    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
-        "java", "py", "js", "ts", "jsx", "tsx", "cpp", "c", "h", "cs", "go",
-        "rb", "php", "rs", "kt", "swift", "scala", "r", "sql", "sh", "md", "txt", "yaml", "yml", "json", "xml", "html", "css"
-    );
-
-    // Directories that contain compiled output, dependencies, or generated files — never useful for evaluation
-    private static final List<String> IGNORED_DIRS = Arrays.asList(
-        // Dependency managers
-        "node_modules", "vendor", ".gradle", ".m2", "bower_components",
-        // Build output
-        "target", "build", "dist", "out", "bin", "obj", ".next", ".nuxt",
-        "release", "debug", "__pycache__", ".pytest_cache", ".eggs", "*.egg-info",
-        // IDE / tooling
-        ".git", ".idea", ".vscode", ".eclipse", ".settings",
-        // Coverage / generated
-        "coverage", ".nyc_output", "generated", "gen", "migrations"
-    );
-
-    // Specific filenames to skip regardless of extension (lock files, compiled manifests, etc.)
-    private static final Set<String> IGNORED_FILENAMES = new HashSet<>(Arrays.asList(
-        "package-lock.json", "yarn.lock", "pom.xml.versionsBackup",
-        "Gemfile.lock", "Cargo.lock", "poetry.lock", "composer.lock",
-        "gradlew", "gradlew.bat", "mvnw", "mvnw.cmd"
-    ));
+    // Groq free-tier TPM limit for llama-3.3-70b-versatile is ~12K — keep content under ~30KB
+    private static final int MAX_CHARS = 30_000;
+    private static final int FETCH_TIMEOUT_SECONDS = 120;
+    private static final String REPOMIX_CONFIG_PATH = "/app/repomix.config.json";
 
     @Value("${GITHUB_TOKEN:}")
     private String githubToken;
@@ -49,96 +26,99 @@ public class GithubService {
             return future.get(FETCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             future.cancel(true);
-            throw new RuntimeException("GitHub fetch timed out after " + FETCH_TIMEOUT_SECONDS + "s for: " + repoUrl);
+            throw new RuntimeException("Repository fetch timed out after " + FETCH_TIMEOUT_SECONDS + "s for: " + repoUrl);
         } finally {
             executor.shutdownNow();
         }
     }
 
     private String doFetch(String repoUrl) throws Exception {
+        Path tmpDir = Files.createTempDirectory("ehub-repo-");
         try {
-            String path = repoUrl.replace("https://github.com/", "").replaceAll("/$", "");
+            Path cloneDir  = tmpDir.resolve("repo");
+            Path outputFile = tmpDir.resolve("bundled.txt");
 
-            String token = (githubToken != null) ? githubToken.strip() : "";
-            System.out.println("GitHub token present: " + !token.isBlank() + " (length=" + token.length() + ")");
+            // Step 1: Shallow clone (depth=1 keeps it fast, avoids full history)
+            String cloneUrl = buildCloneUrl(repoUrl);
+            System.out.println("Cloning: " + repoUrl);
+            runCommand(tmpDir, "git", "clone", "--depth", "1", "--quiet", cloneUrl, cloneDir.toString());
 
-            GitHub github = !token.isBlank()
-                    ? new GitHubBuilder().withOAuthToken(token).build()
-                    : new GitHubBuilder().build();
-
-            System.out.println("Fetching repo tree for: " + path);
-            GHRepository repository = github.getRepository(path);
-            String defaultBranch = repository.getDefaultBranch();
-
-            List<GHTreeEntry> allEntries = repository.getTreeRecursive(defaultBranch, 1).getTree();
-            System.out.println("Tree fetched: " + allEntries.size() + " entries. Collecting source files...");
-
-            // Always show full file tree so the AI understands complete project scope
-            StringBuilder context = new StringBuilder();
-            context.append("=== FULL PROJECT FILE TREE (source files only) ===\n");
-            allEntries.stream()
-                .filter(e -> "blob".equals(e.getType()))
-                .filter(e -> IGNORED_DIRS.stream().noneMatch(e.getPath()::contains))
-                .filter(e -> {
-                    String fname = e.getPath().contains("/")
-                        ? e.getPath().substring(e.getPath().lastIndexOf('/') + 1) : e.getPath();
-                    return !IGNORED_FILENAMES.contains(fname);
-                })
-                .filter(e -> ALLOWED_EXTENSIONS.contains(getExtension(e.getPath())))
-                .forEach(e -> context.append(e.getPath())
-                    .append(" (").append(e.getSize()).append(" bytes)\n"));
-            context.append("\n=== SOURCE CODE ===\n\n");
-
-            // Collect files — stop downloading once we hit the size limit
-            collectFiles(allEntries, context, true);  // README first
-            collectFiles(allEntries, context, false); // then everything else
-            System.out.println("Files collected: " + context.length() + " chars total.");
-
-            if (context.length() > GEMINI_MAX_CHARS) {
-                return context.substring(0, GEMINI_MAX_CHARS) +
-                    "\n\n[... CONTENT TRUNCATED at 30KB. Files listed in the project tree " +
-                    "but not fully included should still be considered when assessing completeness. ...]";
+            // Step 2: Bundle with repomix
+            System.out.println("Running repomix...");
+            List<String> repomixCmd = new ArrayList<>(List.of("repomix"));
+            if (Files.exists(Path.of(REPOMIX_CONFIG_PATH))) {
+                repomixCmd.addAll(List.of("--config", REPOMIX_CONFIG_PATH));
             }
+            repomixCmd.addAll(List.of("--output", outputFile.toString(), cloneDir.toString()));
+            runCommand(tmpDir, repomixCmd.toArray(String[]::new));
 
-            return context.toString();
-        } catch (Exception e) {
-            System.err.println("GitHub Fetch Error: " + e.getMessage());
-            throw new RuntimeException("GitHub fetch failed: " + e.getMessage(), e);
+            // Step 3: Read and truncate to keep within LLM token budget
+            String content = Files.readString(outputFile);
+            System.out.println("Bundle size: " + content.length() + " chars.");
+
+            if (content.length() > MAX_CHARS) {
+                return content.substring(0, MAX_CHARS)
+                    + "\n\n[... CONTENT TRUNCATED at 30KB. Review the repository directly for full context. ...]";
+            }
+            return content;
+
+        } finally {
+            deleteRecursively(tmpDir);
         }
     }
 
-    private void collectFiles(List<GHTreeEntry> entries, StringBuilder context, boolean readmeOnly) {
-        for (GHTreeEntry entry : entries) {
-            if (context.length() >= GEMINI_MAX_CHARS) break; // stop downloading once limit reached
+    /** Injects the GitHub token into the clone URL for private repositories. */
+    private String buildCloneUrl(String repoUrl) {
+        String token = (githubToken != null) ? githubToken.strip() : "";
+        if (!token.isBlank() && repoUrl.startsWith("https://github.com/")) {
+            return repoUrl.replace("https://github.com/", "https://" + token + "@github.com/");
+        }
+        return repoUrl;
+    }
 
-            if (!"blob".equals(entry.getType())) continue;
+    /**
+     * Runs a subprocess, draining its output in a parallel thread to prevent
+     * pipe-buffer deadlock on large output. Throws RuntimeException if exit code != 0.
+     */
+    private void runCommand(Path workDir, String... command) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder(List.of(command))
+            .directory(workDir.toFile())
+            .redirectErrorStream(true); // merge stderr → stdout
+        pb.environment().put("GIT_TERMINAL_PROMPT", "0"); // prevent interactive credential prompts
 
-            String path = entry.getPath();
+        Process process = pb.start();
 
-            // Skip any path segment that's a known ignored directory
-            if (IGNORED_DIRS.stream().anyMatch(path::contains)) continue;
+        StringBuilder output = new StringBuilder();
+        Thread gobbler = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append('\n');
+                }
+            } catch (IOException ignored) {}
+        });
+        gobbler.setDaemon(true);
+        gobbler.start();
 
-            // Skip specific filenames (lock files, wrapper scripts, etc.)
-            String filename = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
-            if (IGNORED_FILENAMES.contains(filename)) continue;
+        int exitCode = process.waitFor();
+        gobbler.join(5_000);
 
-            boolean isReadme = filename.toLowerCase().contains("readme");
-            if (readmeOnly != isReadme) continue;
-
-            if (!ALLOWED_EXTENSIONS.contains(getExtension(path))) continue;
-
-            try {
-                String content = new String(entry.asBlob().read().readAllBytes());
-                context.append("--- File: ").append(path).append(" ---\n");
-                context.append(content).append("\n\n");
-            } catch (Exception e) {
-                System.err.println("Could not read file " + path + ": " + e.getMessage());
-            }
+        if (exitCode != 0) {
+            String snippet = output.length() > 500 ? output.substring(0, 500) + "..." : output.toString();
+            throw new RuntimeException(
+                "Command failed (exit " + exitCode + "): " + String.join(" ", command) + "\n" + snippet);
         }
     }
 
-    private String getExtension(String path) {
-        int index = path.lastIndexOf('.');
-        return (index == -1) ? "" : path.substring(index + 1).toLowerCase();
+    private void deleteRecursively(Path dir) {
+        try {
+            Files.walk(dir)
+                .sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+        } catch (IOException e) {
+            System.err.println("Failed to clean up temp dir " + dir + ": " + e.getMessage());
+        }
     }
 }
+

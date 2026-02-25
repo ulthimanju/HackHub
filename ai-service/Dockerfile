@@ -12,6 +12,9 @@ RUN --mount=type=cache,target=/root/.m2 mvn -f ai-service/pom.xml package -Dskip
 
 # Package stage
 FROM eclipse-temurin:17-jre-alpine
+RUN apk add --no-cache nodejs npm git
+RUN npm install -g repomix
 COPY --from=build /home/app/ai-service/target/*.jar app.jar
+COPY --from=build /home/app/ai-service/src/main/resources/repomix.config.json /app/repomix.config.json
 EXPOSE 8085
 ENTRYPOINT ["java","-jar","/app.jar"]
