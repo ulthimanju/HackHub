@@ -144,6 +144,9 @@ services:
       context: .
       dockerfile: ai-service/Dockerfile
     container_name: ai-service
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ehub-workspaces:/app/workspaces
     depends_on:
       - event-service
       - redis
@@ -152,9 +155,12 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       APPLICATION_EVENT_SERVICE_URL: http://event-service:8084
+      WORKSPACE_ROOT: /app/workspaces
     secrets:
       - source: groq-api-key
         target: GROQ_API_KEY
+      - source: gemini-api-key
+        target: GEMINI_API_KEY
       - source: github-token
         target: GITHUB_TOKEN
       - source: internal-secret
@@ -173,6 +179,15 @@ services:
       - VITE_API_URL=http://localhost:8000
     networks:
       - ehub-network
+
+  # Build-only service — provides the gemini-cli:latest image used by ai-service at runtime.
+  # Build with: docker compose build gemini-cli
+  gemini-cli:
+    build:
+      context: ./gemini-cli
+    image: gemini-cli:latest
+    profiles:
+      - build-only
 
 secrets:
   db-password:
@@ -193,7 +208,12 @@ secrets:
     file: .secrets/app-time-limit.txt
   github-token:
     file: .secrets/github-token.txt
+  gemini-api-key:
+    file: .secrets/gemini-api-key.txt
 
 networks:
   ehub-network:
     driver: bridge
+
+volumes:
+  ehub-workspaces:

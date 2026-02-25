@@ -11,60 +11,44 @@ import java.util.concurrent.*;
 @Service
 public class GithubService {
 
-    // Groq free-tier TPM limit for llama-3.3-70b-versatile is ~12K — keep content under ~30KB
-    private static final int MAX_CHARS = 30_000;
     private static final int FETCH_TIMEOUT_SECONDS = 120;
-    private static final String REPOMIX_CONFIG_PATH = "/app/repomix.config.json";
 
     @Value("${GITHUB_TOKEN:}")
     private String githubToken;
 
-    public String fetchRepoContent(String repoUrl) throws Exception {
+    @Value("${WORKSPACE_ROOT:/app/workspaces}")
+    private String workspaceRoot;
+
+    public String cloneRepoToWorkspace(String repoUrl, String teamId) throws Exception {
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<String> future = executor.submit(() -> doFetch(repoUrl));
+        Future<String> future = executor.submit(() -> doClone(repoUrl, teamId));
         try {
             return future.get(FETCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             future.cancel(true);
-            throw new RuntimeException("Repository fetch timed out after " + FETCH_TIMEOUT_SECONDS + "s for: " + repoUrl);
+            throw new RuntimeException("Repository clone timed out after " + FETCH_TIMEOUT_SECONDS + "s for: " + repoUrl);
         } finally {
             executor.shutdownNow();
         }
     }
 
-    private String doFetch(String repoUrl) throws Exception {
-        Path tmpDir = Files.createTempDirectory("ehub-repo-");
-        try {
-            Path cloneDir  = tmpDir.resolve("repo");
-            Path outputFile = tmpDir.resolve("bundled.txt");
-
-            // Step 1: Shallow clone (depth=1 keeps it fast, avoids full history)
-            String cloneUrl = buildCloneUrl(repoUrl);
-            System.out.println("Cloning: " + repoUrl);
-            runCommand(tmpDir, "git", "clone", "--depth", "1", "--quiet", cloneUrl, cloneDir.toString());
-
-            // Step 2: Bundle with repomix
-            System.out.println("Running repomix...");
-            List<String> repomixCmd = new ArrayList<>(List.of("repomix"));
-            if (Files.exists(Path.of(REPOMIX_CONFIG_PATH))) {
-                repomixCmd.addAll(List.of("--config", REPOMIX_CONFIG_PATH));
-            }
-            repomixCmd.addAll(List.of("--output", outputFile.toString(), cloneDir.toString()));
-            runCommand(tmpDir, repomixCmd.toArray(String[]::new));
-
-            // Step 3: Read and truncate to keep within LLM token budget
-            String content = Files.readString(outputFile);
-            System.out.println("Bundle size: " + content.length() + " chars.");
-
-            if (content.length() > MAX_CHARS) {
-                return content.substring(0, MAX_CHARS)
-                    + "\n\n[... CONTENT TRUNCATED at 30KB. Review the repository directly for full context. ...]";
-            }
-            return content;
-
-        } finally {
-            deleteRecursively(tmpDir);
+    private String doClone(String repoUrl, String teamId) throws Exception {
+        Path workspacesPath = Paths.get(workspaceRoot);
+        if (!Files.exists(workspacesPath)) {
+            Files.createDirectories(workspacesPath);
         }
+
+        Path teamWorkspace = workspacesPath.resolve(teamId);
+        if (Files.exists(teamWorkspace)) {
+            deleteRecursively(teamWorkspace);
+        }
+        Files.createDirectories(teamWorkspace);
+
+        String cloneUrl = buildCloneUrl(repoUrl);
+        System.out.println("Cloning team " + teamId + " repo: " + repoUrl);
+        runCommand(teamWorkspace, "git", "clone", "--depth", "1", "--quiet", cloneUrl, ".");
+
+        return teamWorkspace.toAbsolutePath().toString();
     }
 
     /** Injects the GitHub token into the clone URL for private repositories. */
@@ -107,6 +91,13 @@ public class GithubService {
             String snippet = output.length() > 500 ? output.substring(0, 500) + "..." : output.toString();
             throw new RuntimeException(
                 "Command failed (exit " + exitCode + "): " + String.join(" ", command) + "\n" + snippet);
+        }
+    }
+
+    /** Deletes a workspace directory after evaluation is complete. */
+    public void cleanupWorkspace(String workspacePath) {
+        if (workspacePath != null) {
+            deleteRecursively(Paths.get(workspacePath));
         }
     }
 

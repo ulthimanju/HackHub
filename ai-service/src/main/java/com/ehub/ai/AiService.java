@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,14 +24,16 @@ public class AiService {
 
     private static final String QUEUE_KEY  = "ehub:ai:evaluation:queue";
     private static final int    MAX_RETRIES = 3;
-    private static final String GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
     private final AtomicBoolean isBulkEvaluating = new AtomicBoolean(false);
 
     @Value("${APPLICATION_EVENT_SERVICE_URL}")
     private String eventServiceUrl;
 
-    @Value("${GROQ_API_KEY:}")
-    private String groqApiKey;
+    @Value("${GEMINI_API_KEY:}")
+    private String geminiApiKey;
+
+    @Value("${WORKSPACE_ROOT:/app/workspaces}")
+    private String workspaceRoot;
 
     @PostConstruct
     public void startWorker() {
@@ -89,25 +92,29 @@ public class AiService {
         String teamName = (String) context.get("teamName");
         int retryCount  = context.get("retryCount") instanceof Number n ? n.intValue() : 0;
 
-        System.out.println("Evaluating team: " + teamName + " (attempt " + (retryCount + 1) + ")");
+        System.out.println("Evaluating team: " + teamName + " (attempt " + (retryCount + 1) + ") using Gemini CLI");
 
         try {
-            String sourceCode = githubService.fetchRepoContent(repoUrl);
-            Map<String, Object> result = callGeminiForEvaluation(teamName, problem, requirements, theme, repoUrl, sourceCode);
-            Double score   = (Double) result.get("score");
-            String summary = (String) result.get("summary");
+            String workspacePath = githubService.cloneRepoToWorkspace(repoUrl, teamId);
+            try {
+                Map<String, Object> result = callGeminiCliForEvaluation(teamName, workspacePath, problem, requirements, theme);
+                Double score   = (Double) result.get("score");
+                String summary = (String) result.get("summary");
 
-            updateScoreInEventService(teamId, score, summary);
+                updateScoreInEventService(teamId, score, summary);
 
-            Map<String, Object> broadcast = new HashMap<>();
-            broadcast.put("teamId",    teamId);
-            broadcast.put("teamName",  teamName);
-            broadcast.put("score",     score);
-            broadcast.put("summary",   summary);
-            broadcast.put("timestamp", System.currentTimeMillis());
-            redisTemplate.convertAndSend("ehub:broadcast:leaderboard", broadcast);
+                Map<String, Object> broadcast = new HashMap<>();
+                broadcast.put("teamId",    teamId);
+                broadcast.put("teamName",  teamName);
+                broadcast.put("score",     score);
+                broadcast.put("summary",   summary);
+                broadcast.put("timestamp", System.currentTimeMillis());
+                redisTemplate.convertAndSend("ehub:broadcast:leaderboard", broadcast);
 
-            return score;
+                return score;
+            } finally {
+                githubService.cleanupWorkspace(workspacePath);
+            }
         } catch (Exception e) {
             System.err.println("Evaluation failed for team " + teamId + " (attempt " + (retryCount + 1) + "): " + e.getMessage());
             if (retryCount < MAX_RETRIES) {
@@ -134,58 +141,66 @@ public class AiService {
         }
     }
 
-    // Throws on API failure so processEvaluation can retry.
-    // JSON parse failures are handled locally (retrying won't fix a malformed response).
-    private Map<String, Object> callGeminiForEvaluation(String teamName, String problemStatement,
-                                                        String requirements, String theme,
-                                                        String repoUrl, String sourceCode) throws Exception {
+    private Map<String, Object> callGeminiCliForEvaluation(String teamName, String workspacePath,
+                                                           String problemStatement, String requirements,
+                                                           String theme) throws Exception {
         String prompt = String.format(
-            "You are an expert Senior Software Engineer and Judge. Evaluate the following hackathon project.\n\n" +
-            "HACKATHON THEME: %s\n\n" +
-            "PROBLEM STATEMENT:\n%s\n\n" +
-            "REQUIREMENTS:\n%s\n\n" +
-            "REPOSITORY URL: %s\n\n" +
-            "SOURCE CODE CONTENT:\n%s\n\n" +
+            "You are an expert Senior Software Engineer and Judge. Evaluate this hackathon project workspace.\n" +
+            "HACKATHON THEME: %s\n" +
+            "PROBLEM STATEMENT: %s\n" +
+            "REQUIREMENTS: %s\n" +
             "--- EVALUATION CRITERIA (Total 100%%) ---\n" +
-            "1. INNOVATION (20%%): Creative solutions, unique idea?\n" +
-            "2. TECHNICAL COMPLEXITY (20%%): Advanced algorithms/architecture?\n" +
-            "3. DESIGN & IMPLEMENTATION (20%%): Clean, readable, well-structured? (DRY, SOLID)\n" +
-            "4. POTENTIAL IMPACT (20%%): Does it fulfill the problem statement and requirements?\n" +
-            "5. THEME FIT (20%%): Relevant to the hackathon theme?\n\n" +
-            "Check for bugs, hardcoded secrets, or logic errors and penalize accordingly. " +
-            "If source code could not be fetched, score from README only but penalize significantly.\n\n" +
-            "Respond ONLY with a valid JSON object: {\"score\": <number 0-100>, \"summary\": \"<max 200 chars>\"}",
-            theme, problemStatement, requirements, repoUrl, sourceCode
+            "1. INNOVATION (20%%), 2. TECHNICAL COMPLEXITY (20%%), 3. DESIGN & IMPLEMENTATION (20%%), 4. POTENTIAL IMPACT (20%%), 5. THEME FIT (20%%)\n" +
+            "Respond ONLY with valid JSON: {\"score\": <0-100>, \"summary\": \"<max 200 chars>\"}",
+            theme, problemStatement, requirements
         );
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(groqApiKey.strip());
+        // Map host path (/app/workspaces/teamId) → container path (/workspaces/teamId)
+        // Both refer to the same data via the ehub-workspaces named volume.
+        String root = workspaceRoot.replaceAll("/$", "");
+        String containerPath = "/workspaces" + workspacePath.substring(root.length());
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("model", "llama-3.3-70b-versatile");
-        body.put("temperature", 0.2);
-        body.put("messages", List.of(Map.of("role", "user", "content", prompt)));
+        List<String> dockerCmd = new ArrayList<>(List.of(
+            "docker", "run", "--rm",
+            "-e", "GEMINI_API_KEY=" + geminiApiKey.strip(),
+            "-v", "ehub-workspaces:/workspaces",
+            "gemini-cli:latest",
+            "gemini-cli", "analyze", "--path", containerPath, "--prompt", prompt, "--format", "json"
+        ));
 
-        System.out.println("Calling Groq API for team: " + teamName);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-        ResponseEntity<Map> response = restTemplate.postForEntity(GROQ_API_URL, request, Map.class);
-        System.out.println("Groq API responded with status: " + response.getStatusCode());
+        System.out.println("Running Gemini CLI via Docker for team: " + teamName);
+        ProcessBuilder pb = new ProcessBuilder(dockerCmd);
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
 
-        List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
-        Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-        String text = message.get("content").toString()
-            .replaceAll("```json", "").replaceAll("```", "").trim();
+        StringBuilder output = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+        }
+        int exitCode = process.waitFor();
+
+        if (exitCode != 0) {
+            throw new RuntimeException("Gemini CLI failed with exit code " + exitCode + ": " + output.toString());
+        }
+
+        String jsonResult = output.toString().trim();
+        // Extract JSON if there's noise in the output
+        if (jsonResult.contains("{")) {
+            jsonResult = jsonResult.substring(jsonResult.indexOf("{"), jsonResult.lastIndexOf("}") + 1);
+        }
 
         Map<String, Object> result = new HashMap<>();
-        result.put("score", 0.0);
-        result.put("summary", "No evaluation available.");
         try {
-            Map<String, Object> parsed = objectMapper.readValue(text, Map.class);
-            result.put("score",   ((Number) parsed.get("score")).doubleValue());
+            Map<String, Object> parsed = objectMapper.readValue(jsonResult, Map.class);
+            result.put("score", ((Number) parsed.get("score")).doubleValue());
             result.put("summary", parsed.get("summary").toString());
         } catch (Exception e) {
-            System.err.println("JSON parsing failed for Groq response: " + e.getMessage() + " | Raw: " + text);
+            System.err.println("Failed to parse Gemini CLI output: " + e.getMessage() + " | Raw: " + output.toString());
+            result.put("score", 0.0);
+            result.put("summary", "Evaluation parsing failed.");
         }
         return result;
     }
