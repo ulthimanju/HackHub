@@ -1,12 +1,9 @@
 FROM node:22-alpine
 
-# repomix bundles the repo into LLM-friendly text before calling Gemini
-RUN npm install -g repomix
+# repomix bundles the repo; @google/gemini-cli handles auth + model calls
+RUN npm install -g repomix @google/gemini-cli
 
 WORKDIR /app
-COPY package.json ./
-RUN npm install
-
 COPY gemini-cli.js ./gemini-cli.js
 
 # Shell wrapper so the binary is callable as `gemini-cli <args>`

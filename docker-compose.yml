@@ -159,8 +159,6 @@ services:
     secrets:
       - source: groq-api-key
         target: GROQ_API_KEY
-      - source: gemini-api-key
-        target: GEMINI_API_KEY
       - source: github-token
         target: GITHUB_TOKEN
       - source: internal-secret
@@ -217,3 +215,5 @@ networks:
 
 volumes:
   ehub-workspaces:
+  # Stores Google OAuth credentials after running: docker run -it -v gemini-credentials:/root/.gemini gemini-cli:latest gemini auth login
+  gemini-credentials:

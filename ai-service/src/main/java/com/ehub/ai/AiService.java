@@ -29,9 +29,6 @@ public class AiService {
     @Value("${APPLICATION_EVENT_SERVICE_URL}")
     private String eventServiceUrl;
 
-    @Value("${GEMINI_API_KEY:}")
-    private String geminiApiKey;
-
     @Value("${WORKSPACE_ROOT:/app/workspaces}")
     private String workspaceRoot;
 
@@ -162,7 +159,7 @@ public class AiService {
 
         List<String> dockerCmd = new ArrayList<>(List.of(
             "docker", "run", "--rm",
-            "-e", "GEMINI_API_KEY=" + geminiApiKey.strip(),
+            "-v", "gemini-credentials:/root/.gemini:ro",  // OAuth credentials (login once, reuse always)
             "-v", "ehub-workspaces:/workspaces",
             "gemini-cli:latest",
             "gemini-cli", "analyze", "--path", containerPath, "--prompt", prompt, "--format", "json"

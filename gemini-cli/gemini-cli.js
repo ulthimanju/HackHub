@@ -1,14 +1,23 @@
 #!/usr/bin/env node
 'use strict';
 
-const { execSync }             = require('child_process');
-const { GoogleGenerativeAI }   = require('@google/generative-ai');
-const fs                        = require('fs');
-const os                        = require('os');
-const path                      = require('path');
+/**
+ * gemini-cli analyze wrapper
+ *
+ * Uses the official @google/gemini-cli binary (OAuth — no API key required).
+ * Credentials are pre-stored in /root/.gemini/ by running:
+ *   docker run -it -v gemini-credentials:/root/.gemini gemini-cli:latest gemini auth login
+ *
+ * Usage: gemini-cli analyze --path <dir> --prompt <text> [--format json]
+ */
+
+const { execSync, spawnSync } = require('child_process');
+const fs   = require('fs');
+const os   = require('os');
+const path = require('path');
 
 // ── Argument parsing ─────────────────────────────────────────────────────────
-const argv = process.argv.slice(2); // e.g. ['analyze', '--path', '...', '--prompt', '...', '--format', 'json']
+const argv = process.argv.slice(2);
 
 if (argv[0] !== 'analyze') {
   console.error('Usage: gemini-cli analyze --path <dir> --prompt <text> [--format json]');
@@ -28,20 +37,13 @@ if (!repoPath || !prompt) {
   process.exit(1);
 }
 
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey || !apiKey.trim()) {
-  console.error('GEMINI_API_KEY environment variable is required');
-  process.exit(1);
-}
-
 // ── Constants ────────────────────────────────────────────────────────────────
-// Gemini 2.0 Flash supports 1M token context; 500KB of text ≈ 125K tokens — safe limit
+// Gemini 2.0 Flash supports ~1M token context; 500KB ≈ 125K tokens
 const MAX_CHARS = 500_000;
-const MODEL     = 'gemini-2.0-flash';
 
 // ── Main ─────────────────────────────────────────────────────────────────────
-async function main() {
-  // Step 1: Bundle the repository with repomix for clean LLM input
+function main() {
+  // Step 1: Bundle the repository with repomix
   const tmpFile = path.join(os.tmpdir(), `ehub-bundle-${Date.now()}.txt`);
   try {
     execSync(`repomix --output "${tmpFile}" "${repoPath}"`, { stdio: 'pipe' });
@@ -58,20 +60,27 @@ async function main() {
     bundled = bundled.substring(0, MAX_CHARS) + '\n\n[... CONTENT TRUNCATED ...]';
   }
 
-  // Step 2: Call Gemini
-  const genAI     = new GoogleGenerativeAI(apiKey.trim());
-  const model     = genAI.getGenerativeModel({ model: MODEL });
+  // Step 2: Build full prompt and pipe to official `gemini` CLI via stdin
+  // The CLI reads from stdin when it is not a TTY (non-interactive mode).
   const fullPrompt = `${prompt}\n\nREPOSITORY CONTENT:\n${bundled}`;
 
-  const result = await model.generateContent(fullPrompt);
-  const text   = result.response.text()
-    .replace(/```json/g, '').replace(/```/g, '').trim();
+  const result = spawnSync('gemini', [], {
+    input:     fullPrompt,
+    encoding:  'utf8',
+    maxBuffer: 100 * 1024 * 1024, // 100 MB — large repos can produce big bundles
+    timeout:   180_000,            // 3-minute hard timeout
+    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' } // suppress ANSI codes in output
+  });
 
-  // Output raw text — AiService will extract the JSON block
-  process.stdout.write(text + '\n');
+  if (result.status !== 0 || result.error) {
+    const errMsg = result.stderr || result.error?.message || 'Unknown error';
+    console.error('Gemini CLI failed:', errMsg);
+    process.exit(1);
+  }
+
+  // Output raw text — AiService extracts the JSON block from it
+  process.stdout.write(result.stdout);
 }
 
-main().catch(err => {
-  console.error('Gemini CLI error:', err.message);
-  process.exit(1);
-});
+main();
+
