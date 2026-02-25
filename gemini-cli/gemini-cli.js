@@ -8,13 +8,12 @@
  * Credentials are pre-stored in /root/.gemini/ by running:
  *   docker run -it -v gemini-credentials:/root/.gemini gemini-cli:latest gemini auth login
  *
+ * Gemini CLI can analyze an entire directory natively — no bundling needed.
+ *
  * Usage: gemini-cli analyze --path <dir> --prompt <text> [--format json]
  */
 
-const { execSync, spawnSync } = require('child_process');
-const fs   = require('fs');
-const os   = require('os');
-const path = require('path');
+const { spawnSync } = require('child_process');
 
 // ── Argument parsing ─────────────────────────────────────────────────────────
 const argv = process.argv.slice(2);
@@ -37,39 +36,17 @@ if (!repoPath || !prompt) {
   process.exit(1);
 }
 
-// ── Constants ────────────────────────────────────────────────────────────────
-// Gemini 2.0 Flash supports ~1M token context; 500KB ≈ 125K tokens
-const MAX_CHARS = 500_000;
-
 // ── Main ─────────────────────────────────────────────────────────────────────
 function main() {
-  // Step 1: Bundle the repository with repomix
-  const tmpFile = path.join(os.tmpdir(), `ehub-bundle-${Date.now()}.txt`);
-  try {
-    execSync(`repomix --output "${tmpFile}" "${repoPath}"`, { stdio: 'pipe' });
-  } catch (err) {
-    const msg = err.stderr ? err.stderr.toString() : err.message;
-    console.error('repomix failed:', msg);
-    process.exit(1);
-  }
-
-  let bundled = fs.readFileSync(tmpFile, 'utf8');
-  fs.unlinkSync(tmpFile);
-
-  if (bundled.length > MAX_CHARS) {
-    bundled = bundled.substring(0, MAX_CHARS) + '\n\n[... CONTENT TRUNCATED ...]';
-  }
-
-  // Step 2: Build full prompt and pipe to official `gemini` CLI via stdin
+  // Gemini CLI analyzes the directory directly — pass prompt via stdin.
   // The CLI reads from stdin when it is not a TTY (non-interactive mode).
-  const fullPrompt = `${prompt}\n\nREPOSITORY CONTENT:\n${bundled}`;
-
   const result = spawnSync('gemini', [], {
-    input:     fullPrompt,
-    encoding:  'utf8',
-    maxBuffer: 100 * 1024 * 1024, // 100 MB — large repos can produce big bundles
-    timeout:   180_000,            // 3-minute hard timeout
-    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' } // suppress ANSI codes in output
+    input:   prompt,
+    encoding: 'utf8',
+    maxBuffer: 100 * 1024 * 1024,
+    timeout:   300_000, // 5-minute timeout for large codebases
+    cwd: repoPath,      // run from within the repo so gemini sees all files
+    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' }
   });
 
   if (result.status !== 0 || result.error) {
