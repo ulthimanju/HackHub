@@ -115,7 +115,9 @@ public class EvaluationWorker {
                 // Block for up to 5 seconds waiting for a job
                 Object raw = redisTemplate.opsForList().rightPop(QUEUE_KEY, 5, TimeUnit.SECONDS);
                 if (raw != null) {
-                    EvaluationJob job = objectMapper.convertValue(raw, EvaluationJob.class);
+                    EvaluationJob job = (raw instanceof EvaluationJob ej)
+                            ? ej
+                            : objectMapper.convertValue(raw, EvaluationJob.class);
                     processJob(job);
                 }
             } catch (Exception e) {
@@ -176,8 +178,7 @@ public class EvaluationWorker {
 
     private void enqueue(EvaluationJob job) {
         try {
-            String json = objectMapper.writeValueAsString(job);
-            redisTemplate.opsForList().leftPush(QUEUE_KEY, json);
+            redisTemplate.opsForList().leftPush(QUEUE_KEY, job);  // RedisTemplate serialises to JSON
             updateStatus(job.teamId(), JobStatus.QUEUED, 0, null);
         } catch (Exception e) {
             System.err.println("[EvaluationWorker] Failed to enqueue team " + job.teamId() + ": " + e.getMessage());
