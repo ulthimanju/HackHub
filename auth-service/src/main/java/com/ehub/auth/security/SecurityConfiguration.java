@@ -32,6 +32,7 @@ public class SecurityConfiguration {
                 .requestMatchers("/auth/register/otp/**").permitAll()
                 .requestMatchers("/auth/reset-password/**").permitAll()
                 .requestMatchers("/auth/logout").permitAll()
+                .requestMatchers("/auth/search/by-skills").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
