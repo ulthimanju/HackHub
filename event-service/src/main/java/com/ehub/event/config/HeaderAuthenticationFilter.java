@@ -32,14 +32,18 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             String userId = request.getHeader("X-User-Id");
             String role   = request.getHeader("X-User-Role");
 
-            if (userId != null && role != null) {
-                List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-                        new SimpleGrantedAuthority("ROLE_" + role)
-                );
-                SecurityContextHolder.getContext().setAuthentication(
-                        new UsernamePasswordAuthenticationToken(userId, null, authorities)
-                );
+            // Fall back to a system account when no user identity is provided (service-to-service calls)
+            if (userId == null || role == null) {
+                userId = "system";
+                role   = "SYSTEM";
             }
+
+            List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+                    new SimpleGrantedAuthority("ROLE_" + role)
+            );
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(userId, null, authorities)
+            );
         }
 
         filterChain.doFilter(request, response);
