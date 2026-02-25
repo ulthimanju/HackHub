@@ -22,12 +22,16 @@ import ReferencesTab from '@/components/features/events/ReferencesTab/References
 import RulesTab from '@/components/features/events/RulesTab/RulesTab';
 import SettingsTab from '@/components/features/events/SettingsTab/SettingsTab';
 import { ArrowLeft, Hash, Check, X } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useRegistration } from '@/hooks/useRegistration';
+import Modal from '@/components/common/Modal/Modal';
 
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { isOrganizer } = useAbility();
+  const { user } = useAuth();
   const tabsRef = useRef([]);
 
   const [activeTab, setActiveTab] = useState(0);
@@ -49,6 +53,10 @@ const EventDetails = () => {
 
   const permissions = useEventPermissions(eventDetails);
   const { lifecycle } = useEventLifecycle(id);
+
+  const reg = useRegistration(user, () => {
+    handlers.refreshMyRegistration();
+  });
 
   // Jump to a tab by label when navigating back from a sub-page (e.g. AddProblems)
   React.useEffect(() => {
@@ -97,6 +105,7 @@ const EventDetails = () => {
           myRegistration={myRegistration}
           copiedEmail={copiedEmail}
           copyEmail={copyEmail}
+          onRegister={() => reg.openModal(eventDetails)}
           onSwitchToTeamTab={() => {
             const idx = tabs.findIndex(t => t.label === 'Team');
             if (idx >= 0) setActiveTab(idx);
@@ -242,6 +251,49 @@ const EventDetails = () => {
       </div>
 
       <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* ── Registration Confirmation Modal ─────────────────────────────── */}
+      <Modal
+        isOpen={!!reg.registerEvent}
+        onClose={reg.closeModal}
+        title="Confirm Registration"
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={reg.closeModal} disabled={reg.registering}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={reg.handleRegister}
+              disabled={reg.registering || reg.registerSuccess}
+            >
+              {reg.registering ? 'Registering…' : reg.registerSuccess ? 'Registered!' : 'Confirm'}
+            </Button>
+          </div>
+        }
+      >
+        {reg.registerSuccess ? (
+          <div className="flex flex-col items-center gap-3 py-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center">
+              <Check className="w-6 h-6 text-green-600" />
+            </div>
+            <p className="font-semibold text-ink-primary">You're registered!</p>
+            <p className="text-sm text-ink-secondary">Your registration is pending organizer approval.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-ink-secondary">
+              You're about to register for{' '}
+              <span className="font-semibold text-ink-primary">{reg.registerEvent?.name}</span>.
+              Your spot will be pending organizer approval.
+            </p>
+            {reg.registerError && (
+              <Alert type="error">{reg.registerError}</Alert>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

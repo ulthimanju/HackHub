@@ -125,6 +125,15 @@ export function useEventDetails(id, isOrganizer) {
   }, [eventDetails?.status, id, isOrganizer]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
+  const refreshMyRegistration = useCallback(() => {
+    eventService.getMyRegistrationStatuses()
+      .then(statuses => {
+        const reg = statuses.find(r => r.eventId === id);
+        setMyRegistration(reg ?? null);
+      })
+      .catch(() => {});
+  }, [id]);
+
   const handleStatusUpdate = useCallback(async (registrationId, status) => {
     setUpdatingId(registrationId);
     setStatusUpdateError('');
@@ -235,6 +244,7 @@ export function useEventDetails(id, isOrganizer) {
       handleDeleteProblem,
       handleUpdateEvent,
       handleDeleteEvent,
+      refreshMyRegistration,
     },
   };
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MapPin, Users, Mail, BookOpen,
-  Clock, Globe, Check, ArrowRight, Copy, Pencil,
+  Clock, Globe, Check, ArrowRight, Copy, Pencil, CalendarClock,
 } from 'lucide-react';
 import EventJourney from './EventJourney';
 
@@ -51,6 +51,7 @@ export default function OverviewTab({
   copiedEmail,
   copyEmail,
   onSwitchToTeamTab,
+  onRegister,
 }) {
   const navigate = useNavigate();
   return (
@@ -203,6 +204,41 @@ export default function OverviewTab({
               </React.Fragment>
             ))}
           </div>
+
+          {/* Register CTA */}
+          {!myRegistration && event.status === 'REGISTRATION_OPEN' && (
+            <div className="mt-4 pt-4 border-t border-surface-border flex items-center justify-between gap-4">
+              <p className="text-sm text-ink-secondary">Registration is open — secure your spot now.</p>
+              <button
+                onClick={onRegister}
+                className="shrink-0 px-4 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors"
+              >
+                Register Now
+              </button>
+            </div>
+          )}
+
+          {/* UPCOMING hint */}
+          {!myRegistration && event.status === 'UPCOMING' && (
+            <div className="mt-4 pt-4 border-t border-surface-border flex items-center gap-2.5 text-sm text-ink-secondary">
+              <CalendarClock className="w-4 h-4 text-brand-400 shrink-0" />
+              <span>
+                Registration opens{' '}
+                {event.registrationStart
+                  ? <span className="font-medium text-ink-primary">{fmt(event.registrationStart)}</span>
+                  : 'soon'}
+                .
+              </span>
+            </div>
+          )}
+
+          {/* Pending approval notice */}
+          {myRegistration?.status === 'PENDING' && (
+            <div className="mt-4 pt-4 border-t border-surface-border flex items-center gap-2.5 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+              <Clock className="w-4 h-4 shrink-0" />
+              Your registration is pending organizer approval.
+            </div>
+          )}
         </div>
       )}
     </div>
