@@ -151,6 +151,41 @@ services:
     networks:
       - ehub-network
 
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    container_name: ai-service
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ehub-workspaces:/app/workspaces
+    depends_on:
+      - event-service
+      - redis
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      APPLICATION_EVENT_SERVICE_URL: http://event-service:8084
+      WORKSPACE_ROOT: /app/workspaces
+      WORKSPACE_VOLUME_NAME: ehub_ehub-workspaces
+      SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
+    secrets:
+      - source: github-token
+        target: GITHUB_TOKEN
+      - source: internal-secret
+        target: GATEWAY_INTERNAL_SECRET
+    networks:
+      - ehub-network
+
+  # Build-only service: builds the gemini-cli:latest image used by ai-service at runtime.
+  # Run: docker compose build gemini-cli
+  gemini-cli:
+    build:
+      context: ./gemini-cli
+    image: gemini-cli:latest
+    profiles:
+      - build-only
+
 secrets:
   db-password:
     file: .secrets/db-password.txt
@@ -166,8 +201,16 @@ secrets:
     file: .secrets/app-item-limit.txt
   app-time-limit:
     file: .secrets/app-time-limit.txt
+  github-token:
+    file: .secrets/github-token.txt
 
 networks:
   ehub-network:
     driver: bridge
+
+volumes:
+  ehub-workspaces:
+  # Stores Google OAuth credentials — populated once by running:
+  #   docker run -it -v gemini-credentials:/root/.gemini gemini-cli:latest auth login
+  gemini-credentials:
 

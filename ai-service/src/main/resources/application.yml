@@ -1,0 +1,18 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: ai-service
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+application:
+  event-service-url: ${APPLICATION_EVENT_SERVICE_URL:http://localhost:8084}
+  internal-secret: ${GATEWAY_INTERNAL_SECRET:}
+  workspace-root: ${WORKSPACE_ROOT:/app/workspaces}
+  workspace-volume-name: ${WORKSPACE_VOLUME_NAME:ehub_ehub-workspaces}
+  github-token: ${GITHUB_TOKEN:}
+  max-retries: 3

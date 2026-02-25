@@ -447,6 +447,9 @@ public class TeamService {
     private Event requireEventOwnershipForTeam(String teamId, String requesterId) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.TEAM_NOT_FOUND.getMessage()));
+        // System-to-service calls (from ai-service) bypass ownership check
+        if ("system".equals(requesterId)) return eventRepository.findById(team.getEventId())
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         Event event = eventRepository.findById(team.getEventId())
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
         if (!event.getOrganizerId().equals(requesterId)) {

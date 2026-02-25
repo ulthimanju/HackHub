@@ -140,7 +140,7 @@ public class TeamController {
     }
 
     @PostMapping("/{teamId}/score")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ORGANIZER')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ORGANIZER', 'SYSTEM')")
     public ResponseEntity<Void> updateScore(
             @PathVariable String teamId,
             @RequestParam Double score,
