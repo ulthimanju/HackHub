@@ -68,7 +68,14 @@ const Profile = () => {
 
   const doSave = useCallback(async (data) => {
     if (!isDirty()) return; // nothing changed — skip
-    const payload = { ...data, experienceLevel: data.experienceLevel || null };
+    const payload = {
+      ...data,
+      experienceLevel: data.experienceLevel || null,
+      // Convert empty URL strings to null so backend validation passes
+      githubUrl:    data.githubUrl?.trim()    || null,
+      linkedinUrl:  data.linkedinUrl?.trim()  || null,
+      portfolioUrl: data.portfolioUrl?.trim() || null,
+    };
     if (mountedRef.current) setSaveStatus('saving');
     try {
       const updatedUser = await authService.updateProfile(payload);
