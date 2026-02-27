@@ -2,82 +2,79 @@ package com.ehub.ai.service;
 
 import com.ehub.ai.model.GeminiResult;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Wraps the Gemini CLI running inside an ephemeral Docker container.
+ * Bridges Java to the Gemini CLI binary that is installed in the same container.
  *
- * Strategy:
- *   docker run --rm
- *     -v gemini-credentials:/root/.gemini:ro   ← OAuth credentials (login once)
- *     -v {workspaceVolume}:/src:ro              ← cloned repo
- *     gemini-cli:latest
- *     -p "{prompt} @/src/{teamId}"              ← -p = non-interactive prompt mode
+ * Authentication: the host's ~/.gemini directory is mounted at /root/.gemini (read-only)
+ * via docker-compose, giving the CLI access to the cached OAuth token — no API key needed.
  *
- * The @/src/{teamId} syntax tells the Gemini CLI to include all files in that
- * directory as context. No TTY is required when using the -p flag.
+ * Invocation pattern (mirrors the working approach from the user's prior app):
+ *   ProcessBuilder pb = new ProcessBuilder("gemini", "-p", fullPrompt);
+ *   pb.redirectErrorStream(true);
+ *   Process process = pb.start();
+ *
+ * The prompt includes the @<path> file-context directive so Gemini reads the cloned repo:
+ *   "...evaluate this project @/app/workspaces/{teamId}"
+ *
+ * Since Java's ProcessBuilder creates a non-TTY child process, the Gemini CLI detects
+ * !process.stdin.isTTY and automatically runs in non-interactive mode.
  */
 @Service
 public class GeminiCliWrapper {
 
-    private static final int ANALYSIS_TIMEOUT_MINUTES = 5;
-    private static final Pattern JSON_PATTERN = Pattern.compile("\\{[^{}]*\"score\"[^{}]*\"summary\"[^{}]*\\}", Pattern.DOTALL);
+    private static final int    ANALYSIS_TIMEOUT_MINUTES = 5;
+    private static final Pattern JSON_PATTERN = Pattern.compile(
+            "\\{[^{}]*\"score\"[^{}]*\"summary\"[^{}]*\\}", Pattern.DOTALL);
 
     @Value("${application.workspace-root}")
     private String workspaceRoot;
 
-    @Value("${application.workspace-volume-name}")
-    private String workspaceVolumeName;
-
     /**
      * Runs the Gemini CLI against the cloned repo for {@code teamId}.
      *
-     * @param teamId       used to map the container path /src/{teamId}
-     * @param prompt       fully-rendered judge prompt (from PromptTemplate)
+     * @param teamId  subdirectory name under workspaceRoot containing the cloned code
+     * @param prompt  fully-rendered judge prompt (from judge_prompt.md template)
      * @return {@link GeminiResult} with score and summary
-     * @throws GeminiException on process failure or unparseable output
+     * @throws GeminiException on timeout, non-zero exit, or unparseable output
      */
     public GeminiResult analyze(String teamId, String prompt) throws GeminiException {
-        // Map host path → container path (/src/{teamId})
-        String containerPath = "/src/" + teamId;
+        // Append @<path> so the CLI includes all files in the workspace as context
+        String workspacePath = workspaceRoot.replaceAll("/$", "") + "/" + teamId;
+        String fullPrompt    = prompt + " @" + workspacePath;
 
-        // Build the docker run command
-        List<String> cmd = new ArrayList<>(List.of(
-                "docker", "run", "--rm",
-                "-v", "gemini-credentials:/root/.gemini:ro",
-                "-v", workspaceVolumeName + ":/src:ro",
-                "gemini-cli:latest",
-                "-p", prompt + " @" + containerPath
-        ));
+        // Direct invocation — gemini is on $PATH inside the container.
+        // --approval-mode=yolo: auto-approve all tool calls (no interactive prompts)
+        // --output-format=text: clean text output (no ANSI, no TUI chrome)
+        ProcessBuilder pb = new ProcessBuilder(
+                "gemini", "-p", fullPrompt, "--approval-mode=yolo", "--output-format=text");
+        pb.redirectErrorStream(true); // merge stderr into stdout
 
-        System.out.println("[GeminiCLI] Launching analysis for team: " + teamId);
-
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.redirectErrorStream(true);
+        System.out.println("[GeminiCLI] Starting analysis for team: " + teamId);
 
         Process process;
         try {
             process = pb.start();
         } catch (IOException e) {
-            throw new GeminiException("Failed to start docker process: " + e.getMessage());
+            throw new GeminiException("Failed to start gemini process: " + e.getMessage());
         }
 
-        // Drain output in a dedicated thread to prevent pipe-buffer deadlock
+        // Drain stdout/stderr in a dedicated thread (prevents pipe-buffer deadlock on large output)
         StringBuilder output = new StringBuilder();
         Thread drainer = new Thread(() -> {
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader r = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = r.readLine()) != null) {
                     output.append(line).append('\n');
+                    System.out.println("[GeminiCLI] " + line); // live visibility in Docker logs
                 }
             } catch (IOException ignored) {}
         });
@@ -96,67 +93,64 @@ public class GeminiCliWrapper {
 
         if (!finished) {
             process.destroyForcibly();
-            throw new GeminiException("Gemini CLI timed out after " + ANALYSIS_TIMEOUT_MINUTES + " minutes for team: " + teamId);
+            throw new GeminiException("Gemini CLI timed out after " + ANALYSIS_TIMEOUT_MINUTES
+                    + " minutes for team: " + teamId);
         }
 
         int exitCode = process.exitValue();
         String rawOutput = output.toString().trim();
+        System.out.println("[GeminiCLI] Finished (exit=" + exitCode + ") for team: " + teamId);
 
         if (exitCode != 0) {
-            String snippet = rawOutput.length() > 300 ? rawOutput.substring(0, 300) + "…" : rawOutput;
-            throw new GeminiException("Gemini CLI exited with code " + exitCode + ": " + snippet);
+            String snippet = rawOutput.length() > 400 ? rawOutput.substring(0, 400) + "…" : rawOutput;
+            throw new GeminiException("Gemini CLI exited " + exitCode + ": " + snippet);
         }
 
         return parseOutput(rawOutput, teamId);
     }
 
-    /**
-     * Extracts the JSON block from potentially noisy LLM output.
-     * Falls back to heuristic extraction before giving up.
-     */
+    // ── Output parsing ────────────────────────────────────────────────────────
+
     private GeminiResult parseOutput(String raw, String teamId) throws GeminiException {
-        // Try regex match for the JSON object first (handles preamble/postamble)
+        // Try strict regex match first (handles LLM preamble/postamble)
         Matcher m = JSON_PATTERN.matcher(raw);
         if (m.find()) {
-            return parseJson(m.group(), raw, teamId);
+            return parseJson(m.group(), teamId);
         }
-
-        // Fallback: find outermost { ... } block
+        // Fallback: extract outermost { … } block
         int start = raw.indexOf('{');
         int end   = raw.lastIndexOf('}');
         if (start != -1 && end > start) {
-            return parseJson(raw.substring(start, end + 1), raw, teamId);
+            return parseJson(raw.substring(start, end + 1), teamId);
         }
-
-        throw new GeminiException("No JSON found in Gemini output for team " + teamId + ". Raw: " + abbreviate(raw, 300));
+        throw new GeminiException("No JSON found in output for team " + teamId
+                + ". Raw (truncated): " + abbreviate(raw, 300));
     }
 
-    private GeminiResult parseJson(String json, String raw, String teamId) throws GeminiException {
+    private GeminiResult parseJson(String json, String teamId) throws GeminiException {
         try {
-            // Simple manual parse to avoid Jackson dependency in wrapper — fields are always scalar
             double score   = extractDouble(json, "score");
             String summary = extractString(json, "summary");
             return new GeminiResult(clamp(score), truncate(summary, 200));
         } catch (Exception e) {
-            throw new GeminiException("JSON parse error for team " + teamId + ": " + e.getMessage() + " | JSON: " + abbreviate(json, 200));
+            throw new GeminiException("JSON parse error for team " + teamId
+                    + ": " + e.getMessage() + " | JSON: " + abbreviate(json, 200));
         }
     }
 
     private double extractDouble(String json, String key) {
-        Pattern p = Pattern.compile("\"" + key + "\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)");
-        Matcher m = p.matcher(json);
+        Matcher m = Pattern.compile("\"" + key + "\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)").matcher(json);
         if (!m.find()) throw new IllegalArgumentException("Missing field: " + key);
         return Double.parseDouble(m.group(1));
     }
 
     private String extractString(String json, String key) {
-        Pattern p = Pattern.compile("\"" + key + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
-        Matcher m = p.matcher(json);
+        Matcher m = Pattern.compile("\"" + key + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(json);
         if (!m.find()) throw new IllegalArgumentException("Missing field: " + key);
         return m.group(1).replace("\\\"", "\"").replace("\\n", " ").replace("\\\\", "\\");
     }
 
-    private double clamp(double score) { return Math.max(0, Math.min(100, score)); }
+    private double clamp(double v)       { return Math.max(0, Math.min(100, v)); }
     private String truncate(String s, int max) { return s.length() <= max ? s : s.substring(0, max - 1) + "…"; }
     private String abbreviate(String s, int max) { return s.length() <= max ? s : s.substring(0, max) + "…"; }
 
@@ -166,3 +160,4 @@ public class GeminiCliWrapper {
         public GeminiException(String message) { super(message); }
     }
 }
+

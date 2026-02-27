@@ -157,8 +157,9 @@ services:
       dockerfile: ai-service/Dockerfile
     container_name: ai-service
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ehub-workspaces:/app/workspaces
+      # Mount host Google OAuth credentials so gemini CLI authenticates
+      - C:/Users/umanj/.gemini:/root/.gemini
     depends_on:
       - event-service
       - redis
@@ -167,7 +168,6 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       APPLICATION_EVENT_SERVICE_URL: http://event-service:8084
       WORKSPACE_ROOT: /app/workspaces
-      WORKSPACE_VOLUME_NAME: ehub_ehub-workspaces
       SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
     secrets:
       - source: github-token
@@ -176,15 +176,6 @@ services:
         target: GATEWAY_INTERNAL_SECRET
     networks:
       - ehub-network
-
-  # Build-only service: builds the gemini-cli:latest image used by ai-service at runtime.
-  # Run: docker compose build gemini-cli
-  gemini-cli:
-    build:
-      context: ./gemini-cli
-    image: gemini-cli:latest
-    profiles:
-      - build-only
 
 secrets:
   db-password:
@@ -210,7 +201,4 @@ networks:
 
 volumes:
   ehub-workspaces:
-  # Stores Google OAuth credentials — populated once by running:
-  #   docker run -it -v gemini-credentials:/root/.gemini gemini-cli:latest auth login
-  gemini-credentials:
 
