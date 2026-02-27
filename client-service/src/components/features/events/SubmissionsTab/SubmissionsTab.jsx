@@ -146,7 +146,11 @@ export default function SubmissionsTab({ teams, loading, eventStatus, eventId, p
                       {team.aiSummary && (
                         <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5">
                           <p className="text-xs font-medium text-blue-600 mb-0.5">AI Evaluation</p>
-                          <p className="text-sm text-ink-secondary leading-snug">{team.aiSummary}</p>
+                          <ul className="text-sm text-ink-secondary leading-snug space-y-1 list-none">
+                            {decodeURIComponent(team.aiSummary).split('.').map(s => s.trim()).filter(Boolean).map((sentence, i) => (
+                              <li key={i} className="flex gap-1.5"><span className="mt-1 shrink-0 w-1 h-1 rounded-full bg-blue-400 inline-block"></span><span>{sentence}.</span></li>
+                            ))}
+                          </ul>
                         </div>
                       )}
 
