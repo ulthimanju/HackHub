@@ -56,7 +56,7 @@ const MainLayout = memo(() => {
             onClick={() => handlePageChange('dashboard')}
             className="font-display font-bold text-base text-ink-primary hover:text-brand-600 transition-colors shrink-0"
           >
-            EHub
+            HackHub
           </button>
 
           {/* Search — absolutely centered */}
