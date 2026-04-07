@@ -81,7 +81,7 @@ const Register = () => {
                 <UserPlus className="w-5 h-5 text-brand-600" />
               </div>
             </div>
-            <h2 className="font-display font-semibold text-2xl text-ink-primary">Join EHub Today</h2>
+            <h2 className="font-display font-semibold text-2xl text-ink-primary">Join HackHub Today</h2>
             <p className="mt-2 text-sm text-ink-muted">
               Start your hackathon journey or{' '}
               <button

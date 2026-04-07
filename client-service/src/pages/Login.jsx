@@ -56,7 +56,7 @@ const Login = () => {
                 <LogIn className="w-5 h-5 text-brand-600" />
               </div>
             </div>
-            <h2 className="font-display font-semibold text-2xl text-ink-primary">Sign in to EHub</h2>
+            <h2 className="font-display font-semibold text-2xl text-ink-primary">Sign in to HackHub</h2>
             <p className="mt-2 text-sm text-ink-muted">
               Welcome back! Or{' '}
               <button
