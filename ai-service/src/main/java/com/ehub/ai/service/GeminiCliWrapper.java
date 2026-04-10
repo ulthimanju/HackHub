@@ -37,6 +37,9 @@ public class GeminiCliWrapper {
     @Value("${application.workspace-root}")
     private String workspaceRoot;
 
+    @Value("${application.gemini.model}")
+    private String geminiModel;
+
     /**
      * Runs the Gemini CLI against the cloned repo for {@code teamId}.
      *
@@ -54,7 +57,7 @@ public class GeminiCliWrapper {
         // --approval-mode=yolo: auto-approve all tool calls (no interactive prompts)
         // --output-format=text: clean text output (no ANSI, no TUI chrome)
         ProcessBuilder pb = new ProcessBuilder(
-                "gemini", "-p", fullPrompt, "--approval-mode=yolo", "--output-format=text");
+                "gemini", "-p", fullPrompt, "--model", geminiModel, "--approval-mode=yolo", "--output-format=text");
         pb.redirectErrorStream(true); // merge stderr into stdout
 
         System.out.println("[GeminiCLI] Starting analysis for team: " + teamId);

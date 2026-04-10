@@ -15,3 +15,5 @@ application:
   workspace-root: ${WORKSPACE_ROOT:/app/workspaces}
   github-token: ${GITHUB_TOKEN:}
   max-retries: 3
+  gemini:
+    model: ${GEMINI_MODEL:gemini-3.1-pro-preview}
