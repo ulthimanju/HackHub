@@ -1,4 +1,4 @@
-package com.ehub.ai.service;
+package com.ehub.ai.queue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -18,12 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.ehub.ai.run.EvaluationContext;
-import com.ehub.ai.queue.EvaluationJob;
-import com.ehub.ai.queue.EvaluationQueueService;
-import com.ehub.ai.queue.JobStatus;
 import com.ehub.ai.reporting.EvaluationReportingPort;
-import com.ehub.ai.queue.QueuePort;
+import com.ehub.ai.run.EvaluationContext;
 
 @ExtendWith(MockitoExtension.class)
 class EvaluationQueueServiceTest {
