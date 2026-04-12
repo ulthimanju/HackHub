@@ -32,13 +32,15 @@ public class TeamRosterController {
     }
 
     @PostMapping("/{eventId}")
-    public ResponseEntity<String> createTeam(@PathVariable String eventId, @Valid @RequestBody TeamCreateRequest request) {
+    public ResponseEntity<String> createTeam(@PathVariable String eventId,
+            @Valid @RequestBody TeamCreateRequest request) {
         teamFacade.createTeam(eventId, request, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.TEAM_CREATED.getMessage());
     }
 
     @PatchMapping("/{teamId}/skills-needed")
-    public ResponseEntity<String> updateSkillsNeeded(@PathVariable String teamId, @RequestBody SkillsNeededRequest request) {
+    public ResponseEntity<String> updateSkillsNeeded(@PathVariable String teamId,
+            @RequestBody SkillsNeededRequest request) {
         teamFacade.updateSkillsNeeded(teamId, request.getSkills(), getCurrentUserId());
         return ResponseEntity.ok("Skills updated successfully");
     }

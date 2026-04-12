@@ -36,78 +36,78 @@ import com.ehub.event.util.MessageKeys;
 @ExtendWith(MockitoExtension.class)
 class TeamRosterServiceTest {
 
-    @Mock
-    private TeamRepository teamRepository;
-    @Mock
-    private TeamMemberRepository teamMemberRepository;
-    @Mock
-    private RegistrationRepository registrationRepository;
-    @Mock
-    private EventRepository eventRepository;
-    @Mock
-    private NotificationPort notificationPort;
+        @Mock
+        private TeamRepository teamRepository;
+        @Mock
+        private TeamMemberRepository teamMemberRepository;
+        @Mock
+        private RegistrationRepository registrationRepository;
+        @Mock
+        private EventRepository eventRepository;
+        @Mock
+        private NotificationPort notificationPort;
 
-    private TeamClock fixedClock;
-    private TeamRosterService service;
+        private TeamClock fixedClock;
+        private TeamRosterService service;
 
-    @BeforeEach
-    void setUp() {
-        fixedClock = () -> LocalDateTime.of(2026, 4, 12, 10, 0, 0);
-        service = new TeamRosterService(
-                teamRepository,
-                teamMemberRepository,
-                registrationRepository,
-                eventRepository,
-                notificationPort,
-                fixedClock);
-    }
+        @BeforeEach
+        void setUp() {
+                fixedClock = () -> LocalDateTime.of(2026, 4, 12, 10, 0, 0);
+                service = new TeamRosterService(
+                                teamRepository,
+                                teamMemberRepository,
+                                registrationRepository,
+                                eventRepository,
+                                notificationPort,
+                                fixedClock);
+        }
 
-    @Test
-    void createTeam_rejectsWhenUserAlreadyInAcceptedTeamForEvent() {
-        Event event = Event.builder().id("e1").build();
-        Registration approved = Registration.builder().status(RegistrationStatus.APPROVED).build();
+        @Test
+        void createTeam_rejectsWhenUserAlreadyInAcceptedTeamForEvent() {
+                Event event = Event.builder().id("e1").build();
+                Registration approved = Registration.builder().status(RegistrationStatus.APPROVED).build();
 
-        when(eventRepository.findById("e1")).thenReturn(Optional.of(event));
-        when(registrationRepository.findByEventIdAndUserId("e1", "u1")).thenReturn(Optional.of(approved));
-        when(teamMemberRepository.existsByTeamEventIdAndUserIdAndStatus("e1", "u1", TeamMemberStatus.ACCEPTED))
-                .thenReturn(true);
+                when(eventRepository.findById("e1")).thenReturn(Optional.of(event));
+                when(registrationRepository.findByEventIdAndUserId("e1", "u1")).thenReturn(Optional.of(approved));
+                when(teamMemberRepository.existsByTeamEventIdAndUserIdAndStatus("e1", "u1", TeamMemberStatus.ACCEPTED))
+                                .thenReturn(true);
 
-        TeamCreateRequest req = new TeamCreateRequest();
-        req.setName("Ninjas");
+                TeamCreateRequest req = new TeamCreateRequest();
+                req.setName("Ninjas");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.createTeam("e1", req, "u1"));
+                IllegalStateException ex = assertThrows(IllegalStateException.class,
+                                () -> service.createTeam("e1", req, "u1"));
 
-        assertEquals(MessageKeys.ALREADY_IN_TEAM_THIS_EVENT.getMessage(), ex.getMessage());
-        verify(teamRepository, never()).save(org.mockito.ArgumentMatchers.any());
-    }
+                assertEquals(MessageKeys.ALREADY_IN_TEAM_THIS_EVENT.getMessage(), ex.getMessage());
+                verify(teamRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        }
 
-    @Test
-    void inviteMember_rejectsWhenTeamAtCapacity() {
-        Team team = Team.builder().id("t1").eventId("e1").leaderId("leader").name("Ninjas").build();
-        Event event = Event.builder().id("e1").name("Hack").teamSize(2).status(EventStatus.UPCOMING).build();
-        Registration approved = Registration.builder().status(RegistrationStatus.APPROVED).build();
+        @Test
+        void inviteMember_rejectsWhenTeamAtCapacity() {
+                Team team = Team.builder().id("t1").eventId("e1").leaderId("leader").name("Ninjas").build();
+                Event event = Event.builder().id("e1").name("Hack").teamSize(2).status(EventStatus.UPCOMING).build();
+                Registration approved = Registration.builder().status(RegistrationStatus.APPROVED).build();
 
-        TeamMember m1 = TeamMember.builder().status(TeamMemberStatus.ACCEPTED).build();
-        TeamMember m2 = TeamMember.builder().status(TeamMemberStatus.INVITED).build();
+                TeamMember m1 = TeamMember.builder().status(TeamMemberStatus.ACCEPTED).build();
+                TeamMember m2 = TeamMember.builder().status(TeamMemberStatus.INVITED).build();
 
-        when(teamMemberRepository.existsByTeamIdAndUserId("t1", "u2")).thenReturn(false);
-        when(teamRepository.findById("t1")).thenReturn(Optional.of(team));
-        when(eventRepository.findById("e1")).thenReturn(Optional.of(event));
-        when(registrationRepository.findByEventIdAndUserId("e1", "u2")).thenReturn(Optional.of(approved));
-        when(teamMemberRepository.existsByTeamEventIdAndUserIdAndStatus("e1", "u2", TeamMemberStatus.ACCEPTED))
-                .thenReturn(false);
-        when(teamMemberRepository.findByTeamId("t1")).thenReturn(List.of(m1, m2));
+                when(teamMemberRepository.existsByTeamIdAndUserId("t1", "u2")).thenReturn(false);
+                when(teamRepository.findById("t1")).thenReturn(Optional.of(team));
+                when(eventRepository.findById("e1")).thenReturn(Optional.of(event));
+                when(registrationRepository.findByEventIdAndUserId("e1", "u2")).thenReturn(Optional.of(approved));
+                when(teamMemberRepository.existsByTeamEventIdAndUserIdAndStatus("e1", "u2", TeamMemberStatus.ACCEPTED))
+                                .thenReturn(false);
+                when(teamMemberRepository.findByTeamId("t1")).thenReturn(List.of(m1, m2));
 
-        TeamInviteRequest request = new TeamInviteRequest();
-        request.setUserId("u2");
-        request.setUserEmail("u2@example.com");
-        request.setUsername("user2");
+                TeamInviteRequest request = new TeamInviteRequest();
+                request.setUserId("u2");
+                request.setUserEmail("u2@example.com");
+                request.setUsername("user2");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.inviteMember("t1", request, "leader"));
+                IllegalStateException ex = assertThrows(IllegalStateException.class,
+                                () -> service.inviteMember("t1", request, "leader"));
 
-        assertEquals(MessageKeys.TEAM_AT_MAX_CAPACITY.getMessage(), ex.getMessage());
-        verify(teamMemberRepository, never()).save(org.mockito.ArgumentMatchers.any());
-    }
+                assertEquals(MessageKeys.TEAM_AT_MAX_CAPACITY.getMessage(), ex.getMessage());
+                verify(teamMemberRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        }
 }

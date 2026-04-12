@@ -1,19 +1,21 @@
 package com.ehub.event.team.query;
 
-import com.ehub.event.dto.TeamResponse;
-import com.ehub.event.shared.entity.Team;
-import com.ehub.event.shared.mapper.TeamMapper;
-import com.ehub.event.shared.repository.TeamMemberRepository;
-import com.ehub.event.shared.repository.TeamRepository;
-import com.ehub.event.util.MessageKeys;
-import com.ehub.event.exception.ResourceNotFoundException;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.ehub.event.dto.TeamResponse;
+import com.ehub.event.exception.ResourceNotFoundException;
+import com.ehub.event.shared.entity.Team;
+import com.ehub.event.shared.mapper.TeamMapper;
+import com.ehub.event.shared.repository.TeamMemberRepository;
+import com.ehub.event.shared.repository.TeamRepository;
+import com.ehub.event.util.MessageKeys;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

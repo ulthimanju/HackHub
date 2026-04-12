@@ -34,7 +34,8 @@ public class TeamSubmissionController {
     }
 
     @PostMapping("/{teamId}/submit")
-    public ResponseEntity<String> submitProject(@PathVariable String teamId, @Valid @RequestBody TeamSubmissionRequest request) {
+    public ResponseEntity<String> submitProject(@PathVariable String teamId,
+            @Valid @RequestBody TeamSubmissionRequest request) {
         teamFacade.submitProject(teamId, getCurrentUserId(), request);
         return ResponseEntity.ok(MessageKeys.PROJECT_SUBMITTED_SUCCESS.getMessage());
     }
@@ -51,8 +52,10 @@ public class TeamSubmissionController {
 
     @PatchMapping("/{teamId}/manual-review")
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ORGANIZER')")
-    public ResponseEntity<String> updateManualReview(@PathVariable String teamId, @RequestBody ManualReviewRequest request) {
-        teamFacade.updateManualReview(teamId, request.getManualScore(), request.getOrganizerNotes(), getCurrentUserId());
+    public ResponseEntity<String> updateManualReview(@PathVariable String teamId,
+            @RequestBody ManualReviewRequest request) {
+        teamFacade.updateManualReview(teamId, request.getManualScore(), request.getOrganizerNotes(),
+                getCurrentUserId());
         return ResponseEntity.ok("Review saved");
     }
 

@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ehub.event.dto.TeamSubmissionRequest;
+import com.ehub.event.service.OutboxService;
 import com.ehub.event.shared.entity.Event;
 import com.ehub.event.shared.entity.Team;
 import com.ehub.event.shared.mapper.TeamMapper;
@@ -25,86 +26,85 @@ import com.ehub.event.shared.port.TeamClock;
 import com.ehub.event.shared.repository.EventRepository;
 import com.ehub.event.shared.repository.ProblemStatementRepository;
 import com.ehub.event.shared.repository.TeamRepository;
-import com.ehub.event.service.OutboxService;
 import com.ehub.event.util.MessageKeys;
 
 @ExtendWith(MockitoExtension.class)
 class TeamSubmissionServiceTest {
 
-    @Mock
-    private TeamRepository teamRepository;
-    @Mock
-    private EventRepository eventRepository;
-    @Mock
-    private ProblemStatementRepository problemStatementRepository;
-    @Mock
-    private OutboxService outboxService;
+        @Mock
+        private TeamRepository teamRepository;
+        @Mock
+        private EventRepository eventRepository;
+        @Mock
+        private ProblemStatementRepository problemStatementRepository;
+        @Mock
+        private OutboxService outboxService;
 
-    private TeamSubmissionService service;
+        private TeamSubmissionService service;
 
-    @BeforeEach
-    void setUp() {
-        TeamClock fixedClock = () -> LocalDateTime.of(2026, 4, 12, 10, 0, 0);
-        service = new TeamSubmissionService(
-                teamRepository,
-                eventRepository,
-                problemStatementRepository,
-                new TeamMapper(),
-                fixedClock,
-                outboxService);
-    }
+        @BeforeEach
+        void setUp() {
+                TeamClock fixedClock = () -> LocalDateTime.of(2026, 4, 12, 10, 0, 0);
+                service = new TeamSubmissionService(
+                                teamRepository,
+                                eventRepository,
+                                problemStatementRepository,
+                                new TeamMapper(),
+                                fixedClock,
+                                outboxService);
+        }
 
-    @Test
-    void submitProject_rejectsWhenEventNotOngoing() {
-        Team team = Team.builder().id("t1").eventId("e1").leaderId("u1").build();
-        Event event = Event.builder()
-                .id("e1")
-                .startDate(LocalDateTime.of(2026, 4, 12, 12, 0, 0))
-                .endDate(LocalDateTime.of(2026, 4, 13, 12, 0, 0))
-                .registrationStartDate(LocalDateTime.of(2026, 4, 10, 10, 0, 0))
-                .registrationEndDate(LocalDateTime.of(2026, 4, 11, 10, 0, 0))
-                .judging(true)
-                .build();
+        @Test
+        void submitProject_rejectsWhenEventNotOngoing() {
+                Team team = Team.builder().id("t1").eventId("e1").leaderId("u1").build();
+                Event event = Event.builder()
+                                .id("e1")
+                                .startDate(LocalDateTime.of(2026, 4, 12, 12, 0, 0))
+                                .endDate(LocalDateTime.of(2026, 4, 13, 12, 0, 0))
+                                .registrationStartDate(LocalDateTime.of(2026, 4, 10, 10, 0, 0))
+                                .registrationEndDate(LocalDateTime.of(2026, 4, 11, 10, 0, 0))
+                                .judging(true)
+                                .build();
 
-        when(teamRepository.findById("t1")).thenReturn(Optional.of(team));
-        when(eventRepository.findById("e1")).thenReturn(Optional.of(event));
+                when(teamRepository.findById("t1")).thenReturn(Optional.of(team));
+                when(eventRepository.findById("e1")).thenReturn(Optional.of(event));
 
-        TeamSubmissionRequest req = new TeamSubmissionRequest();
-        req.setRepoUrl("https://example.com/repo");
+                TeamSubmissionRequest req = new TeamSubmissionRequest();
+                req.setRepoUrl("https://example.com/repo");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.submitProject("t1", "u1", req));
+                IllegalStateException ex = assertThrows(IllegalStateException.class,
+                                () -> service.submitProject("t1", "u1", req));
 
-        assertEquals(String.format(MessageKeys.SUBMISSIONS_NOT_OPEN.getMessage(), event.getStartDate()),
-                ex.getMessage());
-        verify(teamRepository, never()).save(team);
-        verify(outboxService, never()).enqueue(anyString(), anyString(), anyString(), anyMap());
-    }
+                assertEquals(String.format(MessageKeys.SUBMISSIONS_NOT_OPEN.getMessage(), event.getStartDate()),
+                                ex.getMessage());
+                verify(teamRepository, never()).save(team);
+                verify(outboxService, never()).enqueue(anyString(), anyString(), anyString(), anyMap());
+        }
 
-    @Test
-    void submitProject_updatesRepoAndSubmissionTimeWhenOngoing() {
-        Team team = Team.builder().id("t1").eventId("e1").leaderId("u1").score(0.0).build();
-        Event event = Event.builder()
-                .id("e1")
-                .startDate(LocalDateTime.of(2026, 4, 12, 9, 0, 0))
-                .endDate(LocalDateTime.of(2026, 4, 12, 18, 0, 0))
-                .registrationStartDate(LocalDateTime.of(2026, 4, 10, 10, 0, 0))
-                .registrationEndDate(LocalDateTime.of(2026, 4, 11, 10, 0, 0))
-                .judging(true)
-                .build();
+        @Test
+        void submitProject_updatesRepoAndSubmissionTimeWhenOngoing() {
+                Team team = Team.builder().id("t1").eventId("e1").leaderId("u1").score(0.0).build();
+                Event event = Event.builder()
+                                .id("e1")
+                                .startDate(LocalDateTime.of(2026, 4, 12, 9, 0, 0))
+                                .endDate(LocalDateTime.of(2026, 4, 12, 18, 0, 0))
+                                .registrationStartDate(LocalDateTime.of(2026, 4, 10, 10, 0, 0))
+                                .registrationEndDate(LocalDateTime.of(2026, 4, 11, 10, 0, 0))
+                                .judging(true)
+                                .build();
 
-        when(teamRepository.findById("t1")).thenReturn(Optional.of(team));
-        when(eventRepository.findById("e1")).thenReturn(Optional.of(event));
+                when(teamRepository.findById("t1")).thenReturn(Optional.of(team));
+                when(eventRepository.findById("e1")).thenReturn(Optional.of(event));
 
-        TeamSubmissionRequest req = new TeamSubmissionRequest();
-        req.setRepoUrl("https://example.com/repo");
-        req.setDemoUrl("https://example.com/demo");
+                TeamSubmissionRequest req = new TeamSubmissionRequest();
+                req.setRepoUrl("https://example.com/repo");
+                req.setDemoUrl("https://example.com/demo");
 
-        service.submitProject("t1", "u1", req);
+                service.submitProject("t1", "u1", req);
 
-        assertEquals("https://example.com/repo", team.getRepoUrl());
-        assertEquals("https://example.com/demo", team.getDemoUrl());
-        verify(teamRepository).save(team);
-        verify(outboxService).enqueue(anyString(), anyString(), anyString(), anyMap());
-    }
+                assertEquals("https://example.com/repo", team.getRepoUrl());
+                assertEquals("https://example.com/demo", team.getDemoUrl());
+                verify(teamRepository).save(team);
+                verify(outboxService).enqueue(anyString(), anyString(), anyString(), anyMap());
+        }
 }

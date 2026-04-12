@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ehub.event.dto.TeamCreateRequest;
 import com.ehub.event.dto.TeamInviteRequest;
+import com.ehub.event.exception.ResourceNotFoundException;
+import com.ehub.event.exception.TeamRosterException;
 import com.ehub.event.shared.entity.Event;
 import com.ehub.event.shared.entity.Registration;
 import com.ehub.event.shared.entity.Team;
@@ -17,8 +19,6 @@ import com.ehub.event.shared.enums.EventStatus;
 import com.ehub.event.shared.enums.RegistrationStatus;
 import com.ehub.event.shared.enums.TeamMemberStatus;
 import com.ehub.event.shared.enums.TeamRole;
-import com.ehub.event.exception.ResourceNotFoundException;
-import com.ehub.event.exception.TeamRosterException;
 import com.ehub.event.shared.port.NotificationPort;
 import com.ehub.event.shared.port.TeamClock;
 import com.ehub.event.shared.repository.EventRepository;
