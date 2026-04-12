@@ -1,4 +1,4 @@
-package com.ehub.auth.exception;
+package com.ehub.auth.error.api;
 
 import com.ehub.auth.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
