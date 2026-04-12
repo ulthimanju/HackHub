@@ -1,4 +1,4 @@
-package com.ehub.event.service;
+package com.ehub.event.team.roster;
 
 import java.util.List;
 import java.util.UUID;

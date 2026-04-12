@@ -1,4 +1,4 @@
-package com.ehub.event.service;
+package com.ehub.event.team.submission;
 
 import java.util.List;
 import java.util.Map;
@@ -18,6 +18,7 @@ import com.ehub.event.shared.port.TeamClock;
 import com.ehub.event.shared.repository.EventRepository;
 import com.ehub.event.shared.repository.ProblemStatementRepository;
 import com.ehub.event.shared.repository.TeamRepository;
+import com.ehub.event.service.OutboxService;
 import com.ehub.event.util.MessageKeys;
 
 import lombok.RequiredArgsConstructor;

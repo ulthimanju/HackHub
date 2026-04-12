@@ -1,4 +1,4 @@
-package com.ehub.event.service;
+package com.ehub.event.team.roster;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

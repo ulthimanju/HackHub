@@ -1,9 +1,9 @@
 package com.ehub.event.facade;
 
 import com.ehub.event.dto.*;
-import com.ehub.event.service.TeamQueryService;
-import com.ehub.event.service.TeamRosterService;
-import com.ehub.event.service.TeamSubmissionService;
+import com.ehub.event.team.query.TeamQueryService;
+import com.ehub.event.team.roster.TeamRosterService;
+import com.ehub.event.team.submission.TeamSubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

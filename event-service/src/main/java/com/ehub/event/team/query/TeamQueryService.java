@@ -1,4 +1,4 @@
-package com.ehub.event.service;
+package com.ehub.event.team.query;
 
 import com.ehub.event.dto.TeamResponse;
 import com.ehub.event.shared.entity.Team;
