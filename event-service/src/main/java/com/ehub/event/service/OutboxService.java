@@ -1,6 +1,7 @@
 package com.ehub.event.service;
 
 import java.time.LocalDateTime;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -69,6 +70,32 @@ public class OutboxService {
             event.setError(ex.getMessage());
             outboxEventRepository.save(event);
         });
+    }
+
+    @Transactional
+    public boolean replay(String id) {
+        return outboxEventRepository.findById(id)
+                .map(event -> {
+                    event.setStatus(OutboxStatus.PENDING);
+                    event.setError(null);
+                    event.setAttempts(0);
+                    event.setPublishedAt(null);
+                    outboxEventRepository.save(event);
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<OutboxStatus, Long> getStatusCounts() {
+        Map<OutboxStatus, Long> counts = new EnumMap<>(OutboxStatus.class);
+        for (Object[] row : outboxEventRepository.countGroupedByStatus()) {
+            counts.put((OutboxStatus) row[0], (Long) row[1]);
+        }
+        for (OutboxStatus status : OutboxStatus.values()) {
+            counts.putIfAbsent(status, 0L);
+        }
+        return counts;
     }
 
     private String toJson(Map<String, Object> payload) {
