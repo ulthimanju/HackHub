@@ -1,4 +1,4 @@
-package com.ehub.auth.controller;
+package com.ehub.auth.api;
 
 import com.ehub.auth.dto.request.LoginRequest;
 import com.ehub.auth.dto.request.PasswordResetRequest;
@@ -7,13 +7,11 @@ import com.ehub.auth.dto.request.UpdateProfileRequest;
 import com.ehub.auth.dto.response.AuthenticationResponse;
 import com.ehub.auth.dto.response.UserResponse;
 import com.ehub.auth.entity.User;
-import com.ehub.auth.service.AuthService;
+import com.ehub.auth.application.AuthService;
 import com.ehub.auth.util.MessageKeys;
-import com.ehub.auth.enums.UserRole;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;

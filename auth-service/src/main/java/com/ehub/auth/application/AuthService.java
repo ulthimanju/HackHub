@@ -1,4 +1,4 @@
-package com.ehub.auth.service;
+package com.ehub.auth.application;
 
 import com.ehub.auth.dto.request.LoginRequest;
 import com.ehub.auth.dto.request.PasswordResetRequest;
