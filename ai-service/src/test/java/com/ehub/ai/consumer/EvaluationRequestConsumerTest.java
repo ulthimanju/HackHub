@@ -2,14 +2,15 @@ package com.ehub.ai.consumer;
 
 import static org.mockito.Mockito.verify;
 
-import com.ehub.ai.dto.EvaluationRequestMessage;
-import com.ehub.ai.service.EvaluationQueueService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.ehub.ai.dto.EvaluationRequestMessage;
+import com.ehub.ai.service.EvaluationQueueService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
 class EvaluationRequestConsumerTest {

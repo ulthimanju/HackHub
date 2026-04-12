@@ -1,16 +1,22 @@
 package com.ehub.ai.controller;
 
-import com.ehub.ai.service.EvaluationWorker;
-import com.ehub.ai.service.EvaluationRequestPublisher;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ehub.ai.service.EvaluationRequestPublisher;
+import com.ehub.ai.service.EvaluationWorker;
 
 /**
  * REST controller exposing AI evaluation operations.
  *
- * All endpoints require the X-Internal-Secret header (enforced by HeaderAuthenticationFilter).
+ * All endpoints require the X-Internal-Secret header (enforced by
+ * HeaderAuthenticationFilter).
  */
 @RestController
 @RequestMapping("/ai")
@@ -25,7 +31,8 @@ public class AiController {
     }
 
     /**
-     * Queues evaluation jobs for all eligible teams (those with a repoUrl) in an event.
+     * Queues evaluation jobs for all eligible teams (those with a repoUrl) in an
+     * event.
      * Returns the count of teams queued.
      */
     @PostMapping("/evaluate-event/{eventId}")
@@ -37,10 +44,9 @@ public class AiController {
         return ResponseEntity.accepted().body(Map.of(
                 "eventId", eventId,
                 "teamsQueued", queued,
-            "message", requestPublisher.isEnabled()
-                ? "Evaluation request published to Kafka. Use /ai/job/{teamId}/status to track progress."
-                : "Evaluation jobs queued. Use /ai/job/{teamId}/status to track progress."
-        ));
+                "message", requestPublisher.isEnabled()
+                        ? "Evaluation request published to Kafka. Use /ai/job/{teamId}/status to track progress."
+                        : "Evaluation jobs queued. Use /ai/job/{teamId}/status to track progress."));
     }
 
     /**
@@ -57,8 +63,7 @@ public class AiController {
                 "teamId", teamId,
                 "message", requestPublisher.isEnabled()
                         ? "Team evaluation request published to Kafka."
-                        : "Team evaluation queued."
-        ));
+                        : "Team evaluation queued."));
     }
 
     /**

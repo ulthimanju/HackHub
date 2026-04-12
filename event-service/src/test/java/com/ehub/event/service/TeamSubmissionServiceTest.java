@@ -36,8 +36,8 @@ class TeamSubmissionServiceTest {
     private EventRepository eventRepository;
     @Mock
     private ProblemStatementRepository problemStatementRepository;
-        @Mock
-        private OutboxService outboxService;
+    @Mock
+    private OutboxService outboxService;
 
     private TeamSubmissionService service;
 
