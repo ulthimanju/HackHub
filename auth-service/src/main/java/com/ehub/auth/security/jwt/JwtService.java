@@ -1,4 +1,4 @@
-package com.ehub.auth.security;
+package com.ehub.auth.security.jwt;
 
 import com.ehub.auth.entity.User;
 import io.jsonwebtoken.Claims;

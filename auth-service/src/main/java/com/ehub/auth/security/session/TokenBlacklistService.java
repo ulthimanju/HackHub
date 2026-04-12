@@ -1,4 +1,4 @@
-package com.ehub.auth.security;
+package com.ehub.auth.security.session;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;

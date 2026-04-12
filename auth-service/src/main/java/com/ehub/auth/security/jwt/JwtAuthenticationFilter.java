@@ -1,4 +1,4 @@
-package com.ehub.auth.security;
+package com.ehub.auth.security.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -13,6 +13,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.ehub.auth.security.session.TokenBlacklistService;
 
 import java.io.IOException;
 
