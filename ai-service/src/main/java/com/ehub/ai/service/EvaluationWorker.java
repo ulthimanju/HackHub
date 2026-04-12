@@ -6,7 +6,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Service;
 
-import com.ehub.ai.model.EvaluationJob;
+import com.ehub.ai.queue.EvaluationJob;
+import com.ehub.ai.queue.EvaluationQueueService;
 import com.ehub.ai.port.AnalyzerPort;
 import com.ehub.ai.reporting.EvaluationReportingPort;
 

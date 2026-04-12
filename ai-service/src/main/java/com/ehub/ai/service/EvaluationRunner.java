@@ -2,9 +2,10 @@ package com.ehub.ai.service;
 
 import org.springframework.stereotype.Service;
 
-import com.ehub.ai.model.EvaluationJob;
+import com.ehub.ai.queue.EvaluationJob;
+import com.ehub.ai.queue.EvaluationQueueService;
 import com.ehub.ai.model.GeminiResult;
-import com.ehub.ai.model.JobStatus;
+import com.ehub.ai.queue.JobStatus;
 import com.ehub.ai.port.AnalyzerPort;
 import com.ehub.ai.reporting.EvaluationReportingPort;
 import com.ehub.ai.port.PromptLoader;

@@ -1,4 +1,4 @@
-package com.ehub.event.dto;
+package com.ehub.event.event.problem;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

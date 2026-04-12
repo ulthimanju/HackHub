@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ehub.ai.service.EvaluationRequestPublisher;
+import com.ehub.ai.queue.EvaluationRequestPublisher;
 import com.ehub.ai.service.EvaluationWorker;
 
 /**

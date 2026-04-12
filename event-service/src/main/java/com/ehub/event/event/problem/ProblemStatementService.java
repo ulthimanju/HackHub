@@ -1,4 +1,4 @@
-package com.ehub.event.service;
+package com.ehub.event.event.problem;
 
 import java.util.List;
 import java.util.UUID;
@@ -7,11 +7,11 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ehub.event.dto.ProblemStatementRequest;
+import com.ehub.event.event.problem.ProblemStatementRequest;
 import com.ehub.event.shared.entity.Event;
 import com.ehub.event.shared.entity.ProblemStatement;
 import com.ehub.event.shared.enums.EventStatus;
-import com.ehub.event.exception.ProblemStatementException;
+import com.ehub.event.event.problem.ProblemStatementException;
 import com.ehub.event.exception.ResourceNotFoundException;
 import com.ehub.event.shared.repository.EventRepository;
 import com.ehub.event.shared.repository.ProblemStatementRepository;

@@ -1,4 +1,4 @@
-package com.ehub.event.service;
+package com.ehub.event.event.problem;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ehub.event.dto.ProblemStatementRequest;
+import com.ehub.event.event.problem.ProblemStatementRequest;
 import com.ehub.event.shared.entity.Event;
 import com.ehub.event.shared.entity.ProblemStatement;
 import com.ehub.event.shared.enums.EventStatus;

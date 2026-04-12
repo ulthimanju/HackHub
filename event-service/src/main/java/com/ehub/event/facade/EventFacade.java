@@ -11,13 +11,13 @@ import com.ehub.event.dto.EventRequest;
 import com.ehub.event.dto.EventResponse;
 import com.ehub.event.dto.EventStatsResponse;
 import com.ehub.event.dto.LifecycleResponse;
-import com.ehub.event.dto.ProblemStatementRequest;
+import com.ehub.event.event.problem.ProblemStatementRequest;
 import com.ehub.event.event.registration.EventRegistrationService;
 import com.ehub.event.event.registration.RegistrationRequest;
 import com.ehub.event.event.registration.RegistrationResponse;
 import com.ehub.event.service.EventLifecycleService;
 import com.ehub.event.service.EventQueryService;
-import com.ehub.event.service.ProblemStatementService;
+import com.ehub.event.event.problem.ProblemStatementService;
 import com.ehub.event.shared.enums.EventStatus;
 import com.ehub.event.shared.enums.RegistrationStatus;
 

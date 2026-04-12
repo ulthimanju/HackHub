@@ -8,8 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ehub.ai.dto.EvaluationRequestMessage;
-import com.ehub.ai.service.EvaluationQueueService;
+import com.ehub.ai.queue.EvaluationRequestConsumer;
+import com.ehub.ai.queue.EvaluationRequestMessage;
+import com.ehub.ai.queue.EvaluationQueueService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)

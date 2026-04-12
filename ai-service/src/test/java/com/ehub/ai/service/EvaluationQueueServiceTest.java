@@ -19,10 +19,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ehub.ai.dto.EvaluationContext;
-import com.ehub.ai.model.EvaluationJob;
-import com.ehub.ai.model.JobStatus;
+import com.ehub.ai.queue.EvaluationJob;
+import com.ehub.ai.queue.EvaluationQueueService;
+import com.ehub.ai.queue.JobStatus;
 import com.ehub.ai.reporting.EvaluationReportingPort;
-import com.ehub.ai.port.QueuePort;
+import com.ehub.ai.queue.QueuePort;
 
 @ExtendWith(MockitoExtension.class)
 class EvaluationQueueServiceTest {

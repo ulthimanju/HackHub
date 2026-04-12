@@ -11,7 +11,7 @@ import com.ehub.event.dto.EventRequest;
 import com.ehub.event.dto.EventResponse;
 import com.ehub.event.dto.EventStatsResponse;
 import com.ehub.event.dto.LifecycleResponse;
-import com.ehub.event.dto.ProblemStatementRequest;
+import com.ehub.event.event.problem.ProblemStatementRequest;
 import com.ehub.event.event.registration.RegistrationRequest;
 import com.ehub.event.event.registration.RegistrationResponse;
 import com.ehub.event.shared.enums.EventStatus;

@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.ehub.ai.queue.EvaluationRequestPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)

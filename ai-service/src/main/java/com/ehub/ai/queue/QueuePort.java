@@ -1,11 +1,11 @@
-package com.ehub.ai.port;
+package com.ehub.ai.queue;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import com.ehub.ai.model.EvaluationJob;
-import com.ehub.ai.model.JobStatus;
+import com.ehub.ai.queue.EvaluationJob;
+import com.ehub.ai.queue.JobStatus;
 
 public interface QueuePort {
     void enqueue(EvaluationJob job);

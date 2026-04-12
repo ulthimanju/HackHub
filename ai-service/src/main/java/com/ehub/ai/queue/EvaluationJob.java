@@ -1,4 +1,4 @@
-package com.ehub.ai.model;
+package com.ehub.ai.queue;
 
 import com.ehub.ai.dto.EvaluationContext;
 

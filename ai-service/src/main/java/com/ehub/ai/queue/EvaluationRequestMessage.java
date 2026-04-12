@@ -1,4 +1,4 @@
-package com.ehub.ai.dto;
+package com.ehub.ai.queue;
 
 import lombok.Data;
 

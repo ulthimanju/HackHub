@@ -1,4 +1,4 @@
-package com.ehub.event.exception;
+package com.ehub.event.event.problem;
 
 public class ProblemStatementException extends IllegalStateException {
     public ProblemStatementException(String message) {

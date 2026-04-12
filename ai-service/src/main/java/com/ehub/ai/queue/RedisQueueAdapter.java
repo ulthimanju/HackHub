@@ -1,4 +1,4 @@
-package com.ehub.ai.adapter;
+package com.ehub.ai.queue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,9 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import com.ehub.ai.exception.EvaluationQueueException;
-import com.ehub.ai.model.EvaluationJob;
-import com.ehub.ai.model.JobStatus;
-import com.ehub.ai.port.QueuePort;
+import com.ehub.ai.queue.EvaluationJob;
+import com.ehub.ai.queue.JobStatus;
+import com.ehub.ai.queue.QueuePort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;

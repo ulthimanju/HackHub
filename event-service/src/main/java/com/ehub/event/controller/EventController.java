@@ -25,9 +25,8 @@ import com.ehub.event.dto.EventRequest;
 import com.ehub.event.dto.EventResponse;
 import com.ehub.event.dto.EventStatsResponse;
 import com.ehub.event.dto.LifecycleResponse;
-import com.ehub.event.dto.ProblemStatementRequest;
-import com.ehub.event.shared.enums.EventStatus;
 import com.ehub.event.facade.EventFacade;
+import com.ehub.event.shared.enums.EventStatus;
 import com.ehub.event.util.MessageKeys;
 
 import jakarta.validation.Valid;
@@ -139,40 +138,6 @@ public class EventController {
     public ResponseEntity<String> deleteEvent(@PathVariable String id) {
         eventFacade.deleteEvent(id, getCurrentUserId());
         return ResponseEntity.ok(MessageKeys.EVENT_DELETED.getMessage());
-    }
-
-    @PostMapping("/{eventId}/problemstatements/bulk")
-    @PreAuthorize("hasRole('ORGANIZER')")
-    public ResponseEntity<String> addProblemStatements(
-            @PathVariable String eventId,
-            @Valid @RequestBody List<ProblemStatementRequest> requests) {
-        eventFacade.addProblemStatements(eventId, requests, getCurrentUserId());
-        return ResponseEntity.ok(MessageKeys.PROBLEM_ADDED_SUCCESS.getMessage());
-    }
-
-    @PostMapping("/{eventId}/problemstatements")
-    @PreAuthorize("hasRole('ORGANIZER')")
-    public ResponseEntity<String> addProblemStatement(
-            @PathVariable String eventId,
-            @Valid @RequestBody ProblemStatementRequest request) {
-        eventFacade.addProblemStatement(eventId, request, getCurrentUserId());
-        return ResponseEntity.ok(MessageKeys.PROBLEM_ADDED_SUCCESS.getMessage());
-    }
-
-    @PutMapping("/problemstatements/{id}")
-    @PreAuthorize("hasRole('ORGANIZER')")
-    public ResponseEntity<String> updateProblemStatement(
-            @PathVariable String id,
-            @Valid @RequestBody ProblemStatementRequest request) {
-        eventFacade.updateProblemStatement(id, request, getCurrentUserId());
-        return ResponseEntity.ok(MessageKeys.PROBLEM_UPDATED.getMessage());
-    }
-
-    @DeleteMapping("/problemstatements/{id}")
-    @PreAuthorize("hasRole('ORGANIZER')")
-    public ResponseEntity<String> deleteProblemStatement(@PathVariable String id) {
-        eventFacade.deleteProblemStatement(id, getCurrentUserId());
-        return ResponseEntity.ok(MessageKeys.PROBLEM_DELETED.getMessage());
     }
 
     @PatchMapping("/{id}/advance-status")

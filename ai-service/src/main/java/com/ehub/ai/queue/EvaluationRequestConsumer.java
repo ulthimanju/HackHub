@@ -1,7 +1,7 @@
-package com.ehub.ai.consumer;
+package com.ehub.ai.queue;
 
-import com.ehub.ai.dto.EvaluationRequestMessage;
-import com.ehub.ai.service.EvaluationQueueService;
+import com.ehub.ai.queue.EvaluationRequestMessage;
+import com.ehub.ai.queue.EvaluationQueueService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,10 +1,10 @@
-package com.ehub.ai.service;
+package com.ehub.ai.queue;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import com.ehub.ai.dto.EvaluationRequestMessage;
+import com.ehub.ai.queue.EvaluationRequestMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

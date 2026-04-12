@@ -1,4 +1,4 @@
-package com.ehub.ai.service;
+package com.ehub.ai.queue;
 
 import java.util.List;
 import java.util.Map;
@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service;
 
 import com.ehub.ai.dto.EvaluationContext;
 import com.ehub.ai.exception.EvaluationQueueException;
-import com.ehub.ai.model.EvaluationJob;
-import com.ehub.ai.model.JobStatus;
+import com.ehub.ai.queue.EvaluationJob;
+import com.ehub.ai.queue.JobStatus;
 import com.ehub.ai.reporting.EvaluationReportingPort;
-import com.ehub.ai.port.QueuePort;
+import com.ehub.ai.queue.QueuePort;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
