@@ -1,8 +1,10 @@
 package com.ehub.event.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.ehub.event.client.NotificationClient;
@@ -20,6 +22,10 @@ public class MissionNotificationService {
 
     private final NotificationClient notificationClient;
     private final RegistrationRepository registrationRepository;
+    private final OutboxService outboxService;
+
+    @Value("${application.outbox.notifications-enabled:true}")
+    private boolean outboxNotificationsEnabled;
 
     public void notifyTransition(Event event, EventStatus to) {
         String subject = "";
@@ -60,11 +66,27 @@ public class MissionNotificationService {
                 .toList();
 
         for (String email : emails) {
+            if (outboxNotificationsEnabled) {
+                enqueueNotification(eventId, email, subject, message);
+            }
+
             try {
                 notificationClient.sendEmail(email, subject, message);
             } catch (Exception e) {
                 log.warn("Failed to send notification to {}", email, e);
             }
         }
+    }
+
+    private void enqueueNotification(String eventId, String email, String subject, String message) {
+        outboxService.enqueue(
+                "event",
+                eventId,
+                "notification.email.requested",
+                Map.of(
+                        "eventId", eventId,
+                        "to", email,
+                        "subject", subject,
+                        "message", message));
     }
 }
