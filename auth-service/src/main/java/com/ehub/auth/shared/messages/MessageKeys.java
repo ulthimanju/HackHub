@@ -1,4 +1,4 @@
-package com.ehub.auth.util;
+package com.ehub.auth.shared.messages;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package com.ehub.auth.outbound.notification;
 
-import com.ehub.auth.util.MessageKeys;
+import com.ehub.auth.shared.messages.MessageKeys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;

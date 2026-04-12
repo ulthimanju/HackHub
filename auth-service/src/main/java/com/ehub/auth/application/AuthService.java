@@ -18,7 +18,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import com.ehub.auth.enums.UserRole;
-import com.ehub.auth.util.MessageKeys;
+import com.ehub.auth.shared.messages.MessageKeys;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

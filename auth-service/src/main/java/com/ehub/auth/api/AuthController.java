@@ -8,7 +8,7 @@ import com.ehub.auth.dto.response.AuthenticationResponse;
 import com.ehub.auth.dto.response.UserResponse;
 import com.ehub.auth.entity.User;
 import com.ehub.auth.application.AuthService;
-import com.ehub.auth.util.MessageKeys;
+import com.ehub.auth.shared.messages.MessageKeys;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
