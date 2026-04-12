@@ -1,17 +1,19 @@
 package com.ehub.ai.adapter;
 
-import com.ehub.ai.run.EvaluationContext;
-import com.ehub.ai.run.ClasspathPromptLoader;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.ehub.ai.run.ClasspathPromptLoader;
+import com.ehub.ai.run.EvaluationContext;
 
 class ClasspathPromptLoaderTest {
 
     @Test
     void buildJudgePrompt_replacesTemplatePlaceholders() {
         ClasspathPromptLoader loader = new ClasspathPromptLoader();
-        EvaluationContext context = new EvaluationContext("t1", "Team One", "https://github.com/x/y", "A smart assistant", "Must be secure", "AI for good");
+        EvaluationContext context = new EvaluationContext("t1", "Team One", "https://github.com/x/y",
+                "A smart assistant", "Must be secure", "AI for good");
 
         String prompt = loader.buildJudgePrompt(context);
 
