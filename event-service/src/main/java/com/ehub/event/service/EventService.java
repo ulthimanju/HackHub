@@ -14,8 +14,8 @@ import com.ehub.event.dto.LifecycleResponse;
 import com.ehub.event.dto.ProblemStatementRequest;
 import com.ehub.event.dto.RegistrationRequest;
 import com.ehub.event.dto.RegistrationResponse;
-import com.ehub.event.enums.EventStatus;
-import com.ehub.event.enums.RegistrationStatus;
+import com.ehub.event.shared.enums.EventStatus;
+import com.ehub.event.shared.enums.RegistrationStatus;
 import com.ehub.event.facade.EventFacade;
 
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,9 @@
 package com.ehub.event.service;
 
-import com.ehub.event.entity.Event;
+import com.ehub.event.shared.entity.Event;
 import com.ehub.event.entity.EventRule;
 import com.ehub.event.repository.EventRuleRepository;
-import com.ehub.event.repository.EventRepository;
+import com.ehub.event.shared.repository.EventRepository;
 import com.ehub.event.exception.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import com.ehub.event.util.MessageKeys;

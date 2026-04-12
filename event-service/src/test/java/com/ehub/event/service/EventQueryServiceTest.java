@@ -1,12 +1,12 @@
 package com.ehub.event.service;
 
 import com.ehub.event.dto.EventStatsResponse;
-import com.ehub.event.entity.Event;
-import com.ehub.event.mapper.EventMapper;
-import com.ehub.event.port.EventClock;
-import com.ehub.event.repository.EventRepository;
-import com.ehub.event.repository.RegistrationRepository;
-import com.ehub.event.repository.TeamRepository;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.mapper.EventMapper;
+import com.ehub.event.shared.port.EventClock;
+import com.ehub.event.shared.repository.EventRepository;
+import com.ehub.event.shared.repository.RegistrationRepository;
+import com.ehub.event.shared.repository.TeamRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,11 +47,11 @@ class EventQueryServiceTest {
 
         when(eventRepository.findById("e1")).thenReturn(Optional.of(event));
         when(registrationRepository.countByEventId("e1")).thenReturn(10L);
-        when(registrationRepository.countByEventIdAndStatus("e1", com.ehub.event.enums.RegistrationStatus.PENDING))
+        when(registrationRepository.countByEventIdAndStatus("e1", com.ehub.event.shared.enums.RegistrationStatus.PENDING))
                 .thenReturn(4L);
-        when(registrationRepository.countByEventIdAndStatus("e1", com.ehub.event.enums.RegistrationStatus.APPROVED))
+        when(registrationRepository.countByEventIdAndStatus("e1", com.ehub.event.shared.enums.RegistrationStatus.APPROVED))
                 .thenReturn(5L);
-        when(registrationRepository.countByEventIdAndStatus("e1", com.ehub.event.enums.RegistrationStatus.REJECTED))
+        when(registrationRepository.countByEventIdAndStatus("e1", com.ehub.event.shared.enums.RegistrationStatus.REJECTED))
                 .thenReturn(1L);
         when(teamRepository.countByEventId("e1")).thenReturn(3L);
         when(teamRepository.countByEventIdAndRepoUrlIsNotNull("e1")).thenReturn(2L);

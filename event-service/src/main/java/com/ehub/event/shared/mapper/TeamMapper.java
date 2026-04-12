@@ -1,4 +1,4 @@
-package com.ehub.event.mapper;
+package com.ehub.event.shared.mapper;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 import com.ehub.event.dto.TeamResponse;
 import com.ehub.event.dto.TeamSubmissionRequest;
-import com.ehub.event.entity.Team;
-import com.ehub.event.entity.TeamMember;
+import com.ehub.event.shared.entity.Team;
+import com.ehub.event.shared.entity.TeamMember;
 
 @Component
 public class TeamMapper {

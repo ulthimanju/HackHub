@@ -1,4 +1,4 @@
-package com.ehub.event.mapper;
+package com.ehub.event.shared.mapper;
 
 import java.util.List;
 import java.util.Map;
@@ -7,10 +7,10 @@ import org.springframework.stereotype.Component;
 
 import com.ehub.event.dto.EventResponse;
 import com.ehub.event.dto.RegistrationResponse;
-import com.ehub.event.entity.Event;
-import com.ehub.event.entity.ProblemStatement;
-import com.ehub.event.entity.Registration;
-import com.ehub.event.port.EventClock;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.entity.ProblemStatement;
+import com.ehub.event.shared.entity.Registration;
+import com.ehub.event.shared.port.EventClock;
 
 import lombok.RequiredArgsConstructor;
 

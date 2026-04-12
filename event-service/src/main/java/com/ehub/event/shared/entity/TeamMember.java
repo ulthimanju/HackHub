@@ -1,7 +1,7 @@
-package com.ehub.event.entity;
+package com.ehub.event.shared.entity;
 
-import com.ehub.event.enums.TeamMemberStatus;
-import com.ehub.event.enums.TeamRole;
+import com.ehub.event.shared.enums.TeamMemberStatus;
+import com.ehub.event.shared.enums.TeamRole;
 import jakarta.persistence.*;
 import lombok.*;
 

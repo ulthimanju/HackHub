@@ -8,16 +8,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ehub.event.dto.TeamSubmissionRequest;
-import com.ehub.event.entity.Event;
-import com.ehub.event.entity.Team;
-import com.ehub.event.enums.EventStatus;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.entity.Team;
+import com.ehub.event.shared.enums.EventStatus;
 import com.ehub.event.exception.ResourceNotFoundException;
 import com.ehub.event.exception.TeamSubmissionException;
-import com.ehub.event.mapper.TeamMapper;
-import com.ehub.event.port.TeamClock;
-import com.ehub.event.repository.EventRepository;
-import com.ehub.event.repository.ProblemStatementRepository;
-import com.ehub.event.repository.TeamRepository;
+import com.ehub.event.shared.mapper.TeamMapper;
+import com.ehub.event.shared.port.TeamClock;
+import com.ehub.event.shared.repository.EventRepository;
+import com.ehub.event.shared.repository.ProblemStatementRepository;
+import com.ehub.event.shared.repository.TeamRepository;
 import com.ehub.event.util.MessageKeys;
 
 import lombok.RequiredArgsConstructor;

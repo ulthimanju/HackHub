@@ -12,19 +12,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ehub.event.dto.EventRequest;
-import com.ehub.event.entity.Event;
-import com.ehub.event.entity.Registration;
-import com.ehub.event.enums.EventStatus;
-import com.ehub.event.enums.RegistrationStatus;
-import com.ehub.event.enums.TeamMemberStatus;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.entity.Registration;
+import com.ehub.event.shared.enums.EventStatus;
+import com.ehub.event.shared.enums.RegistrationStatus;
+import com.ehub.event.shared.enums.TeamMemberStatus;
 import com.ehub.event.exception.EventLifecycleException;
 import com.ehub.event.exception.ResourceNotFoundException;
-import com.ehub.event.port.EventClock;
-import com.ehub.event.port.NotificationPort;
-import com.ehub.event.repository.EventRepository;
-import com.ehub.event.repository.RegistrationRepository;
-import com.ehub.event.repository.TeamMemberRepository;
-import com.ehub.event.repository.TeamRepository;
+import com.ehub.event.shared.port.EventClock;
+import com.ehub.event.shared.port.NotificationPort;
+import com.ehub.event.shared.repository.EventRepository;
+import com.ehub.event.shared.repository.RegistrationRepository;
+import com.ehub.event.shared.repository.TeamMemberRepository;
+import com.ehub.event.shared.repository.TeamRepository;
 import com.ehub.event.util.MessageKeys;
 import com.ehub.event.util.ShortCodeGenerator;
 
@@ -83,8 +83,8 @@ public class EventLifecycleService {
 
         if (request.getTeamSize() != null && event.getTeamSize() != null
                 && request.getTeamSize() < event.getTeamSize()) {
-            List<com.ehub.event.entity.Team> eventTeams = teamRepository.findByEventId(id);
-            for (com.ehub.event.entity.Team team : eventTeams) {
+            List<com.ehub.event.shared.entity.Team> eventTeams = teamRepository.findByEventId(id);
+            for (com.ehub.event.shared.entity.Team team : eventTeams) {
                 long memberCount = teamMemberRepository.findByTeamId(team.getId()).stream()
                         .filter(m -> m.getStatus() == TeamMemberStatus.ACCEPTED)
                         .count();

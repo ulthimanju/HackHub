@@ -1,8 +1,8 @@
-package com.ehub.event.adapter;
+package com.ehub.event.shared.adapter;
 
 import java.time.LocalDateTime;
 
-import com.ehub.event.port.EventClock;
+import com.ehub.event.shared.port.EventClock;
 
 public class SystemEventClock implements EventClock {
 

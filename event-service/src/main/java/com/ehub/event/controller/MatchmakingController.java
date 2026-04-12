@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ehub.event.client.AuthClient;
-import com.ehub.event.entity.Team;
+import com.ehub.event.shared.entity.Team;
 import com.ehub.event.exception.ResourceNotFoundException;
-import com.ehub.event.repository.TeamRepository;
+import com.ehub.event.shared.repository.TeamRepository;
 
 import lombok.RequiredArgsConstructor;
 

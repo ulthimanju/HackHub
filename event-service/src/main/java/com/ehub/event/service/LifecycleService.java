@@ -1,8 +1,8 @@
 package com.ehub.event.service;
 
 import com.ehub.event.dto.LifecycleResponse;
-import com.ehub.event.entity.Event;
-import com.ehub.event.enums.EventStatus;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.enums.EventStatus;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ehub.event.dto.ProblemStatementRequest;
-import com.ehub.event.entity.Event;
-import com.ehub.event.entity.ProblemStatement;
-import com.ehub.event.enums.EventStatus;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.entity.ProblemStatement;
+import com.ehub.event.shared.enums.EventStatus;
 import com.ehub.event.exception.ProblemStatementException;
 import com.ehub.event.exception.ResourceNotFoundException;
-import com.ehub.event.repository.EventRepository;
-import com.ehub.event.repository.ProblemStatementRepository;
+import com.ehub.event.shared.repository.EventRepository;
+import com.ehub.event.shared.repository.ProblemStatementRepository;
 import com.ehub.event.util.MessageKeys;
 
 import lombok.RequiredArgsConstructor;

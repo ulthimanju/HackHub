@@ -1,6 +1,6 @@
-package com.ehub.event.entity;
+package com.ehub.event.shared.entity;
 
-import com.ehub.event.enums.RegistrationStatus;
+import com.ehub.event.shared.enums.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

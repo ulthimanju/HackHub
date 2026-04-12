@@ -18,13 +18,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ehub.event.dto.TeamSubmissionRequest;
-import com.ehub.event.entity.Event;
-import com.ehub.event.entity.Team;
-import com.ehub.event.mapper.TeamMapper;
-import com.ehub.event.port.TeamClock;
-import com.ehub.event.repository.EventRepository;
-import com.ehub.event.repository.ProblemStatementRepository;
-import com.ehub.event.repository.TeamRepository;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.entity.Team;
+import com.ehub.event.shared.mapper.TeamMapper;
+import com.ehub.event.shared.port.TeamClock;
+import com.ehub.event.shared.repository.EventRepository;
+import com.ehub.event.shared.repository.ProblemStatementRepository;
+import com.ehub.event.shared.repository.TeamRepository;
 import com.ehub.event.util.MessageKeys;
 
 @ExtendWith(MockitoExtension.class)

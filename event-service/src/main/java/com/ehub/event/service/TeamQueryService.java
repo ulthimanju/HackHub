@@ -1,10 +1,10 @@
 package com.ehub.event.service;
 
 import com.ehub.event.dto.TeamResponse;
-import com.ehub.event.entity.Team;
-import com.ehub.event.mapper.TeamMapper;
-import com.ehub.event.repository.TeamMemberRepository;
-import com.ehub.event.repository.TeamRepository;
+import com.ehub.event.shared.entity.Team;
+import com.ehub.event.shared.mapper.TeamMapper;
+import com.ehub.event.shared.repository.TeamMemberRepository;
+import com.ehub.event.shared.repository.TeamRepository;
 import com.ehub.event.util.MessageKeys;
 import com.ehub.event.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;

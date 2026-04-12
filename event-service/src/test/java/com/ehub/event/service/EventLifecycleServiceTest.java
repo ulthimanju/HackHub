@@ -1,15 +1,15 @@
 package com.ehub.event.service;
 
-import com.ehub.event.entity.Event;
-import com.ehub.event.entity.Registration;
-import com.ehub.event.enums.EventStatus;
-import com.ehub.event.enums.RegistrationStatus;
-import com.ehub.event.port.EventClock;
-import com.ehub.event.port.NotificationPort;
-import com.ehub.event.repository.EventRepository;
-import com.ehub.event.repository.RegistrationRepository;
-import com.ehub.event.repository.TeamMemberRepository;
-import com.ehub.event.repository.TeamRepository;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.entity.Registration;
+import com.ehub.event.shared.enums.EventStatus;
+import com.ehub.event.shared.enums.RegistrationStatus;
+import com.ehub.event.shared.port.EventClock;
+import com.ehub.event.shared.port.NotificationPort;
+import com.ehub.event.shared.repository.EventRepository;
+import com.ehub.event.shared.repository.RegistrationRepository;
+import com.ehub.event.shared.repository.TeamMemberRepository;
+import com.ehub.event.shared.repository.TeamRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

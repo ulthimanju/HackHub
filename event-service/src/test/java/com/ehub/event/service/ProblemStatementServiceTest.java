@@ -15,11 +15,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ehub.event.dto.ProblemStatementRequest;
-import com.ehub.event.entity.Event;
-import com.ehub.event.entity.ProblemStatement;
-import com.ehub.event.enums.EventStatus;
-import com.ehub.event.repository.EventRepository;
-import com.ehub.event.repository.ProblemStatementRepository;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.entity.ProblemStatement;
+import com.ehub.event.shared.enums.EventStatus;
+import com.ehub.event.shared.repository.EventRepository;
+import com.ehub.event.shared.repository.ProblemStatementRepository;
 import com.ehub.event.util.MessageKeys;
 
 @ExtendWith(MockitoExtension.class)

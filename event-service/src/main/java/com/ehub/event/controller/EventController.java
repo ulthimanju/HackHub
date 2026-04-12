@@ -28,8 +28,8 @@ import com.ehub.event.dto.LifecycleResponse;
 import com.ehub.event.dto.ProblemStatementRequest;
 import com.ehub.event.dto.RegistrationRequest;
 import com.ehub.event.dto.RegistrationResponse;
-import com.ehub.event.enums.EventStatus;
-import com.ehub.event.enums.RegistrationStatus;
+import com.ehub.event.shared.enums.EventStatus;
+import com.ehub.event.shared.enums.RegistrationStatus;
 import com.ehub.event.facade.EventFacade;
 import com.ehub.event.util.MessageKeys;
 
@@ -186,7 +186,7 @@ public class EventController {
     @PatchMapping("/{id}/advance-status")
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<String> advanceEventStatus(@PathVariable String id) {
-        com.ehub.event.enums.EventStatus newStatus = eventFacade.advanceEventStatus(id, getCurrentUserId());
+        com.ehub.event.shared.enums.EventStatus newStatus = eventFacade.advanceEventStatus(id, getCurrentUserId());
         return ResponseEntity.ok(newStatus.name());
     }
 

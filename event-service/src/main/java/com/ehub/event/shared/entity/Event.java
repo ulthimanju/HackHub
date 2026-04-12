@@ -1,9 +1,9 @@
-package com.ehub.event.entity;
+package com.ehub.event.shared.entity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.ehub.event.enums.EventStatus;
+import com.ehub.event.shared.enums.EventStatus;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;

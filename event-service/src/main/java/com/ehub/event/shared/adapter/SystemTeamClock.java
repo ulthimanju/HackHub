@@ -1,8 +1,8 @@
-package com.ehub.event.adapter;
+package com.ehub.event.shared.adapter;
 
 import java.time.LocalDateTime;
 
-import com.ehub.event.port.TeamClock;
+import com.ehub.event.shared.port.TeamClock;
 
 public class SystemTeamClock implements TeamClock {
 

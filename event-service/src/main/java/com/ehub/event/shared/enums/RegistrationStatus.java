@@ -1,14 +1,15 @@
-package com.ehub.event.enums;
+package com.ehub.event.shared.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum TeamRole {
-    LEADER("LEADER"),
-    MEMBER("MEMBER");
+public enum RegistrationStatus {
+    PENDING("PENDING"),
+    APPROVED("APPROVED"),
+    REJECTED("REJECTED");
 
     private final String value;
 
-    TeamRole(String value) {
+    RegistrationStatus(String value) {
         this.value = value;
     }
 

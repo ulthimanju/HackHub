@@ -1,7 +1,7 @@
-package com.ehub.event.repository;
+package com.ehub.event.shared.repository;
 
-import com.ehub.event.entity.Registration;
-import com.ehub.event.enums.RegistrationStatus;
+import com.ehub.event.shared.entity.Registration;
+import com.ehub.event.shared.enums.RegistrationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

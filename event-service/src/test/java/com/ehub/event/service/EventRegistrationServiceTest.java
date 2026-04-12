@@ -1,14 +1,14 @@
 package com.ehub.event.service;
 
 import com.ehub.event.dto.RegistrationRequest;
-import com.ehub.event.entity.Event;
-import com.ehub.event.enums.RegistrationStatus;
-import com.ehub.event.port.EventClock;
-import com.ehub.event.port.NotificationPort;
-import com.ehub.event.repository.EventRepository;
-import com.ehub.event.repository.RegistrationRepository;
-import com.ehub.event.repository.TeamMemberRepository;
-import com.ehub.event.repository.TeamRepository;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.enums.RegistrationStatus;
+import com.ehub.event.shared.port.EventClock;
+import com.ehub.event.shared.port.NotificationPort;
+import com.ehub.event.shared.repository.EventRepository;
+import com.ehub.event.shared.repository.RegistrationRepository;
+import com.ehub.event.shared.repository.TeamMemberRepository;
+import com.ehub.event.shared.repository.TeamRepository;
 import com.ehub.event.util.MessageKeys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,7 +91,7 @@ class EventRegistrationServiceTest {
                 .organizerId("org")
                 .build();
 
-        com.ehub.event.entity.Registration approved = com.ehub.event.entity.Registration.builder()
+        com.ehub.event.shared.entity.Registration approved = com.ehub.event.shared.entity.Registration.builder()
                 .id("r1")
                 .eventId("e1")
                 .status(RegistrationStatus.APPROVED)

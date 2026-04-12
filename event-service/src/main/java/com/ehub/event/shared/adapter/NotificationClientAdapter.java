@@ -1,7 +1,7 @@
-package com.ehub.event.adapter;
+package com.ehub.event.shared.adapter;
 
 import com.ehub.event.client.NotificationClient;
-import com.ehub.event.port.NotificationPort;
+import com.ehub.event.shared.port.NotificationPort;
 
 import lombok.RequiredArgsConstructor;
 

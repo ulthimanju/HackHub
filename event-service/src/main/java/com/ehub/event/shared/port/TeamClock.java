@@ -1,4 +1,4 @@
-package com.ehub.event.port;
+package com.ehub.event.shared.port;
 
 import java.time.LocalDateTime;
 

@@ -1,4 +1,4 @@
-package com.ehub.event.entity;
+package com.ehub.event.shared.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

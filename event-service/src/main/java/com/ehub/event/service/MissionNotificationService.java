@@ -8,9 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.ehub.event.client.NotificationClient;
-import com.ehub.event.entity.Event;
-import com.ehub.event.enums.EventStatus;
-import com.ehub.event.repository.RegistrationRepository;
+import com.ehub.event.shared.entity.Event;
+import com.ehub.event.shared.enums.EventStatus;
+import com.ehub.event.shared.repository.RegistrationRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +60,7 @@ public class MissionNotificationService {
 
     private void broadcastToParticipants(String eventId, String subject, String message) {
         List<String> emails = registrationRepository.findByEventId(eventId).stream()
-                .map(com.ehub.event.entity.Registration::getUserEmail)
+                .map(com.ehub.event.shared.entity.Registration::getUserEmail)
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();

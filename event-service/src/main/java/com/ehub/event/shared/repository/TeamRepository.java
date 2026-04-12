@@ -1,6 +1,6 @@
-package com.ehub.event.repository;
+package com.ehub.event.shared.repository;
 
-import com.ehub.event.entity.Team;
+import com.ehub.event.shared.entity.Team;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

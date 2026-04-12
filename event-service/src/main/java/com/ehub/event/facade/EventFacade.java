@@ -1,8 +1,8 @@
 package com.ehub.event.facade;
 
 import com.ehub.event.dto.*;
-import com.ehub.event.enums.EventStatus;
-import com.ehub.event.enums.RegistrationStatus;
+import com.ehub.event.shared.enums.EventStatus;
+import com.ehub.event.shared.enums.RegistrationStatus;
 import com.ehub.event.service.EventLifecycleService;
 import com.ehub.event.service.EventQueryService;
 import com.ehub.event.service.EventRegistrationService;
