@@ -29,9 +29,7 @@ public class NotificationEventsConsumer {
     private final NotificationDedupeService notificationDedupeService;
     private final EmailService emailService;
 
-    @KafkaListener(
-            topics = "${application.kafka.topics.notifications}",
-            groupId = "${application.kafka.consumer.notifications-group}")
+    @KafkaListener(topics = "${application.kafka.topics.notifications}", groupId = "${application.kafka.consumer.notifications-group}")
     public void consume(String rawPayload) {
         String dedupeKey = sha256(rawPayload);
         if (!notificationDedupeService.firstTime(dedupeKey)) {
