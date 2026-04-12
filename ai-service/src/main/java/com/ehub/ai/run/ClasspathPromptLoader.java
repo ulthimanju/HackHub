@@ -1,13 +1,13 @@
-package com.ehub.ai.adapter;
+package com.ehub.ai.run;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.core.io.ClassPathResource;
 
-import com.ehub.ai.dto.EvaluationContext;
+import com.ehub.ai.run.EvaluationContext;
 import com.ehub.ai.exception.PromptTemplateException;
-import com.ehub.ai.port.PromptLoader;
+import com.ehub.ai.run.PromptLoader;
 
 public class ClasspathPromptLoader implements PromptLoader {
 

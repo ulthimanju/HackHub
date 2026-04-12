@@ -4,16 +4,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 
-import com.ehub.ai.adapter.ClasspathPromptLoader;
+import com.ehub.ai.run.ClasspathPromptLoader;
 import com.ehub.ai.reporting.EventServiceReportingAdapter;
-import com.ehub.ai.adapter.GeminiAnalyzerAdapter;
+import com.ehub.ai.run.GeminiAnalyzerAdapter;
 import com.ehub.ai.queue.RedisQueueAdapter;
-import com.ehub.ai.port.AnalyzerPort;
+import com.ehub.ai.run.AnalyzerPort;
 import com.ehub.ai.reporting.EvaluationReportingPort;
-import com.ehub.ai.port.PromptLoader;
+import com.ehub.ai.run.PromptLoader;
 import com.ehub.ai.queue.QueuePort;
 import com.ehub.ai.reporting.EventServiceClient;
-import com.ehub.ai.service.GeminiCliWrapper;
+import com.ehub.ai.run.GeminiCliWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration

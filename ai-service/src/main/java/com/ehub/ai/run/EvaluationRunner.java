@@ -1,14 +1,14 @@
-package com.ehub.ai.service;
+package com.ehub.ai.run;
 
 import org.springframework.stereotype.Service;
 
 import com.ehub.ai.queue.EvaluationJob;
 import com.ehub.ai.queue.EvaluationQueueService;
-import com.ehub.ai.model.GeminiResult;
+import com.ehub.ai.run.GeminiResult;
 import com.ehub.ai.queue.JobStatus;
-import com.ehub.ai.port.AnalyzerPort;
+import com.ehub.ai.run.AnalyzerPort;
 import com.ehub.ai.reporting.EvaluationReportingPort;
-import com.ehub.ai.port.PromptLoader;
+import com.ehub.ai.run.PromptLoader;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,7 +22,7 @@ public class EvaluationRunner {
     private final EvaluationReportingPort reportingPort;
     private final PromptLoader promptLoader;
 
-    public void run(EvaluationJob job) throws WorkspaceManager.WorkspaceException, AnalyzerPort.AnalysisException {
+    public void run(EvaluationJob job) throws com.ehub.ai.run.WorkspaceManager.WorkspaceException, AnalyzerPort.AnalysisException {
         String teamId = job.teamId();
         int attempt = job.retryCount() + 1;
 

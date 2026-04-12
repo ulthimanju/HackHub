@@ -18,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.ehub.ai.dto.EvaluationContext;
+import com.ehub.ai.run.EvaluationContext;
 import com.ehub.ai.queue.EvaluationJob;
 import com.ehub.ai.queue.EvaluationQueueService;
 import com.ehub.ai.queue.JobStatus;

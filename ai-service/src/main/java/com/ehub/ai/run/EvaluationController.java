@@ -1,4 +1,4 @@
-package com.ehub.ai.controller;
+package com.ehub.ai.run;
 
 import java.util.Map;
 
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ehub.ai.queue.EvaluationRequestPublisher;
-import com.ehub.ai.service.EvaluationWorker;
+import com.ehub.ai.run.EvaluationWorker;
 
 /**
  * REST controller exposing AI evaluation operations.
@@ -20,12 +20,12 @@ import com.ehub.ai.service.EvaluationWorker;
  */
 @RestController
 @RequestMapping("/ai")
-public class AiController {
+public class EvaluationController {
 
     private final EvaluationWorker worker;
     private final EvaluationRequestPublisher requestPublisher;
 
-    public AiController(EvaluationWorker worker, EvaluationRequestPublisher requestPublisher) {
+    public EvaluationController(EvaluationWorker worker, EvaluationRequestPublisher requestPublisher) {
         this.worker = worker;
         this.requestPublisher = requestPublisher;
     }

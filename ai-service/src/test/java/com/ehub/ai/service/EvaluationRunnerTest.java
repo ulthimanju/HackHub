@@ -11,14 +11,16 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ehub.ai.dto.EvaluationContext;
+import com.ehub.ai.run.EvaluationContext;
 import com.ehub.ai.queue.EvaluationJob;
 import com.ehub.ai.queue.EvaluationQueueService;
-import com.ehub.ai.model.GeminiResult;
+import com.ehub.ai.run.GeminiResult;
 import com.ehub.ai.queue.JobStatus;
-import com.ehub.ai.port.AnalyzerPort;
+import com.ehub.ai.run.AnalyzerPort;
 import com.ehub.ai.reporting.EvaluationReportingPort;
-import com.ehub.ai.port.PromptLoader;
+import com.ehub.ai.run.PromptLoader;
+import com.ehub.ai.run.EvaluationRunner;
+import com.ehub.ai.run.WorkspaceManager;
 
 @ExtendWith(MockitoExtension.class)
 class EvaluationRunnerTest {

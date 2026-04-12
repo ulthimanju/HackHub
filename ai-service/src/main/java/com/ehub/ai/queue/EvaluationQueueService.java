@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.ehub.ai.dto.EvaluationContext;
+import com.ehub.ai.run.EvaluationContext;
 import com.ehub.ai.exception.EvaluationQueueException;
 import com.ehub.ai.queue.EvaluationJob;
 import com.ehub.ai.queue.JobStatus;

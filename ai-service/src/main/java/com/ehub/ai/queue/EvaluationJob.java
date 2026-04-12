@@ -1,6 +1,6 @@
 package com.ehub.ai.queue;
 
-import com.ehub.ai.dto.EvaluationContext;
+import com.ehub.ai.run.EvaluationContext;
 
 /**
  * Represents a single evaluation job moving through the pipeline.

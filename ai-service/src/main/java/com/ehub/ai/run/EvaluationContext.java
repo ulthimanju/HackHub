@@ -1,4 +1,4 @@
-package com.ehub.ai.dto;
+package com.ehub.ai.run;
 
 /**
  * Strongly-typed evaluation context for a single team.

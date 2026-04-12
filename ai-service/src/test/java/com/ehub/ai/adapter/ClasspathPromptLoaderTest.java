@@ -1,6 +1,7 @@
 package com.ehub.ai.adapter;
 
-import com.ehub.ai.dto.EvaluationContext;
+import com.ehub.ai.run.EvaluationContext;
+import com.ehub.ai.run.ClasspathPromptLoader;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;

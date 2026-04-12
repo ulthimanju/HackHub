@@ -1,6 +1,6 @@
-package com.ehub.ai.port;
+package com.ehub.ai.run;
 
-import com.ehub.ai.model.GeminiResult;
+import com.ehub.ai.run.GeminiResult;
 
 public interface AnalyzerPort {
     GeminiResult analyze(String teamId, String prompt) throws AnalysisException;

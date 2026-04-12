@@ -1,7 +1,7 @@
 package com.ehub.ai.reporting;
 
-import com.ehub.ai.dto.EvaluationContext;
-import com.ehub.ai.model.GeminiResult;
+import com.ehub.ai.run.EvaluationContext;
+import com.ehub.ai.run.GeminiResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.ehub.ai.model;
+package com.ehub.ai.run;
 
 /**
  * Immutable result from the Gemini CLI analysis.

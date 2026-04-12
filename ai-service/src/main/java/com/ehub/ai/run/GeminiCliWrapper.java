@@ -1,6 +1,6 @@
-package com.ehub.ai.service;
+package com.ehub.ai.run;
 
-import com.ehub.ai.model.GeminiResult;
+import com.ehub.ai.run.GeminiResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 

@@ -1,4 +1,4 @@
-package com.ehub.ai.service;
+package com.ehub.ai.run;
 
 import java.util.Map;
 import java.util.Optional;
@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.ehub.ai.queue.EvaluationJob;
 import com.ehub.ai.queue.EvaluationQueueService;
-import com.ehub.ai.port.AnalyzerPort;
+import com.ehub.ai.run.AnalyzerPort;
 import com.ehub.ai.reporting.EvaluationReportingPort;
 
 import jakarta.annotation.PostConstruct;
@@ -85,7 +85,7 @@ public class EvaluationWorker {
     private void processJob(EvaluationJob job) {
         try {
             runner.run(job);
-        } catch (WorkspaceManager.WorkspaceException e) {
+        } catch (com.ehub.ai.run.WorkspaceManager.WorkspaceException e) {
             boolean requeued = queueService.handleFailure(job, "Clone failed: " + e.getMessage(), e.isFatal());
             if (!requeued) {
                 reportingPort.reportError(job.teamId(), "Clone failed: " + e.getMessage());

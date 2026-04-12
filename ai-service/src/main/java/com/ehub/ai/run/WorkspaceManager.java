@@ -1,4 +1,4 @@
-package com.ehub.ai.service;
+package com.ehub.ai.run;
 
 import java.io.BufferedReader;
 import java.io.File;

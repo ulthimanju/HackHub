@@ -1,8 +1,8 @@
-package com.ehub.ai.adapter;
+package com.ehub.ai.run;
 
-import com.ehub.ai.model.GeminiResult;
-import com.ehub.ai.port.AnalyzerPort;
-import com.ehub.ai.service.GeminiCliWrapper;
+import com.ehub.ai.run.GeminiResult;
+import com.ehub.ai.run.AnalyzerPort;
+import com.ehub.ai.run.GeminiCliWrapper;
 
 import lombok.RequiredArgsConstructor;
 

@@ -1,6 +1,6 @@
-package com.ehub.ai.port;
+package com.ehub.ai.run;
 
-import com.ehub.ai.dto.EvaluationContext;
+import com.ehub.ai.run.EvaluationContext;
 
 public interface PromptLoader {
     String loadJudgePromptTemplate();
