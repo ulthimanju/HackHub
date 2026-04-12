@@ -1,4 +1,4 @@
-package com.ehub.notification.service;
+package com.ehub.notification.events.dedupe;
 
 import java.time.Duration;
 

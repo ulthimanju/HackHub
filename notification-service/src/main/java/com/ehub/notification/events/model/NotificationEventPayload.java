@@ -1,4 +1,4 @@
-package com.ehub.notification.dto;
+package com.ehub.notification.events.model;
 
 import lombok.Data;
 

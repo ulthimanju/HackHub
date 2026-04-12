@@ -1,4 +1,4 @@
-package com.ehub.notification.consumer;
+package com.ehub.notification.events.ingress;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -10,9 +10,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import com.ehub.notification.dto.NotificationEventPayload;
+import com.ehub.notification.events.dedupe.NotificationDedupeService;
+import com.ehub.notification.events.model.NotificationEventPayload;
 import com.ehub.notification.service.EmailService;
-import com.ehub.notification.service.NotificationDedupeService;
 import com.ehub.notification.util.NotificationTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
