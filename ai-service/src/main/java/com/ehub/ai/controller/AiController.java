@@ -1,6 +1,7 @@
 package com.ehub.ai.controller;
 
 import com.ehub.ai.service.EvaluationWorker;
+import com.ehub.ai.service.EvaluationRequestPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,9 +17,11 @@ import java.util.Map;
 public class AiController {
 
     private final EvaluationWorker worker;
+    private final EvaluationRequestPublisher requestPublisher;
 
-    public AiController(EvaluationWorker worker) {
+    public AiController(EvaluationWorker worker, EvaluationRequestPublisher requestPublisher) {
         this.worker = worker;
+        this.requestPublisher = requestPublisher;
     }
 
     /**
@@ -27,11 +30,16 @@ public class AiController {
      */
     @PostMapping("/evaluate-event/{eventId}")
     public ResponseEntity<Map<String, Object>> evaluateEvent(@PathVariable String eventId) {
-        int queued = worker.queueEvent(eventId);
+        int queued = requestPublisher.isEnabled() ? 0 : worker.queueEvent(eventId);
+        if (requestPublisher.isEnabled()) {
+            requestPublisher.publishEvent(eventId);
+        }
         return ResponseEntity.accepted().body(Map.of(
                 "eventId", eventId,
                 "teamsQueued", queued,
-                "message", "Evaluation jobs queued. Use /ai/job/{teamId}/status to track progress."
+            "message", requestPublisher.isEnabled()
+                ? "Evaluation request published to Kafka. Use /ai/job/{teamId}/status to track progress."
+                : "Evaluation jobs queued. Use /ai/job/{teamId}/status to track progress."
         ));
     }
 
@@ -40,10 +48,16 @@ public class AiController {
      */
     @PostMapping("/evaluate-team/{teamId}")
     public ResponseEntity<Map<String, Object>> evaluateTeam(@PathVariable String teamId) {
-        worker.queueTeam(teamId);
+        if (requestPublisher.isEnabled()) {
+            requestPublisher.publishTeam(teamId);
+        } else {
+            worker.queueTeam(teamId);
+        }
         return ResponseEntity.accepted().body(Map.of(
                 "teamId", teamId,
-                "message", "Team evaluation queued."
+                "message", requestPublisher.isEnabled()
+                        ? "Team evaluation request published to Kafka."
+                        : "Team evaluation queued."
         ));
     }
 

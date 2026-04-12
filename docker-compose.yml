@@ -188,11 +188,15 @@ services:
     depends_on:
       - event-service
       - redis
+      - kafka
     environment:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       APPLICATION_EVENT_SERVICE_URL: http://event-service:8084
       WORKSPACE_ROOT: /app/workspaces
+      APPLICATION_KAFKA_ENABLED: "true"
+      APPLICATION_KAFKA_CONSUMER_ENABLED: "true"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
     secrets:
       - source: github-token

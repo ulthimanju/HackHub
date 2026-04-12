@@ -15,5 +15,13 @@ application:
   workspace-root: ${WORKSPACE_ROOT:/app/workspaces}
   github-token: ${GITHUB_TOKEN:}
   max-retries: 3
+  kafka:
+    enabled: ${APPLICATION_KAFKA_ENABLED:false}
+    consumer-enabled: ${APPLICATION_KAFKA_CONSUMER_ENABLED:false}
+    topic: ${APPLICATION_KAFKA_TOPIC:ai.eval.requests.v1}
   gemini:
     model: ${GEMINI_MODEL:gemini-3.1-pro-preview}
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
