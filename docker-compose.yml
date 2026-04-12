@@ -51,6 +51,24 @@ services:
     networks:
       - ehub-network
 
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: ehub-kafka
+    environment:
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    networks:
+      - ehub-network
+
   notification-service:
     build:
       context: .
@@ -58,9 +76,12 @@ services:
     container_name: notification-service
     depends_on:
       - redis
+      - kafka
     environment:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      APPLICATION_KAFKA_CONSUMER_NOTIFICATIONS_ENABLED: "true"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_CONFIG_IMPORT: "optional:configtree:/run/secrets/"
     secrets:
       - source: gmail-username
@@ -124,6 +145,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      kafka:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/ehub_event_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -131,6 +154,8 @@ services:
       APPLICATION_NOTIFICATION_SERVICE_URL: http://notification-service:8082/notifications/send-alert
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      APPLICATION_KAFKA_ENABLED: "true"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     secrets:
       - source: db-password
         target: SPRING_DATASOURCE_PASSWORD
