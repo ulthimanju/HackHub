@@ -27,6 +27,9 @@ public class OutboxPublisherScheduler {
     @Value("${application.kafka.topics.notifications}")
     private String notificationsTopic;
 
+    @Value("${application.kafka.topics.ai-evaluation}")
+    private String aiEvaluationTopic;
+
     @Scheduled(fixedDelayString = "${application.outbox.publish-delay-ms:2000}")
     public void publishPendingEvents() {
         if (!kafkaEnabled) {
@@ -36,12 +39,22 @@ public class OutboxPublisherScheduler {
         List<OutboxEvent> pending = outboxService.fetchPendingBatch(100);
         for (OutboxEvent event : pending) {
             try {
-                kafkaTemplate.send(notificationsTopic, event.getAggregateId(), event.getPayload()).get();
+                kafkaTemplate.send(resolveTopic(event), event.getAggregateId(), event.getPayload()).get();
                 outboxService.markPublished(event.getId());
             } catch (Exception ex) {
                 outboxService.markFailed(event.getId(), ex);
                 log.warn("Failed to publish outbox event {} to Kafka", event.getId(), ex);
             }
         }
+    }
+
+    private String resolveTopic(OutboxEvent event) {
+        if (event.getEventType() != null && event.getEventType().startsWith("notification.")) {
+            return notificationsTopic;
+        }
+        if ("ai.evaluation.requested".equals(event.getEventType())) {
+            return aiEvaluationTopic;
+        }
+        throw new IllegalArgumentException("Unsupported outbox event type: " + event.getEventType());
     }
 }

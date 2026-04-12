@@ -31,6 +31,7 @@ public class TeamSubmissionService {
     private final ProblemStatementRepository problemStatementRepository;
     private final TeamMapper teamMapper;
     private final TeamClock teamClock;
+    private final OutboxService outboxService;
 
     @Transactional
     public void submitProject(String teamId, String userId, TeamSubmissionRequest request) {
@@ -60,6 +61,18 @@ public class TeamSubmissionService {
 
         teamMapper.applySubmission(team, request, teamClock.now());
         teamRepository.save(team);
+
+        outboxService.enqueue(
+                "team",
+                teamId,
+                "ai.evaluation.requested",
+                Map.of(
+                        "type", "TEAM",
+                        "eventId", event.getId(),
+                        "teamId", teamId,
+                        "repoUrl", request.getRepoUrl(),
+                        "demoUrl", request.getDemoUrl() != null ? request.getDemoUrl() : "",
+                        "requestedAt", teamClock.now().toString()));
     }
 
     public Map<String, Object> getTeamForEvaluation(String teamId) {

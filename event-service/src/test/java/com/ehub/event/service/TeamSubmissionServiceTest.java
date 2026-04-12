@@ -2,6 +2,8 @@ package com.ehub.event.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,6 +36,8 @@ class TeamSubmissionServiceTest {
     private EventRepository eventRepository;
     @Mock
     private ProblemStatementRepository problemStatementRepository;
+        @Mock
+        private OutboxService outboxService;
 
     private TeamSubmissionService service;
 
@@ -45,7 +49,8 @@ class TeamSubmissionServiceTest {
                 eventRepository,
                 problemStatementRepository,
                 new TeamMapper(),
-                fixedClock);
+                fixedClock,
+                outboxService);
     }
 
     @Test
@@ -72,6 +77,7 @@ class TeamSubmissionServiceTest {
         assertEquals(String.format(MessageKeys.SUBMISSIONS_NOT_OPEN.getMessage(), event.getStartDate()),
                 ex.getMessage());
         verify(teamRepository, never()).save(team);
+        verify(outboxService, never()).enqueue(anyString(), anyString(), anyString(), anyMap());
     }
 
     @Test
@@ -98,5 +104,6 @@ class TeamSubmissionServiceTest {
         assertEquals("https://example.com/repo", team.getRepoUrl());
         assertEquals("https://example.com/demo", team.getDemoUrl());
         verify(teamRepository).save(team);
+        verify(outboxService).enqueue(anyString(), anyString(), anyString(), anyMap());
     }
 }
