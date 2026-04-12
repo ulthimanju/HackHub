@@ -1,22 +1,35 @@
 package com.ehub.ai.service;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.nio.file.*;
-import java.util.Comparator;
-import java.util.List;
-import java.util.concurrent.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Manages the on-disk lifecycle of a cloned repository:
- *   Clone → Verify → (evaluation runs) → Cleanup
+ * Clone → Verify → (evaluation runs) → Cleanup
  *
  * All Git errors are surfaced as descriptive RuntimeExceptions so the
  * EvaluationWorker can classify them (auth failure, repo not found, timeout).
  */
 @Service
+@Slf4j
 public class WorkspaceManager {
 
     private static final int CLONE_TIMEOUT_SECONDS = 120;
@@ -40,10 +53,12 @@ public class WorkspaceManager {
             return future.get(CLONE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             future.cancel(true);
-            throw new WorkspaceException("Clone timed out after " + CLONE_TIMEOUT_SECONDS + "s for: " + repoUrl, ErrorKind.TIMEOUT);
+            throw new WorkspaceException("Clone timed out after " + CLONE_TIMEOUT_SECONDS + "s for: " + repoUrl,
+                    ErrorKind.TIMEOUT);
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof WorkspaceException we) throw we;
+            if (cause instanceof WorkspaceException we)
+                throw we;
             throw new WorkspaceException("Clone failed: " + cause.getMessage(), ErrorKind.GIT_ERROR);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -53,7 +68,10 @@ public class WorkspaceManager {
         }
     }
 
-    /** Removes the workspace directory for {@code teamId}. Safe to call even if the directory is missing. */
+    /**
+     * Removes the workspace directory for {@code teamId}. Safe to call even if the
+     * directory is missing.
+     */
     public void cleanup(String teamId) {
         Path dir = Paths.get(workspaceRoot, teamId);
         deleteRecursively(dir);
@@ -80,7 +98,7 @@ public class WorkspaceManager {
         }
 
         String cloneUrl = injectToken(repoUrl);
-        String output = runCommand(teamDir, "git", "clone", "--depth", "1", "--quiet", cloneUrl, ".");
+        runCommand(teamDir, "git", "clone", "--depth", "1", "--quiet", cloneUrl, ".");
 
         // Verify: at minimum one file must exist after cloning
         try {
@@ -105,7 +123,8 @@ public class WorkspaceManager {
 
     /**
      * Runs a subprocess with merged stdout/stderr, draining output in a parallel
-     * thread to prevent pipe-buffer deadlock. Throws WorkspaceException on non-zero exit.
+     * thread to prevent pipe-buffer deadlock. Throws WorkspaceException on non-zero
+     * exit.
      */
     private String runCommand(Path workDir, String... command) throws WorkspaceException {
         ProcessBuilder pb = new ProcessBuilder(List.of(command))
@@ -124,8 +143,10 @@ public class WorkspaceManager {
         Thread gobbler = new Thread(() -> {
             try (BufferedReader r = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
-                while ((line = r.readLine()) != null) output.append(line).append('\n');
-            } catch (IOException ignored) {}
+                while ((line = r.readLine()) != null)
+                    output.append(line).append('\n');
+            } catch (IOException ignored) {
+            }
         });
         gobbler.setDaemon(true);
         gobbler.start();
@@ -163,14 +184,15 @@ public class WorkspaceManager {
     }
 
     private void deleteRecursively(Path dir) {
-        if (!Files.exists(dir)) return;
+        if (!Files.exists(dir))
+            return;
         try {
             Files.walk(dir)
                     .sorted(Comparator.reverseOrder())
                     .map(Path::toFile)
                     .forEach(File::delete);
         } catch (IOException e) {
-            System.err.println("[WorkspaceManager] Failed to delete " + dir + ": " + e.getMessage());
+            log.warn("Failed to delete {}", dir, e);
         }
     }
 
@@ -188,7 +210,9 @@ public class WorkspaceManager {
             this.kind = kind;
         }
 
-        public ErrorKind getKind() { return kind; }
+        public ErrorKind getKind() {
+            return kind;
+        }
 
         /** True if retrying is unlikely to help (repo missing, auth failure). */
         public boolean isFatal() {

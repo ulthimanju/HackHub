@@ -1,10 +1,25 @@
 package com.ehub.event.entity;
 
-import com.ehub.event.enums.EventStatus;
-import jakarta.persistence.*;
-import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.ehub.event.enums.EventStatus;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "events")
@@ -59,31 +74,41 @@ public class Event {
     private List<ProblemStatement> problemStatements = new ArrayList<>();
 
     public EventStatus calculateCurrentStatus() {
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        
+        return calculateCurrentStatus(java.time.LocalDateTime.now());
+    }
+
+    public EventStatus calculateCurrentStatus(java.time.LocalDateTime now) {
+
         // Before Registration
-        if (registrationStartDate != null && now.isBefore(registrationStartDate)) return EventStatus.UPCOMING;
-        
+        if (registrationStartDate != null && now.isBefore(registrationStartDate))
+            return EventStatus.UPCOMING;
+
         // During Registration
-        if (registrationStartDate != null && registrationEndDate != null && 
-            !now.isBefore(registrationStartDate) && !now.isAfter(registrationEndDate)) return EventStatus.REGISTRATION_OPEN;
-            
+        if (registrationStartDate != null && registrationEndDate != null &&
+                !now.isBefore(registrationStartDate) && !now.isAfter(registrationEndDate))
+            return EventStatus.REGISTRATION_OPEN;
+
         // After Registration but before Event Start
-        if (startDate != null && now.isBefore(startDate)) return EventStatus.UPCOMING;
-        
+        if (startDate != null && now.isBefore(startDate))
+            return EventStatus.UPCOMING;
+
         // During Event
-        if (startDate != null && endDate != null && 
-            !now.isBefore(startDate) && !now.isAfter(endDate)) return EventStatus.ONGOING;
-            
+        if (startDate != null && endDate != null &&
+                !now.isBefore(startDate) && !now.isAfter(endDate))
+            return EventStatus.ONGOING;
+
         // Judging Phase (Automatic if endDate passed and judging boolean is true)
-        if (endDate != null && now.isAfter(endDate) && Boolean.TRUE.equals(judging)) return EventStatus.JUDGING;
-            
-        // Results Announced (If judging is false but resultsDate hasn't passed or is exactly now)
+        if (endDate != null && now.isAfter(endDate) && Boolean.TRUE.equals(judging))
+            return EventStatus.JUDGING;
+
+        // Results Announced (If judging is false but resultsDate hasn't passed or is
+        // exactly now)
         if (endDate != null && now.isAfter(endDate) && !Boolean.TRUE.equals(judging)) {
-            if (resultsDate != null && now.isAfter(resultsDate)) return EventStatus.COMPLETED;
+            if (resultsDate != null && now.isAfter(resultsDate))
+                return EventStatus.COMPLETED;
             return EventStatus.RESULTS_ANNOUNCED;
         }
-            
+
         return EventStatus.UPCOMING;
     }
 }

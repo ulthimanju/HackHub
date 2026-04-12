@@ -1,621 +1,128 @@
 package com.ehub.event.service;
 
-import com.ehub.event.client.NotificationClient;
-import com.ehub.event.dto.*;
-import com.ehub.event.entity.Event;
-import com.ehub.event.entity.ProblemStatement;
-import com.ehub.event.entity.Registration;
-import com.ehub.event.entity.Team;
-import com.ehub.event.entity.TeamMember;
-import com.ehub.event.repository.EventRepository;
-import com.ehub.event.repository.ProblemStatementRepository;
-import com.ehub.event.repository.RegistrationRepository;
-import com.ehub.event.repository.TeamMemberRepository;
-import com.ehub.event.repository.TeamRepository;
-import com.ehub.event.util.MessageKeys;
-import com.ehub.event.enums.RegistrationStatus;
-import com.ehub.event.enums.EventStatus;
-import com.ehub.event.enums.TeamMemberStatus;
-import com.ehub.event.enums.TeamRole;
-import com.ehub.event.util.ShortCodeGenerator;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
-import com.ehub.event.exception.ResourceNotFoundException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import com.ehub.event.dto.EventRequest;
+import com.ehub.event.dto.EventResponse;
+import com.ehub.event.dto.EventStatsResponse;
+import com.ehub.event.dto.LifecycleResponse;
+import com.ehub.event.dto.ProblemStatementRequest;
+import com.ehub.event.dto.RegistrationRequest;
+import com.ehub.event.dto.RegistrationResponse;
+import com.ehub.event.enums.EventStatus;
+import com.ehub.event.enums.RegistrationStatus;
+import com.ehub.event.facade.EventFacade;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class EventService {
 
-    private final EventRepository eventRepository;
-    private final ProblemStatementRepository problemRepository;
-    private final RegistrationRepository registrationRepository;
-    private final TeamRepository teamRepository;
-    private final TeamMemberRepository teamMemberRepository;
-    private final NotificationClient notificationClient;
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final LifecycleService lifecycleService;
+    private final EventFacade eventFacade;
 
     public List<EventResponse> getEventsByOrganizer(String organizerId) {
-        List<Event> events = eventRepository.findByOrganizerId(organizerId);
-        Map<String, Long> counts = registrationRepository.countApprovedByEventIds(
-                events.stream().map(Event::getId).collect(Collectors.toList()));
-        return events.stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
+        return eventFacade.getEventsByOrganizer(organizerId);
     }
 
     public EventStatsResponse getEventStats(String eventId) {
-        eventRepository.findById(eventId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        return EventStatsResponse.builder()
-                .totalRegistrations(registrationRepository.countByEventId(eventId))
-                .pendingRegistrations(registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.PENDING))
-                .approvedRegistrations(registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.APPROVED))
-                .rejectedRegistrations(registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.REJECTED))
-                .totalTeams(teamRepository.countByEventId(eventId))
-                .submittedTeams(teamRepository.countByEventIdAndRepoUrlIsNotNull(eventId))
-                .evaluatedTeams(teamRepository.countByEventIdAndScoreIsNotNull(eventId))
-                .avgScore(teamRepository.avgScoreByEventId(eventId))
-                .maxScore(teamRepository.maxScoreByEventId(eventId))
-                .build();
+        return eventFacade.getEventStats(eventId);
     }
 
     public List<EventResponse> getEventsByParticipant(String userId) {
-        List<String> eventIds = registrationRepository.findByUserId(userId).stream()
-                .map(Registration::getEventId).collect(Collectors.toList());
-        List<Event> events = eventRepository.findAllById(eventIds);
-        Map<String, Long> counts = registrationRepository.countApprovedByEventIds(eventIds);
-        return events.stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
+        return eventFacade.getEventsByParticipant(userId);
     }
 
     public List<EventResponse> getAllEvents() {
-        List<Event> events = eventRepository.findAll();
-        Map<String, Long> counts = registrationRepository.countApprovedByEventIds(
-                events.stream().map(Event::getId).collect(Collectors.toList()));
-        return events.stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
+        return eventFacade.getAllEvents();
     }
 
     public Page<EventResponse> getAllEvents(Pageable pageable) {
-        Page<Event> page = eventRepository.findAll(pageable);
-        List<String> ids = page.getContent().stream().map(Event::getId).collect(Collectors.toList());
-        Map<String, Long> counts = ids.isEmpty() ? Collections.emptyMap() : registrationRepository.countApprovedByEventIds(ids);
-        List<EventResponse> content = page.getContent().stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
-        return new PageImpl<>(content, pageable, page.getTotalElements());
+        return eventFacade.getAllEvents(pageable);
     }
 
     public Page<EventResponse> getEventsByOrganizer(String organizerId, Pageable pageable) {
-        Page<Event> page = eventRepository.findByOrganizerId(organizerId, pageable);
-        List<String> ids = page.getContent().stream().map(Event::getId).collect(Collectors.toList());
-        Map<String, Long> counts = ids.isEmpty() ? Collections.emptyMap() : registrationRepository.countApprovedByEventIds(ids);
-        List<EventResponse> content = page.getContent().stream().map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
-        return new PageImpl<>(content, pageable, page.getTotalElements());
+        return eventFacade.getEventsByOrganizer(organizerId, pageable);
     }
 
     public Page<EventResponse> getEventsByParticipant(String userId, Pageable pageable) {
-        List<String> eventIds = registrationRepository.findByUserId(userId).stream()
-                .map(Registration::getEventId).collect(Collectors.toList());
-        if (eventIds.isEmpty()) return Page.empty(pageable);
-        List<Event> all = eventRepository.findAllById(eventIds);
-        Map<String, Long> counts = registrationRepository.countApprovedByEventIds(eventIds);
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), all.size());
-        if (start > all.size()) return Page.empty(pageable);
-        List<EventResponse> content = all.subList(start, end).stream()
-                .map(e -> mapToEventResponse(e, counts)).collect(Collectors.toList());
-        return new PageImpl<>(content, pageable, all.size());
+        return eventFacade.getEventsByParticipant(userId, pageable);
     }
 
     public Page<RegistrationResponse> getEventRegistrations(String eventId, Pageable pageable) {
-        return registrationRepository.findByEventId(eventId, pageable)
-                .map(reg -> RegistrationResponse.builder()
-                        .id(reg.getId())
-                        .eventId(reg.getEventId())
-                        .userId(reg.getUserId())
-                        .username(reg.getUsername())
-                        .userEmail(reg.getUserEmail())
-                        .status(reg.getStatus())
-                        .registrationTime(reg.getRegistrationTime())
-                        .build());
+        return eventFacade.getEventRegistrations(eventId, pageable);
     }
 
     public EventResponse getEventById(String id) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        long count = registrationRepository.countByEventIdAndStatus(id, RegistrationStatus.APPROVED);
-        return mapToEventResponse(event, Map.of(id, count));
+        return eventFacade.getEventById(id);
     }
 
     public Map.Entry<String, LifecycleResponse> getEventLifecycleData(String id, String role) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        return Map.entry(lifecycleService.computeEtag(event), lifecycleService.build(event, role));
+        return eventFacade.getEventLifecycleData(id, role);
     }
 
     public EventResponse getEventByShortCode(String shortCode) {
-        Event event = eventRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        long count = registrationRepository.countByEventIdAndStatus(event.getId(), RegistrationStatus.APPROVED);
-        return mapToEventResponse(event, Map.of(event.getId(), count));
-    }
-
-    /** Cross-field date validation: registration must close before or when the event starts. */
-    private void validateEventDates(EventRequest request) {
-        if (request.getRegistrationEndDate() != null && request.getStartDate() != null
-                && request.getRegistrationEndDate().isAfter(request.getStartDate())) {
-            throw new RuntimeException(MessageKeys.REGISTRATION_END_BEFORE_START.getMessage());
-        }
-        if (request.getStartDate() != null && request.getEndDate() != null
-                && !request.getStartDate().isBefore(request.getEndDate())) {
-            throw new RuntimeException("Event start date must be before end date.");
-        }
-    }
-
-    /** Fetches the event and verifies the requester is its owner. Throws 403 otherwise. */
-    private Event requireEventOwnership(String eventId, String requesterId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_ORGANIZER.getMessage());
-        }
-        return event;
-    }
-
-    private EventResponse mapToEventResponse(Event event, Map<String, Long> registeredCounts) {
-        return EventResponse.builder()
-                .id(event.getId())
-                .shortCode(event.getShortCode())
-                .name(event.getName())
-                .description(event.getDescription())
-                .theme(event.getTheme())
-                .contactEmail(event.getContactEmail())
-                .prizes(event.getPrizes())
-                .startDate(event.getStartDate())
-                .endDate(event.getEndDate())
-                .registrationStartDate(event.getRegistrationStartDate())
-                .registrationEndDate(event.getRegistrationEndDate())
-                .judging(Boolean.TRUE.equals(event.getJudging()))
-                .resultsDate(event.getResultsDate())
-                .venue(event.getVenue())
-                .isVirtual(event.isVirtual())
-                .location(event.getLocation())
-                .maxParticipants(event.getMaxParticipants())
-                .teamSize(event.getTeamSize())
-                .registeredCount(registeredCounts.getOrDefault(event.getId(), 0L).intValue())
-                .status(event.calculateCurrentStatus())
-                .organizerId(event.getOrganizerId())
-                .problemStatements(event.getProblemStatements().stream()
-                        .map(this::mapToProblemStatementResponse)
-                        .collect(Collectors.toList()))
-                .build();
-    }
-
-    private EventResponse.ProblemStatementResponse mapToProblemStatementResponse(com.ehub.event.entity.ProblemStatement ps) {
-        return EventResponse.ProblemStatementResponse.builder()
-                .id(ps.getId())
-                .statementId(ps.getStatementId())
-                .name(ps.getName())
-                .statement(ps.getStatement())
-                .requirements(ps.getRequirements())
-                .build();
+        return eventFacade.getEventByShortCode(shortCode);
     }
 
     public String createEvent(EventRequest request, String currentUserId) {
-        validateEventDates(request);
-        String id = UUID.randomUUID().toString();
-        String shortCode = ShortCodeGenerator.generate(8);
-        
-        Event event = Event.builder()
-                .id(id)
-                .shortCode(shortCode)
-                .name(request.getName())
-                .description(request.getDescription())
-                .theme(request.getTheme())
-                .contactEmail(request.getContactEmail())
-                .prizes(request.getPrizes())
-                .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
-                .registrationStartDate(request.getRegistrationStartDate())
-                .registrationEndDate(request.getRegistrationEndDate())
-                .judging(request.isJudging())
-                .resultsDate(request.getResultsDate())
-                .venue(request.getVenue())
-                .isVirtual(request.isVirtual())
-                .location(request.getLocation())
-                .maxParticipants(request.getMaxParticipants())
-                .teamSize(request.getTeamSize())
-                .organizerId(currentUserId)
-                .build();
-        
-        event.setStatus(event.calculateCurrentStatus());
-        eventRepository.save(event);
-        return id;
+        return eventFacade.createEvent(request, currentUserId);
     }
 
-    @Transactional
     public void updateEvent(String id, EventRequest request, String requesterId) {
-        validateEventDates(request);
-        Event event = requireEventOwnership(id, requesterId);
-
-        // Ambiguity 4.2: Retroactively validate teamSize reduction
-        if (request.getTeamSize() != null && event.getTeamSize() != null
-                && request.getTeamSize() < event.getTeamSize()) {
-            List<com.ehub.event.entity.Team> eventTeams = teamRepository.findByEventId(id);
-            for (com.ehub.event.entity.Team team : eventTeams) {
-                long memberCount = teamMemberRepository.findByTeamId(team.getId()).stream()
-                        .filter(m -> m.getStatus() == com.ehub.event.enums.TeamMemberStatus.ACCEPTED)
-                        .count();
-                if (memberCount > request.getTeamSize()) {
-                    throw new RuntimeException("Cannot reduce team size to " + request.getTeamSize()
-                            + " — team \"" + team.getName() + "\" already has " + memberCount + " accepted members.");
-                }
-            }
-        }
-
-        event.setName(request.getName());
-        event.setDescription(request.getDescription());
-        event.setTheme(request.getTheme());
-        event.setContactEmail(request.getContactEmail());
-        event.setPrizes(request.getPrizes());
-        event.setStartDate(request.getStartDate());
-        event.setEndDate(request.getEndDate());
-        event.setRegistrationStartDate(request.getRegistrationStartDate());
-        event.setRegistrationEndDate(request.getRegistrationEndDate());
-        event.setJudging(request.isJudging());
-        event.setResultsDate(request.getResultsDate());
-        event.setVenue(request.getVenue());
-        event.setVirtual(request.isVirtual());
-        event.setLocation(request.getLocation());
-        event.setMaxParticipants(request.getMaxParticipants());
-        event.setTeamSize(request.getTeamSize());
-        // Recalculate status after timestamp changes
-        event.setStatus(event.calculateCurrentStatus());
-        eventRepository.save(event);
+        eventFacade.updateEvent(id, request, requesterId);
     }
 
-    @Transactional
     public boolean toggleJudging(String id, String requesterId) {
-        Event event = requireEventOwnership(id, requesterId);
-        boolean newValue = !Boolean.TRUE.equals(event.getJudging());
-        event.setJudging(newValue);
-        event.setStatus(event.calculateCurrentStatus());
-        eventRepository.save(event);
-        return newValue;
+        return eventFacade.toggleJudging(id, requesterId);
     }
 
-    @Transactional
     public void deleteEvent(String id, String requesterId) {
-        requireEventOwnership(id, requesterId);
-        eventRepository.deleteById(id);
+        eventFacade.deleteEvent(id, requesterId);
     }
 
-    @Transactional
     public EventStatus advanceEventStatus(String id, String requesterId) {
-        Event event = requireEventOwnership(id, requesterId);
-
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        // Use the stored DB status as the authoritative current state
-        EventStatus current = event.getStatus() != null ? event.getStatus() : EventStatus.UPCOMING;
-
-        switch (current) {
-            case UPCOMING -> {
-                // Open registration now
-                event.setRegistrationStartDate(now.minusSeconds(1));
-                if (event.getRegistrationEndDate() == null || !now.isBefore(event.getRegistrationEndDate())) {
-                    java.time.LocalDateTime anchor = event.getStartDate() != null && event.getStartDate().isAfter(now)
-                            ? event.getStartDate() : now.plusDays(7);
-                    event.setRegistrationEndDate(anchor);
-                }
-            }
-            case REGISTRATION_OPEN -> {
-                // Close registration and start the event now
-                event.setRegistrationEndDate(now.minusSeconds(1));
-                event.setStartDate(now.minusSeconds(1));
-                if (event.getEndDate() == null || !event.getEndDate().isAfter(now)) {
-                    event.setEndDate(now.plusDays(2));
-                }
-            }
-            case ONGOING -> {
-                // End the event and enter judging
-                event.setEndDate(now.minusSeconds(1));
-                event.setJudging(true);
-                if (event.getResultsDate() == null || !event.getResultsDate().isAfter(now)) {
-                    event.setResultsDate(now.plusDays(3));
-                }
-            }
-            case JUDGING -> {
-                // Publish results — set status explicitly to avoid calculateCurrentStatus edge cases
-                event.setJudging(false);
-                if (event.getResultsDate() == null || !event.getResultsDate().isAfter(now)) {
-                    event.setResultsDate(now.plusDays(30));
-                }
-                event.setStatus(EventStatus.RESULTS_ANNOUNCED);
-                eventRepository.save(event);
-                notifyParticipantsResultsAnnounced(id, event);
-                return event.getStatus();
-            }
-            case RESULTS_ANNOUNCED -> {
-                // Mark as completed
-                event.setResultsDate(now.minusSeconds(1));
-            }
-            default -> throw new IllegalStateException("Event cannot be advanced from status: " + current);
-        }
-
-        event.setStatus(event.calculateCurrentStatus());
-        eventRepository.save(event);
-        return event.getStatus();
+        return eventFacade.advanceEventStatus(id, requesterId);
     }
 
-    private void notifyParticipantsResultsAnnounced(String eventId, Event event) {
-        List<Registration> approved = registrationRepository.findByEventId(eventId).stream()
-                .filter(r -> r.getStatus() == RegistrationStatus.APPROVED)
-                .collect(Collectors.toList());
-
-        for (Registration reg : approved) {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("type", "RESULTS_ANNOUNCED");
-            payload.put("eventId", eventId);
-            payload.put("eventName", event.getName());
-            payload.put("status", "RESULTS_ANNOUNCED");
-            payload.put("message", "Results for \"" + event.getName() + "\" are now live! Check the leaderboard.");
-            redisTemplate.convertAndSend("ehub:broadcast:user-" + reg.getUserId(), payload);
-
-            try {
-                notificationClient.sendEmail(
-                    reg.getUserEmail(),
-                    "Results Announced: " + event.getName(),
-                    "Hi " + reg.getUsername() + ",\n\nThe results for \"" + event.getName() +
-                    "\" have been announced! Head to the platform to view the final leaderboard and your ranking.\n\nBest regards,\nEHub Team"
-                );
-            } catch (Exception e) {
-                System.err.println("Failed to send results email to " + reg.getUserEmail() + ": " + e.getMessage());
-            }
-        }
-    }
-
-    @Transactional
     public void addProblemStatements(String eventId, List<ProblemStatementRequest> requests, String requesterId) {
-        Event event = requireEventOwnership(eventId, requesterId);
-        if (!isRegistrationPhase(event)) {
-            throw new IllegalStateException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
-        }
-
-        int currentCount = event.getProblemStatements().size();
-        
-        for (int i = 0; i < requests.size(); i++) {
-            String id = UUID.randomUUID().toString();
-            String autoStatementId = String.format("PS%03d", currentCount + i + 1);
-            
-            ProblemStatement problem = ProblemStatement.builder()
-                    .id(id)
-                    .statementId(autoStatementId)
-                    .name(requests.get(i).getName())
-                    .statement(requests.get(i).getStatement())
-                    .requirements(requests.get(i).getRequirements())
-                    .event(event)
-                    .build();
-            
-            problemRepository.save(problem);
-        }
+        eventFacade.addProblemStatements(eventId, requests, requesterId);
     }
 
-    @Transactional
     public void addProblemStatement(String eventId, ProblemStatementRequest request, String requesterId) {
-        Event event = requireEventOwnership(eventId, requesterId);
-        if (!isRegistrationPhase(event)) {
-            throw new IllegalStateException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
-        }
-
-        String id = UUID.randomUUID().toString();
-        String autoStatementId = String.format("PS%03d", event.getProblemStatements().size() + 1);
-
-        ProblemStatement problem = ProblemStatement.builder()
-                .id(id)
-                .statementId(autoStatementId)
-                .name(request.getName())
-                .statement(request.getStatement())
-                .requirements(request.getRequirements())
-                .event(event)
-                .build();
-        
-        problemRepository.save(problem);
+        eventFacade.addProblemStatement(eventId, request, requesterId);
     }
 
-    @Transactional
     public void updateProblemStatement(String id, ProblemStatementRequest request, String requesterId) {
-        ProblemStatement problem = problemRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PROBLEM_NOT_FOUND.getMessage()));
-        
-        if (!problem.getEvent().getOrganizerId().equals(requesterId)) {
-            throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_ORGANIZER.getMessage());
-        }
-        if (isEventStarted(problem.getEvent())) {
-            throw new IllegalStateException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
-        }
-
-        problem.setName(request.getName());
-        problem.setStatement(request.getStatement());
-        problem.setRequirements(request.getRequirements());
-        problemRepository.save(problem);
+        eventFacade.updateProblemStatement(id, request, requesterId);
     }
 
-    @Transactional
     public void deleteProblemStatement(String id, String requesterId) {
-        ProblemStatement problem = problemRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PROBLEM_NOT_FOUND.getMessage()));
-        
-        if (!problem.getEvent().getOrganizerId().equals(requesterId)) {
-            throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_ORGANIZER.getMessage());
-        }
-        if (!isRegistrationPhase(problem.getEvent())) {
-            throw new IllegalStateException(MessageKeys.PROBLEM_STATEMENTS_LOCKED.getMessage());
-        }
-
-        problemRepository.deleteById(id);
+        eventFacade.deleteProblemStatement(id, requesterId);
     }
 
-    @Transactional
     public void registerForEvent(String eventId, RegistrationRequest request, String currentUserId) {
-        if (registrationRepository.existsByEventIdAndUserId(eventId, currentUserId)) {
-            throw new IllegalStateException(MessageKeys.ALREADY_REGISTERED.getMessage());
-        }
-
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-
-        // Constraint: Check registration deadline
-        if (event.getRegistrationEndDate() != null && LocalDateTime.now().isAfter(event.getRegistrationEndDate())) {
-            throw new IllegalStateException(MessageKeys.REGISTRATION_CLOSED.getMessage());
-        }
-
-        // Constraint: Check max participants capacity
-        if (event.getMaxParticipants() != null) {
-            long approvedCount = registrationRepository.findByEventId(eventId).stream()
-                    .filter(reg -> reg.getStatus() == RegistrationStatus.APPROVED)
-                    .count();
-            if (approvedCount >= event.getMaxParticipants()) {
-                throw new IllegalStateException(MessageKeys.EVENT_CAPACITY_REACHED.getMessage());
-            }
-        }
-
-        String id = UUID.randomUUID().toString();
-        
-        Registration registration = Registration.builder()
-                .id(id)
-                .eventId(eventId)
-                .userId(currentUserId)
-                .username(request.getUsername())
-                .userEmail(request.getUserEmail())
-                .status(RegistrationStatus.PENDING)
-                .registrationTime(LocalDateTime.now())
-                .build();
-
-        registrationRepository.save(registration);
-
-        // Send Notification to User about pending request
-        try {
-            String subject = "Registration Request Received: " + event.getName();
-            String message = "Your registration request for " + event.getName() + " is pending approval from the organizer.";
-            notificationClient.sendEmail(request.getUserEmail(), subject, message);
-        } catch (Exception e) {
-            // Log error but don't fail registration
-            System.err.println("Failed to send registration notification: " + e.getMessage());
-        }
+        eventFacade.registerForEvent(eventId, request, currentUserId);
     }
 
     public List<RegistrationResponse> getMyRegistrations(String userId) {
-        return registrationRepository.findByUserId(userId).stream()
-                .map(reg -> RegistrationResponse.builder()
-                        .id(reg.getId())
-                        .eventId(reg.getEventId())
-                        .userId(reg.getUserId())
-                        .username(reg.getUsername())
-                        .userEmail(reg.getUserEmail())
-                        .status(reg.getStatus())
-                        .registrationTime(reg.getRegistrationTime())
-                        .build())
-                .collect(Collectors.toList());
+        return eventFacade.getMyRegistrations(userId);
     }
 
     public List<RegistrationResponse> getEventRegistrations(String eventId) {
-        return registrationRepository.findByEventId(eventId).stream()
-                .map(reg -> RegistrationResponse.builder()
-                        .id(reg.getId())
-                        .eventId(reg.getEventId())
-                        .userId(reg.getUserId())
-                        .username(reg.getUsername())
-                        .userEmail(reg.getUserEmail())
-                        .status(reg.getStatus())
-                        .registrationTime(reg.getRegistrationTime())
-                        .build())
-                .collect(Collectors.toList());
+        return eventFacade.getEventRegistrations(eventId);
     }
 
-    @Transactional
     public void cancelRegistration(String registrationId, String currentUserId) {
-        Registration registration = registrationRepository.findById(registrationId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.REGISTRATION_NOT_FOUND.getMessage()));
-        
-        if (!registration.getUserId().equals(currentUserId)) {
-             throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_CANCEL_REGISTRATION.getMessage());
-        }
-
-        registrationRepository.delete(registration);
+        eventFacade.cancelRegistration(registrationId, currentUserId);
     }
 
-    @Transactional
     public void updateRegistrationStatus(String registrationId, RegistrationStatus status, String requesterId) {
-        Registration registration = registrationRepository.findById(registrationId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.REGISTRATION_NOT_FOUND.getMessage()));
-        
-        Event event = eventRepository.findById(registration.getEventId())
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.EVENT_NOT_FOUND.getMessage()));
-
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new AccessDeniedException(MessageKeys.UNAUTHORIZED_MANAGE_REGISTRATIONS.getMessage());
-        }
-
-        registration.setStatus(status);
-        registrationRepository.save(registration);
-
-        // If rejected, remove user from any team they belong to in this event
-        if (status == RegistrationStatus.REJECTED) {
-            Optional<TeamMember> membership = teamMemberRepository
-                    .findByTeamEventIdAndUserId(registration.getEventId(), registration.getUserId());
-            membership.ifPresent(m -> {
-                if (m.getRole() == TeamRole.LEADER) {
-                    // Dismantle entire team if user was the leader
-                    teamRepository.deleteById(m.getTeam().getId());
-                } else {
-                    teamMemberRepository.delete(m);
-                }
-            });
-        }
-
-        // Broadcast to specific user via WebSocket bridge
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("type", "REGISTRATION_UPDATE");
-        payload.put("eventId", event.getId());
-        payload.put("eventName", event.getName());
-        payload.put("status", status.name());
-        payload.put("message", "Your registration for " + event.getName() + " has been " + status.name());
-        redisTemplate.convertAndSend("ehub:broadcast:user-" + registration.getUserId(), payload);
-
-        // Send Notification to User
-        try {
-            String subject = "Registration " + status.name() + " for " + event.getName();
-            String message = status == RegistrationStatus.APPROVED 
-                ? "Congratulations! Your registration for " + event.getName() + " has been APPROVED."
-                : "We regret to inform you that your registration for " + event.getName() + " has been REJECTED.";
-            
-            notificationClient.sendEmail(registration.getUserEmail(), subject, message);
-        } catch (Exception e) {
-            System.err.println("Failed to send status update notification: " + e.getMessage());
-        }
-    }
-
-    /** Returns true only while event is in UPCOMING or REGISTRATION_OPEN phase. */
-    private boolean isRegistrationPhase(Event event) {
-        EventStatus status = event.getStatus();
-        return status == EventStatus.UPCOMING || status == EventStatus.REGISTRATION_OPEN;
-    }
-
-    /** Returns true once participants are actively working (ONGOING or beyond). */
-    private boolean isEventStarted(Event event) {
-        EventStatus s = event.getStatus();
-        return s == EventStatus.ONGOING || s == EventStatus.JUDGING
-                || s == EventStatus.RESULTS_ANNOUNCED || s == EventStatus.COMPLETED;
+        eventFacade.updateRegistrationStatus(registrationId, status, requesterId);
     }
 }

@@ -1,16 +1,20 @@
 package com.ehub.event.service;
 
-import com.ehub.event.client.NotificationClient;
-import com.ehub.event.entity.Event;
-import com.ehub.event.repository.RegistrationRepository;
-import com.ehub.event.enums.EventStatus;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.stereotype.Service;
+
+import com.ehub.event.client.NotificationClient;
+import com.ehub.event.entity.Event;
+import com.ehub.event.enums.EventStatus;
+import com.ehub.event.repository.RegistrationRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class MissionNotificationService {
 
@@ -36,7 +40,10 @@ public class MissionNotificationService {
             }
             case RESULTS_ANNOUNCED -> {
                 subject = "RESULTS ANNOUNCED: " + event.getName();
-                message = "The final rankings for " + event.getName() + " have been released. Head over to the event page to see the winners!";
+                message = "The final rankings for " + event.getName()
+                        + " have been released. Head over to the event page to see the winners!";
+            }
+            default -> {
             }
         }
 
@@ -56,7 +63,7 @@ public class MissionNotificationService {
             try {
                 notificationClient.sendEmail(email, subject, message);
             } catch (Exception e) {
-                System.err.println("Failed to send notification to " + email + ": " + e.getMessage());
+                log.warn("Failed to send notification to {}", email, e);
             }
         }
     }

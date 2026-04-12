@@ -5,11 +5,13 @@ import com.ehub.event.repository.EventRepository;
 import com.ehub.event.service.MissionNotificationService;
 import com.ehub.event.enums.EventStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class EventStatusScheduler {
 
@@ -23,8 +25,7 @@ public class EventStatusScheduler {
             EventStatus.ONGOING,
             EventStatus.JUDGING,
             EventStatus.RESULTS_ANNOUNCED,
-            EventStatus.COMPLETED
-    );
+            EventStatus.COMPLETED);
 
     @Scheduled(fixedRate = 60000) // Run every minute
     public void checkEventStatusTransitions() {
@@ -45,12 +46,13 @@ public class EventStatusScheduler {
     }
 
     private boolean isForwardTransition(EventStatus from, EventStatus to) {
-        if (from == null) return true;
+        if (from == null)
+            return true;
         return STATUS_ORDER.indexOf(to) > STATUS_ORDER.indexOf(from);
     }
 
     private void handleTransition(Event event, EventStatus from, EventStatus to) {
-        System.out.println("Event " + event.getName() + " transitioned from " + from + " to " + to);
+        log.info("Event {} transitioned from {} to {}", event.getName(), from, to);
         missionNotificationService.notifyTransition(event, to);
     }
 }

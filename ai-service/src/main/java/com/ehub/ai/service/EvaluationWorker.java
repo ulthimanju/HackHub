@@ -1,219 +1,112 @@
 package com.ehub.ai.service;
 
-import com.ehub.ai.dto.EvaluationContext;
-import com.ehub.ai.model.EvaluationJob;
-import com.ehub.ai.model.GeminiResult;
-import com.ehub.ai.model.JobStatus;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.data.redis.core.RedisTemplate;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import com.ehub.ai.model.EvaluationJob;
+import com.ehub.ai.port.AnalyzerPort;
+import com.ehub.ai.port.EvaluationReportingPort;
+
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Orchestrates the AI evaluation pipeline.
  *
- * Queue   : Redis List   "ehub:ai:evaluation:queue"   — stores JSON EvaluationJob
- * Status  : Redis Hash   "ehub:ai:job:{teamId}"        — fields: status, retryCount, error, updatedAt
- *
- * Pipeline stages per job:
- *   QUEUED → CLONING → ANALYZING → COMPLETED (or FAILED)
- *
- * Retry policy: up to maxRetries for transient errors.
- *   Fatal workspace errors (repo not found, auth failure) skip retries immediately.
+ * The worker only manages the polling loop and retry backoff.
+ * Queue semantics, job status updates, and retry bookkeeping live in
+ * EvaluationQueueService.
  */
 @Service
+@Slf4j
 public class EvaluationWorker {
 
-    private static final String QUEUE_KEY      = "ehub:ai:evaluation:queue";
-    private static final String JOB_KEY_PREFIX = "ehub:ai:job:";
-    private static final int    JOB_TTL_HOURS  = 48;
+    private static final long POLL_TIMEOUT_SECONDS = 5L;
+    private static final long INITIAL_BACKOFF_MILLIS = 1_000L;
+    private static final long MAX_BACKOFF_MILLIS = 30_000L;
 
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final ObjectMapper objectMapper;
-    private final WorkspaceManager workspaceManager;
-    private final GeminiCliWrapper geminiCli;
-    private final EventServiceClient eventClient;
+    private final EvaluationQueueService queueService;
+    private final EvaluationRunner runner;
+    private final EvaluationReportingPort reportingPort;
 
-    @Value("${application.max-retries:3}")
-    private int maxRetries;
+    private volatile long backoffMillis = INITIAL_BACKOFF_MILLIS;
 
-    private String judgePromptTemplate;
-
-    public EvaluationWorker(RedisTemplate<String, Object> redisTemplate,
-                            ObjectMapper objectMapper,
-                            WorkspaceManager workspaceManager,
-                            GeminiCliWrapper geminiCli,
-                            EventServiceClient eventClient) {
-        this.redisTemplate    = redisTemplate;
-        this.objectMapper     = objectMapper;
-        this.workspaceManager = workspaceManager;
-        this.geminiCli        = geminiCli;
-        this.eventClient      = eventClient;
+    public EvaluationWorker(EvaluationQueueService queueService,
+            EvaluationRunner runner,
+            EvaluationReportingPort reportingPort) {
+        this.queueService = queueService;
+        this.runner = runner;
+        this.reportingPort = reportingPort;
     }
 
     @PostConstruct
-    public void init() throws IOException {
-        // Load prompt template once at startup
-        ClassPathResource resource = new ClassPathResource("templates/judge_prompt.md");
-        judgePromptTemplate = resource.getContentAsString(StandardCharsets.UTF_8);
-
-        // Start the background worker thread
+    public void init() {
         Thread worker = new Thread(this::runWorkerLoop, "ai-eval-worker");
         worker.setDaemon(true);
         worker.start();
-        System.out.println("[EvaluationWorker] Started background evaluation worker.");
+        log.info("Started background evaluation worker");
     }
 
-    // ── Public API ────────────────────────────────────────────────────────────
-
-    /** Enqueues evaluation jobs for all teams in an event. Idempotent — skips already-queued teams. */
     public int queueEvent(String eventId) {
-        List<EvaluationContext> contexts = eventClient.getEventContexts(eventId);
-        int count = 0;
-        for (EvaluationContext ctx : contexts) {
-            if (ctx.repoUrl() == null || ctx.repoUrl().isBlank()) continue;
-            enqueue(EvaluationJob.of(ctx));
-            count++;
-        }
-        System.out.println("[EvaluationWorker] Queued " + count + " team(s) for event " + eventId);
-        return count;
+        return queueService.queueEvent(eventId);
     }
 
-    /** Enqueues a single team for evaluation. */
     public void queueTeam(String teamId) {
-        EvaluationContext ctx = eventClient.getTeamContext(teamId);
-        if (ctx.repoUrl() == null || ctx.repoUrl().isBlank()) {
-            throw new IllegalStateException("Team " + teamId + " has no repository URL.");
-        }
-        enqueue(EvaluationJob.of(ctx));
-        System.out.println("[EvaluationWorker] Queued team " + teamId + " for evaluation.");
+        queueService.queueTeam(teamId);
     }
 
-    /** Returns current status metadata for a team's evaluation job. */
     public Map<Object, Object> getJobStatus(String teamId) {
-        Map<Object, Object> status = redisTemplate.opsForHash().entries(JOB_KEY_PREFIX + teamId);
-        if (status == null || status.isEmpty()) {
-            return Map.of("status", "NOT_FOUND");
-        }
-        return status;
+        return queueService.getJobStatus(teamId);
     }
-
-    // ── Worker Loop ───────────────────────────────────────────────────────────
 
     private void runWorkerLoop() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                // Block for up to 5 seconds waiting for a job
-                Object raw = redisTemplate.opsForList().rightPop(QUEUE_KEY, 5, TimeUnit.SECONDS);
-                if (raw != null) {
-                    EvaluationJob job = (raw instanceof EvaluationJob ej)
-                            ? ej
-                            : objectMapper.convertValue(raw, EvaluationJob.class);
-                    processJob(job);
+                Optional<EvaluationJob> maybeJob = queueService.pollJob(POLL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                if (maybeJob.isEmpty()) {
+                    backoffMillis = INITIAL_BACKOFF_MILLIS;
+                    continue;
                 }
+
+                processJob(maybeJob.get());
+                backoffMillis = INITIAL_BACKOFF_MILLIS;
             } catch (Exception e) {
-                System.err.println("[EvaluationWorker] Worker loop error: " + e.getMessage());
-                sleepQuietly(5_000);
+                log.error("Worker loop error", e);
+                sleepQuietly(backoffMillis);
+                backoffMillis = Math.min(backoffMillis * 2, MAX_BACKOFF_MILLIS);
             }
         }
     }
 
     private void processJob(EvaluationJob job) {
-        String teamId   = job.teamId();
-        String teamName = job.context().teamName();
-        int    attempt  = job.retryCount() + 1;
-
-        System.out.printf("[EvaluationWorker] Processing team %s (%s) — attempt %d/%d%n",
-                teamName, teamId, attempt, maxRetries + 1);
-
-        // ── Stage 1: CLONING ─────────────────────────────────────────────────
-        updateStatus(teamId, JobStatus.CLONING, attempt, null);
-        String workspacePath;
         try {
-            workspacePath = workspaceManager.cloneRepo(job.context().repoUrl(), teamId);
+            runner.run(job);
         } catch (WorkspaceManager.WorkspaceException e) {
-            System.err.println("[EvaluationWorker] Clone failed for " + teamId + ": " + e.getMessage());
-            if (e.isFatal() || job.retryCount() >= maxRetries) {
-                fail(job, "Clone failed: " + e.getMessage());
-            } else {
-                requeue(job);
+            boolean requeued = queueService.handleFailure(job, "Clone failed: " + e.getMessage(), e.isFatal());
+            if (!requeued) {
+                reportingPort.reportError(job.teamId(), "Clone failed: " + e.getMessage());
             }
-            return;
-        }
-
-        // ── Stage 2: ANALYZING ───────────────────────────────────────────────
-        updateStatus(teamId, JobStatus.ANALYZING, attempt, null);
-        try {
-            String prompt = buildPrompt(job.context());
-            GeminiResult result = geminiCli.analyze(teamId, prompt);
-
-            // ── Stage 3: COMPLETED ───────────────────────────────────────────
-            updateStatus(teamId, JobStatus.COMPLETED, attempt, null);
-            eventClient.reportSuccess(teamId, result);
-            System.out.printf("[EvaluationWorker] ✓ Team %s scored %.1f%n", teamName, result.score());
-
-        } catch (GeminiCliWrapper.GeminiException e) {
-            System.err.println("[EvaluationWorker] Gemini failed for " + teamId + ": " + e.getMessage());
-            if (job.retryCount() >= maxRetries) {
-                fail(job, "Gemini analysis failed: " + e.getMessage());
-                eventClient.reportError(teamId, e.getMessage());
-            } else {
-                requeue(job);
+        } catch (AnalyzerPort.AnalysisException e) {
+            boolean requeued = queueService.handleFailure(job, "Gemini analysis failed: " + e.getMessage(), false);
+            if (!requeued) {
+                reportingPort.reportError(job.teamId(), e.getMessage());
             }
-        } finally {
-            workspaceManager.cleanup(teamId);
+        } catch (RuntimeException e) {
+            boolean requeued = queueService.handleFailure(job, "Worker error: " + e.getMessage(), false);
+            if (!requeued) {
+                reportingPort.reportError(job.teamId(), e.getMessage());
+            }
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private void enqueue(EvaluationJob job) {
+    private void sleepQuietly(long millis) {
         try {
-            redisTemplate.opsForList().leftPush(QUEUE_KEY, job);  // RedisTemplate serialises to JSON
-            updateStatus(job.teamId(), JobStatus.QUEUED, 0, null);
-        } catch (Exception e) {
-            System.err.println("[EvaluationWorker] Failed to enqueue team " + job.teamId() + ": " + e.getMessage());
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-    }
-
-    private void requeue(EvaluationJob job) {
-        System.out.println("[EvaluationWorker] Re-queuing team " + job.teamId() + " (retry " + (job.retryCount() + 1) + ")");
-        enqueue(job.incrementRetry());
-    }
-
-    private void fail(EvaluationJob job, String reason) {
-        System.err.println("[EvaluationWorker] ✗ Team " + job.teamId() + " permanently failed: " + reason);
-        updateStatus(job.teamId(), JobStatus.FAILED, job.retryCount() + 1, reason);
-    }
-
-    private void updateStatus(String teamId, JobStatus status, int attempt, String error) {
-        Map<String, Object> fields = new HashMap<>();
-        fields.put("status",    status.name());
-        fields.put("attempt",   String.valueOf(attempt));
-        fields.put("updatedAt", String.valueOf(System.currentTimeMillis()));
-        if (error != null) fields.put("error", error.length() > 500 ? error.substring(0, 500) + "…" : error);
-        String key = JOB_KEY_PREFIX + teamId;
-        redisTemplate.opsForHash().putAll(key, fields);
-        redisTemplate.expire(key, JOB_TTL_HOURS, TimeUnit.HOURS);
-    }
-
-    private String buildPrompt(EvaluationContext ctx) {
-        return judgePromptTemplate
-                .replace("{theme}",            ctx.safeTheme())
-                .replace("{problemStatement}", ctx.safeProblem())
-                .replace("{requirements}",     ctx.safeRequirements());
-    }
-
-    private void sleepQuietly(long ms) {
-        try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     }
 }
