@@ -2,6 +2,7 @@ package com.ehub.auth.service;
 
 import com.ehub.auth.dto.*;
 import com.ehub.auth.entity.User;
+import com.ehub.auth.outbound.notification.NotificationClient;
 import com.ehub.auth.repository.UserRepository;
 import com.ehub.auth.security.JwtService;
 import com.ehub.auth.security.TokenBlacklistService;
@@ -11,17 +12,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import com.ehub.auth.client.NotificationClient;
 import com.ehub.auth.enums.UserRole;
 import com.ehub.auth.util.MessageKeys;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Value;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 

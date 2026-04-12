@@ -1,4 +1,4 @@
-package com.ehub.auth.client;
+package com.ehub.auth.outbound.notification;
 
 import com.ehub.auth.util.MessageKeys;
 import lombok.extern.slf4j.Slf4j;
