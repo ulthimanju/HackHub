@@ -1,4 +1,4 @@
-package com.ehub.auth.security;
+package com.ehub.auth.security.config;
 
 import com.ehub.auth.security.jwt.JwtAuthenticationFilter;
 
