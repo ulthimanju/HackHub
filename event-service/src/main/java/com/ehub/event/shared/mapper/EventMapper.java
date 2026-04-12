@@ -6,7 +6,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import com.ehub.event.dto.EventResponse;
-import com.ehub.event.dto.RegistrationResponse;
+import com.ehub.event.event.registration.RegistrationResponse;
 import com.ehub.event.shared.entity.Event;
 import com.ehub.event.shared.entity.ProblemStatement;
 import com.ehub.event.shared.entity.Registration;

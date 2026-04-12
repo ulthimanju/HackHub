@@ -1,4 +1,4 @@
-package com.ehub.event.dto;
+package com.ehub.event.event.registration;
 
 import com.ehub.event.shared.enums.RegistrationStatus;
 import lombok.AllArgsConstructor;

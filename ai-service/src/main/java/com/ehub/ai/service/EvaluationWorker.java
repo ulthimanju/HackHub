@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.ehub.ai.model.EvaluationJob;
 import com.ehub.ai.port.AnalyzerPort;
-import com.ehub.ai.port.EvaluationReportingPort;
+import com.ehub.ai.reporting.EvaluationReportingPort;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;

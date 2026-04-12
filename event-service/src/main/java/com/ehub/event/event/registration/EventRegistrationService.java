@@ -1,4 +1,4 @@
-package com.ehub.event.service;
+package com.ehub.event.event.registration;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,13 +10,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ehub.event.dto.RegistrationRequest;
+import com.ehub.event.event.registration.RegistrationRequest;
 import com.ehub.event.shared.entity.Event;
 import com.ehub.event.shared.entity.Registration;
 import com.ehub.event.shared.entity.TeamMember;
 import com.ehub.event.shared.enums.RegistrationStatus;
 import com.ehub.event.shared.enums.TeamRole;
-import com.ehub.event.exception.EventRegistrationException;
+import com.ehub.event.event.registration.EventRegistrationException;
 import com.ehub.event.exception.ResourceNotFoundException;
 import com.ehub.event.shared.port.EventClock;
 import com.ehub.event.shared.port.NotificationPort;

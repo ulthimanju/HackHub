@@ -1,4 +1,4 @@
-package com.ehub.ai.port;
+package com.ehub.ai.reporting;
 
 import java.util.List;
 

@@ -12,7 +12,7 @@ import com.ehub.ai.dto.EvaluationContext;
 import com.ehub.ai.exception.EvaluationQueueException;
 import com.ehub.ai.model.EvaluationJob;
 import com.ehub.ai.model.JobStatus;
-import com.ehub.ai.port.EvaluationReportingPort;
+import com.ehub.ai.reporting.EvaluationReportingPort;
 import com.ehub.ai.port.QueuePort;
 
 import lombok.RequiredArgsConstructor;

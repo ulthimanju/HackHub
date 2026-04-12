@@ -26,10 +26,7 @@ import com.ehub.event.dto.EventResponse;
 import com.ehub.event.dto.EventStatsResponse;
 import com.ehub.event.dto.LifecycleResponse;
 import com.ehub.event.dto.ProblemStatementRequest;
-import com.ehub.event.dto.RegistrationRequest;
-import com.ehub.event.dto.RegistrationResponse;
 import com.ehub.event.shared.enums.EventStatus;
-import com.ehub.event.shared.enums.RegistrationStatus;
 import com.ehub.event.facade.EventFacade;
 import com.ehub.event.util.MessageKeys;
 
@@ -70,11 +67,6 @@ public class EventController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "1000") int size) {
         return ResponseEntity.ok(eventFacade.getEventsByParticipant(getCurrentUserId(), PageRequest.of(page, size)));
-    }
-
-    @GetMapping("/my-registrations/status")
-    public ResponseEntity<List<RegistrationResponse>> getMyRegistrationStatuses() {
-        return ResponseEntity.ok(eventFacade.getMyRegistrations(getCurrentUserId()));
     }
 
     @GetMapping("/organizer/{organizerId}")
@@ -205,39 +197,4 @@ public class EventController {
         return ResponseEntity.ok(newStatus.name());
     }
 
-    @PostMapping("/{eventId}/register")
-    public ResponseEntity<String> registerForEvent(
-            @PathVariable String eventId,
-            @Valid @RequestBody RegistrationRequest request) {
-        // userId in request should match current user or be populated from current user
-        eventFacade.registerForEvent(eventId, request, getCurrentUserId());
-        return ResponseEntity.ok(MessageKeys.REGISTRATION_SUCCESS.getMessage());
-    }
-
-    @GetMapping("/{eventId}/registrations")
-    @PreAuthorize("hasRole('ORGANIZER')")
-    public ResponseEntity<Page<RegistrationResponse>> getEventRegistrations(
-            @PathVariable String eventId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "1000") int size) {
-        return ResponseEntity.ok(eventFacade.getEventRegistrations(eventId, PageRequest.of(page, size)));
-    }
-
-    @DeleteMapping("/registrations/{registrationId}")
-    public ResponseEntity<String> cancelRegistration(@PathVariable String registrationId) {
-        eventFacade.cancelRegistration(registrationId, getCurrentUserId());
-        return ResponseEntity.ok(MessageKeys.REGISTRATION_CANCELLED.getMessage());
-    }
-
-    @PatchMapping("/registrations/{registrationId}/status")
-    @PreAuthorize("hasRole('ORGANIZER')")
-    public ResponseEntity<String> updateRegistrationStatus(
-            @PathVariable String registrationId,
-            @RequestParam RegistrationStatus status) {
-        eventFacade.updateRegistrationStatus(registrationId, status, getCurrentUserId());
-        String message = status == RegistrationStatus.APPROVED
-                ? MessageKeys.REGISTRATION_APPROVED.getMessage()
-                : MessageKeys.REGISTRATION_REJECTED.getMessage();
-        return ResponseEntity.ok(message);
-    }
 }

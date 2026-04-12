@@ -1,4 +1,4 @@
-package com.ehub.ai.service;
+package com.ehub.ai.reporting;
 
 import com.ehub.ai.dto.EvaluationContext;
 import com.ehub.ai.model.GeminiResult;

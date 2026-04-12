@@ -1,6 +1,6 @@
-package com.ehub.event.service;
+package com.ehub.event.event.registration;
 
-import com.ehub.event.dto.RegistrationRequest;
+import com.ehub.event.event.registration.RegistrationRequest;
 import com.ehub.event.shared.entity.Event;
 import com.ehub.event.shared.enums.RegistrationStatus;
 import com.ehub.event.shared.port.EventClock;

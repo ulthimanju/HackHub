@@ -1,11 +1,11 @@
-package com.ehub.ai.adapter;
+package com.ehub.ai.reporting;
 
 import java.util.List;
 
 import com.ehub.ai.dto.EvaluationContext;
 import com.ehub.ai.model.GeminiResult;
-import com.ehub.ai.port.EvaluationReportingPort;
-import com.ehub.ai.service.EventServiceClient;
+import com.ehub.ai.reporting.EvaluationReportingPort;
+import com.ehub.ai.reporting.EventServiceClient;
 
 import lombok.RequiredArgsConstructor;
 

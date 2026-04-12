@@ -6,7 +6,7 @@ import com.ehub.ai.model.EvaluationJob;
 import com.ehub.ai.model.GeminiResult;
 import com.ehub.ai.model.JobStatus;
 import com.ehub.ai.port.AnalyzerPort;
-import com.ehub.ai.port.EvaluationReportingPort;
+import com.ehub.ai.reporting.EvaluationReportingPort;
 import com.ehub.ai.port.PromptLoader;
 
 import lombok.RequiredArgsConstructor;

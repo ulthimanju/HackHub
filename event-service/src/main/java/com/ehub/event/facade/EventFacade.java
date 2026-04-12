@@ -1,19 +1,27 @@
 package com.ehub.event.facade;
 
-import com.ehub.event.dto.*;
-import com.ehub.event.shared.enums.EventStatus;
-import com.ehub.event.shared.enums.RegistrationStatus;
-import com.ehub.event.service.EventLifecycleService;
-import com.ehub.event.service.EventQueryService;
-import com.ehub.event.service.EventRegistrationService;
-import com.ehub.event.service.ProblemStatementService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import com.ehub.event.dto.EventRequest;
+import com.ehub.event.dto.EventResponse;
+import com.ehub.event.dto.EventStatsResponse;
+import com.ehub.event.dto.LifecycleResponse;
+import com.ehub.event.dto.ProblemStatementRequest;
+import com.ehub.event.event.registration.EventRegistrationService;
+import com.ehub.event.event.registration.RegistrationRequest;
+import com.ehub.event.event.registration.RegistrationResponse;
+import com.ehub.event.service.EventLifecycleService;
+import com.ehub.event.service.EventQueryService;
+import com.ehub.event.service.ProblemStatementService;
+import com.ehub.event.shared.enums.EventStatus;
+import com.ehub.event.shared.enums.RegistrationStatus;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

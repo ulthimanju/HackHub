@@ -1,4 +1,4 @@
-package com.ehub.event.dto;
+package com.ehub.event.event.registration;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
