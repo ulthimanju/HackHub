@@ -2,7 +2,7 @@ package com.ehub.auth.dto.response;
 
 import java.util.List;
 
-import com.ehub.auth.enums.ExperienceLevel;
+import com.ehub.auth.shared.domain.ExperienceLevel;
 import com.ehub.auth.shared.domain.UserRole;
 
 import lombok.AllArgsConstructor;

@@ -1,18 +1,28 @@
 package com.ehub.auth.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.ehub.auth.shared.domain.UserRole;
-import jakarta.persistence.*;
-import lombok.*;
+import java.util.Collection;
+import java.util.List;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.ehub.auth.enums.ExperienceLevel;
-import java.util.Collection;
-import java.util.List;
+import com.ehub.auth.shared.domain.ExperienceLevel;
+import com.ehub.auth.shared.domain.UserRole;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")

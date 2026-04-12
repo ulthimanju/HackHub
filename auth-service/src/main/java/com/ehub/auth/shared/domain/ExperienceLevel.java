@@ -1,4 +1,4 @@
-package com.ehub.auth.enums;
+package com.ehub.auth.shared.domain;
 
 public enum ExperienceLevel {
     BEGINNER,
