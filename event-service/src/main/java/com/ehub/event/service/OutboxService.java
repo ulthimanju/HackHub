@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,9 @@ public class OutboxService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+
+    @Value("${application.outbox.max-attempts:5}")
+    private int maxAttempts;
 
     @Transactional
     public void enqueue(String aggregateType, String aggregateId, String eventType, Map<String, Object> payload) {
@@ -59,8 +63,9 @@ public class OutboxService {
     @Transactional
     public void markFailed(String id, Exception ex) {
         outboxEventRepository.findById(id).ifPresent(event -> {
-            event.setStatus(OutboxStatus.FAILED);
-            event.setAttempts(event.getAttempts() + 1);
+            int attempts = event.getAttempts() + 1;
+            event.setAttempts(attempts);
+            event.setStatus(attempts >= Math.max(maxAttempts, 1) ? OutboxStatus.FAILED : OutboxStatus.PENDING);
             event.setError(ex.getMessage());
             outboxEventRepository.save(event);
         });
