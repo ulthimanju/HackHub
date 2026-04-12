@@ -1,7 +1,7 @@
 package com.ehub.auth.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.ehub.auth.enums.UserRole;
+import com.ehub.auth.shared.domain.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;

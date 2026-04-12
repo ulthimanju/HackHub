@@ -1,5 +1,18 @@
 package com.ehub.auth.application;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.ehub.auth.dto.request.LoginRequest;
 import com.ehub.auth.dto.request.PasswordResetRequest;
 import com.ehub.auth.dto.request.RegisterRequest;
@@ -9,23 +22,12 @@ import com.ehub.auth.dto.response.UserResponse;
 import com.ehub.auth.entity.User;
 import com.ehub.auth.outbound.notification.NotificationClient;
 import com.ehub.auth.repository.UserRepository;
+import com.ehub.auth.shared.domain.UserRole;
 import com.ehub.auth.security.jwt.JwtService;
 import com.ehub.auth.security.session.TokenBlacklistService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import com.ehub.auth.enums.UserRole;
 import com.ehub.auth.shared.messages.MessageKeys;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +66,8 @@ public class AuthService {
         try {
             repository.save(user);
         } catch (DataIntegrityViolationException e) {
-            // Handles race condition where another request registered the same username/email concurrently
+            // Handles race condition where another request registered the same
+            // username/email concurrently
             throw new RuntimeException(MessageKeys.USER_ALREADY_EXISTS.getMessage());
         }
         var jwtToken = jwtService.generateToken(user);
@@ -78,9 +81,7 @@ public class AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
-                        request.getPassword()
-                )
-        );
+                        request.getPassword()));
         var user = repository.findByUsernameOrEmail(request.getUsername(), request.getUsername())
                 .orElseThrow();
         var jwtToken = jwtService.generateToken(user);
@@ -154,8 +155,7 @@ public class AuthService {
         if (currentToken != null) {
             tokenBlacklistService.blacklist(
                     jwtService.extractJti(currentToken),
-                    jwtService.getExpirationMillis(currentToken)
-            );
+                    jwtService.getExpirationMillis(currentToken));
         }
 
         // 4. Issue a new token with updated ORGANIZER role
@@ -170,8 +170,7 @@ public class AuthService {
         if (token != null) {
             tokenBlacklistService.blacklist(
                     jwtService.extractJti(token),
-                    jwtService.getExpirationMillis(token)
-            );
+                    jwtService.getExpirationMillis(token));
         }
     }
 
@@ -184,7 +183,8 @@ public class AuthService {
         User user = repository.findByUsername(currentUsername)
                 .orElseThrow(() -> new RuntimeException(MessageKeys.USER_NOT_FOUND.getMessage()));
 
-        // Username changes are intentionally disallowed: the JWT subject is the username,
+        // Username changes are intentionally disallowed: the JWT subject is the
+        // username,
         // so changing it would silently invalidate all existing tokens.
         if (request.getSkills() != null) {
             user.setSkills(request.getSkills());
@@ -224,7 +224,8 @@ public class AuthService {
 
     public List<User> getUsersBySkills(List<String> skills) {
         // Simple implementation: filter in memory or use a native query for JSONB
-        // For production, a native query like "skills ?| array['skill1', 'skill2']" would be better
+        // For production, a native query like "skills ?| array['skill1', 'skill2']"
+        // would be better
         return repository.findAll().stream()
                 .filter(u -> u.getSkills() != null && !Collections.disjoint(u.getSkills(), skills))
                 .collect(Collectors.toList());
