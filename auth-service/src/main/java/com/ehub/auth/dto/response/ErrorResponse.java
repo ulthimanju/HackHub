@@ -1,4 +1,4 @@
-package com.ehub.auth.dto;
+package com.ehub.auth.dto.response;
 
 import java.time.Instant;
 import java.util.Map;

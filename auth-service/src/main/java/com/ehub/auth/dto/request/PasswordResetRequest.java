@@ -1,4 +1,4 @@
-package com.ehub.auth.dto;
+package com.ehub.auth.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -12,19 +12,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
-    private String username;
-
+public class PasswordResetRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Please enter a valid email address")
     private String email;
-
-    @NotBlank(message = "Password is required")
+    @NotBlank(message = "New password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
-    private String password;
-
+    private String newPassword;
     @NotBlank(message = "OTP code is required")
     private String otp;
 }

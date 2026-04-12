@@ -1,6 +1,6 @@
 package com.ehub.auth.exception;
 
-import com.ehub.auth.dto.ErrorResponse;
+import com.ehub.auth.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

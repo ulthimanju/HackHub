@@ -1,6 +1,11 @@
 package com.ehub.auth.service;
 
-import com.ehub.auth.dto.*;
+import com.ehub.auth.dto.request.LoginRequest;
+import com.ehub.auth.dto.request.PasswordResetRequest;
+import com.ehub.auth.dto.request.RegisterRequest;
+import com.ehub.auth.dto.request.UpdateProfileRequest;
+import com.ehub.auth.dto.response.AuthenticationResponse;
+import com.ehub.auth.dto.response.UserResponse;
 import com.ehub.auth.entity.User;
 import com.ehub.auth.outbound.notification.NotificationClient;
 import com.ehub.auth.repository.UserRepository;

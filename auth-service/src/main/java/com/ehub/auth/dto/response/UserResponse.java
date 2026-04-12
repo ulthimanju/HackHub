@@ -1,7 +1,7 @@
-package com.ehub.auth.dto;
+package com.ehub.auth.dto.response;
 
 import com.ehub.auth.enums.ExperienceLevel;
-import jakarta.validation.constraints.Pattern;
+import com.ehub.auth.enums.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,17 +13,17 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateProfileRequest {
+public class UserResponse {
+    private String id;
     private String username;
     private String displayName;
+    private String email;
+    private UserRole role;
     private List<String> skills;
     private String bio;
-    @Pattern(regexp = "^$|^https?://[^\\s]+$", message = "GitHub URL must start with http:// or https://")
     private String githubUrl;
-    @Pattern(regexp = "^$|^https?://[^\\s]+$", message = "LinkedIn URL must start with http:// or https://")
     private String linkedinUrl;
-    @Pattern(regexp = "^$|^https?://[^\\s]+$", message = "Portfolio URL must start with http:// or https://")
     private String portfolioUrl;
     private ExperienceLevel experienceLevel;
-    private Boolean openToInvites;
+    private boolean openToInvites;
 }
